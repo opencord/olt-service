@@ -29,8 +29,30 @@ class VOLTTenantPolicy(Policy):
         self.cleanup_orphans(tenant)
 
     def handle_delete(self, tenant):
-        if tenant.vcpe:
-            tenant.vcpe.delete()
+        pass
+        # assume this is handled by ServiceInstanceLink being deleted
+        #if tenant.vcpe:
+        #    tenant.vcpe.delete()
+
+    def get_current_vsg(self, tenant):
+        for link in ServiceInstanceLink.objects.filter(subscriber_service_instance_id = tenant.id):
+            # NOTE: Assumes the first (and only?) link is to a vsg
+            # cast from ServiceInstance to VSGTenant
+            return link.provider_service_instance.leaf_model
+        return None
+
+    def create_vsg(self, tenant):
+        vsgServices = VSGService.objects.all()
+        if not vsgServices:
+            raise XOSConfigurationError("No VSG Services available")
+
+        self.logger.info("MODEL_POLICY: volttenant %s creating vsg" % tenant)
+
+        cur_vsg = VSGServiceInstance(owner=vsgServices[0])
+        cur_vsg.creator = tenant.creator
+        cur_vsg.save()
+        link = ServiceInstanceLink(provider_service_instance=cur_vsg, subscriber_service_instance=tenant)
+        link.save()
 
     def manage_vsg(self, tenant):
         # Each VOLT object owns exactly one VCPE object
@@ -39,27 +61,20 @@ class VOLTTenantPolicy(Policy):
             self.logger.info("MODEL_POLICY: volttenant %s deleted, deleting vsg" % tenant)
             return
 
+        cur_vsg = self.get_current_vsg(tenant)
+
         # Check to see if the wrong s-tag is set. This can only happen if the
         # user changed the s-tag after the VoltTenant object was created.
-        if tenant.vcpe and tenant.vcpe.instance:
-            s_tags = Tag.objects.filter(content_type=tenant.vcpe.instance.self_content_type_id,
-                                        object_id=tenant.vcpe.instance.id, name="s_tag")
+        if cur_vsg and cur_vsg.instance:
+            s_tags = Tag.objects.filter(content_type=cur_vsg.instance.self_content_type_id,
+                                        object_id=cur_vsg.instance.id, name="s_tag")
             if s_tags and (s_tags[0].value != str(tenant.s_tag)):
                 self.logger.info("MODEL_POLICY: volttenant %s s_tag changed, deleting vsg" % tenant)
-                tenant.vcpe.delete()
+                cur_vsg.delete()
+                cur_vsg = None
 
-        if tenant.vcpe is None:
-            vsgServices = VSGService.objects.all()
-            if not vsgServices:
-                raise XOSConfigurationError("No VSG Services available")
-
-            self.logger.info("MODEL_POLICY: volttenant %s creating vsg" % tenant)
-
-            vcpe = VSGTenant(owner=vsgServices[0])
-            vcpe.creator = tenant.creator
-            vcpe.save()
-            link = ServiceInstanceLink(provider_service_instance = vcpe, subscriber_service_instance = tenant)
-            link.save()
+        if cur_vsg is None:
+            self.create_vsg(tenant)
 
     def manage_subscriber(self, tenant):
         # check for existing link to a root
@@ -84,11 +99,9 @@ class VOLTTenantPolicy(Policy):
 
     def cleanup_orphans(self, tenant):
         # ensure vOLT only has one vCPE
-        cur_vcpe = tenant.vcpe
+        cur_vsg = self.get_current_vsg(tenant)
 
         links = tenant.subscribed_links.all()
         for link in links:
-            vsgs = VSGTenant.objects.filter(id = link.provider_service_instance.id)
-            for vsg in vsgs:
-                if (not cur_vcpe) or (vsg.id != cur_vcpe.id):
-                    vsg.delete()
+            if (link.provider_service_instance_id != cur_vsg.id):
+                link.delete()
