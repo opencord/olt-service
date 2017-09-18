@@ -24,12 +24,12 @@ def __init__(self, *args, **kwargs):
 @property
 def vcpe(self):
     # TODO: hardcoded service dependency
-    from services.vsg.models import VSGTenant
+    from services.vsg.models import VSGServiceInstance
 
     vsg = None
     for link in self.subscribed_links:
         # cast from base class to derived class
-        vsgs = VSGTenant.objects.filter(serviceinstance_ptr=link.provider_service_instance)
+        vsgs = VSGServiceInstance.objects.filter(serviceinstance_ptr=link.provider_service_instance)
         if vsgs:
             vsg = vsgs[0]
 
