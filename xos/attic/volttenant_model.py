@@ -57,7 +57,7 @@ def subscriber(self):
             return roots[0]
     return None
 
-def save(self, *args, **kwargs):
+def __xos_save_base(self, *args, **kwargs):
     if not self.creator:
         if not getattr(self, "caller", None):
             # caller must be set when creating a vCPE since it creates a slice
@@ -66,4 +66,4 @@ def save(self, *args, **kwargs):
         if not self.creator:
             raise XOSProgrammingError("VOLTTenant's self.creator was not set")
 
-    super(VOLTTenant, self).save(*args, **kwargs)
+    return False
