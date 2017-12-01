@@ -1,0 +1,81 @@
+
+# Copyright 2017-present Open Networking Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+import unittest
+from mock import patch, call, Mock, PropertyMock
+import mock
+
+import os, sys
+
+test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+service_dir=os.path.join(test_path, "../../../..")
+xos_dir=os.path.join(test_path, "../../..")
+if not os.path.exists(os.path.join(test_path, "new_base")):
+    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
+    services_dir=os.path.join(xos_dir, "../../xos_services")
+
+# ---------------------------------------------------------------------------------------------------------------------
+# End Model Policy Testing Framework
+# ---------------------------------------------------------------------------------------------------------------------
+
+class TestModelPolicyVOLTTenant(unittest.TestCase):
+    def setUp(self):
+        global VOLTTenantPolicy, MockObjectList
+
+        self.sys_path_save = sys.path
+        sys.path.append(xos_dir)
+        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
+
+        config = os.path.join(test_path, "test_config.yaml")
+        from xosconfig import Config
+        Config.clear()
+        Config.init(config, 'synchronizer-config-schema.yaml')
+
+        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
+        build_mock_modelaccessor(xos_dir, services_dir, ["olt-service/xos/volt.xproto", "vsg/xos/vsg.xproto"])
+
+        import synchronizers.new_base.modelaccessor
+        import model_policy_volttenant
+        from model_policy_volttenant import VOLTTenantPolicy, model_accessor
+
+        from mock_modelaccessor import MockObjectList
+
+        # import all class names to globals
+        for (k, v) in model_accessor.all_model_classes.items():
+            globals()[k] = v
+
+        # Some of the functions we call have side-effects. For example, creating a VSGServiceInstance may lead to creation of
+        # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
+        model_accessor.reset_all_object_stores()
+
+        self.policy = VOLTTenantPolicy()
+        self.tenant = VOLTTenant(s_tag=111, c_tag=222)
+
+    def tearDown(self):
+        sys.path = self.sys_path_save
+
+    def test_handle_create(self):
+        with patch.object(VOLTTenantPolicy, "manage_vsg") as manage_vsg, \
+                patch.object(VOLTTenantPolicy, "manage_subscriber") as manage_subscriber, \
+                patch.object(VOLTTenantPolicy, "cleanup_orphans") as cleanup_orphans:
+            self.policy.handle_create(self.tenant)
+            manage_subscriber.assert_called_with(self.tenant)
+            manage_vsg.assert_called_with(self.tenant)
+            cleanup_orphans.assert_called_with(self.tenant)
+
+if __name__ == '__main__':
+    unittest.main()
+
