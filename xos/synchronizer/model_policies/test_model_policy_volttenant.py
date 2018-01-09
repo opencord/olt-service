@@ -27,6 +27,18 @@ if not os.path.exists(os.path.join(test_path, "new_base")):
     xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
     services_dir=os.path.join(xos_dir, "../../xos_services")
 
+# While transitioning from static to dynamic load, the path to find neighboring xproto files has changed. So check
+# both possible locations...
+def get_models_fn(service_name, xproto_name):
+    name = os.path.join(service_name, "xos", xproto_name)
+    if os.path.exists(os.path.join(services_dir, name)):
+        return name
+    else:
+        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
+        if os.path.exists(os.path.join(services_dir, name)):
+            return name
+    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
+
 class TestModelPolicyVOLTTenant(unittest.TestCase):
     def setUp(self):
         global VOLTTenantPolicy, MockObjectList
@@ -41,7 +53,9 @@ class TestModelPolicyVOLTTenant(unittest.TestCase):
         Config.init(config, 'synchronizer-config-schema.yaml')
 
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, ["olt-service/xos/volt.xproto", "vsg/xos/vsg.xproto", "../profiles/rcord/xos/rcord.xproto"])
+        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
+                                                         get_models_fn("vsg", "vsg.xproto"),
+                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
 
         import synchronizers.new_base.modelaccessor
         import model_policy_volttenant
