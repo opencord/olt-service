@@ -29,7 +29,6 @@ topology_template:
           base_url: file:///opt/xos_services/olt-service/xos/
           # The following will concatenate with base_url automatically, if
           # base_url is non-null.
-          xproto: ./
           tosca_resource: tosca/resources/voltdevice.py, tosca/resources/voltservice.py, tosca/resources/CORDSubscriber.py, tosca/resources/CORDUser.py, tosca/resources/VOLTTenant.py, tosca/resources/accessagent.py, tosca/resources/accessdevice.py
           private_key: file:///opt/xos/key_import/volt_rsa
           public_key: file:///opt/xos/key_import/volt_rsa.pub
