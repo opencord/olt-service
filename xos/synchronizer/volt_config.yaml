@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-name: volt-synchronizer
+name: volt
 accessor:
   username: xosadmin@opencord.org
   password: "@/opt/xos/services/volt/credentials/xosadmin@opencord.org"
