@@ -24,7 +24,6 @@ from django.forms.models import model_to_dict
 from django.db.models import Q
 from operator import itemgetter, attrgetter, methodcaller
 from core.models import Tag
-from core.models.service import LeastLoadedNodeScheduler
 import traceback
 from xos.exceptions import *
 from xosconfig import Config
