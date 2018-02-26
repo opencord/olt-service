@@ -81,10 +81,8 @@ class TestModelPolicyVOLTTenant(unittest.TestCase):
 
     def test_handle_create(self):
         with patch.object(VOLTTenantPolicy, "manage_vsg") as manage_vsg, \
-                patch.object(VOLTTenantPolicy, "manage_subscriber") as manage_subscriber, \
                 patch.object(VOLTTenantPolicy, "cleanup_orphans") as cleanup_orphans:
             self.policy.handle_create(self.tenant)
-            manage_subscriber.assert_called_with(self.tenant)
             manage_vsg.assert_called_with(self.tenant)
             cleanup_orphans.assert_called_with(self.tenant)
 
@@ -135,63 +133,6 @@ class TestModelPolicyVOLTTenant(unittest.TestCase):
             link = save_link.call_args[0][0]
             self.assertEqual(link.provider_service_instance, vsg)
             self.assertEqual(link.subscriber_service_instance, self.tenant)
-
-    def test_manage_subscriber(self):
-        with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
-                patch.object(CordSubscriberRoot, "save", autospec=True) as save_csr:
-
-            self.tenant.provided_links = MockObjectList()
-
-            self.policy.manage_subscriber(self.tenant)
-
-            self.assertEqual(save_csr.call_count, 1)
-            csr = save_csr.call_args[0][0]
-
-            self.assertEqual(save_link.call_count, 1)
-            link = save_link.call_args[0][0]
-            self.assertEqual(link.provider_service_instance, self.tenant)
-            self.assertEqual(link.subscriber_service_instance, csr)
-
-    def test_manage_subscriber_exists(self):
-        with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
-                patch.object(CordSubscriberRoot, "save", autospec=True) as save_csr, \
-                patch.object(CordSubscriberRoot.objects, "get_items") as csr_items, \
-                patch.object(ServiceInstanceLink.objects, "get_items") as link_items:
-            self.tenant.provided_links = MockObjectList()
-
-            subscriber = CordSubscriberRoot(service_specific_id=1234)
-            csr_items.return_value = [subscriber]
-
-            link = ServiceInstanceLink(provider_service_instance= self.tenant, subscriber_service_instance = subscriber)
-            link_items.return_value = [link]
-
-            self.tenant.provided_links = MockObjectList(initial=[link])
-
-            self.policy.manage_subscriber(self.tenant)
-
-            self.assertEqual(save_csr.call_count, 0)
-            self.assertEqual(save_link.call_count, 0)
-
-    def test_manage_subscriber_exists_nolink(self):
-        with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
-                patch.object(CordSubscriberRoot, "save", autospec=True) as save_csr, \
-                patch.object(CordSubscriberRoot.objects, "get_items") as csr_items, \
-                patch.object(ServiceInstanceLink.objects, "get_items") as link_items:
-            self.tenant.provided_links = MockObjectList()
-
-            subscriber = CordSubscriberRoot(service_specific_id=1234)
-            csr_items.return_value = [subscriber]
-
-            self.tenant.provided_links = MockObjectList()
-
-            self.policy.manage_subscriber(self.tenant)
-
-            self.assertEqual(save_csr.call_count, 0)
-
-            self.assertEqual(save_link.call_count, 1)
-            link = save_link.call_args[0][0]
-            self.assertEqual(link.provider_service_instance, self.tenant)
-            self.assertEqual(link.subscriber_service_instance, subscriber)
 
     def test_handle_delete(self):
         self.policy.handle_delete(self.tenant)
