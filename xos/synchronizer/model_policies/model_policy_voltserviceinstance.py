@@ -14,11 +14,11 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import *
+from synchronizers.new_base.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, VSGService, VSGServiceInstance, model_accessor
 from synchronizers.new_base.policy import Policy
 
-class VOLTTenantPolicy(Policy):
-    model_name = "VOLTTenant"
+class VOLTServiceInstancePolicy(Policy):
+    model_name = "VOLTServiceInstance"
 
     def handle_create(self, tenant):
         return self.handle_update(tenant)
@@ -28,7 +28,7 @@ class VOLTTenantPolicy(Policy):
         if (tenant.link_deleted_count > 0) and (not tenant.provided_links.exists()):
             # If this instance has no links pointing to it, delete
             self.handle_delete(tenant)
-            if VOLTTenant.objects.filter(id=tenant.id).exists():
+            if VOLTServiceInstance.objects.filter(id=tenant.id).exists():
                 tenant.delete()
             return
 
@@ -53,7 +53,7 @@ class VOLTTenantPolicy(Policy):
         if not vsgServices:
             raise XOSConfigurationError("No VSG Services available")
 
-        self.logger.info("MODEL_POLICY: volttenant %s creating vsg" % tenant)
+        self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating vsg" % tenant)
 
         cur_vsg = VSGServiceInstance(owner=vsgServices[0])
         cur_vsg.creator = tenant.creator
@@ -65,18 +65,18 @@ class VOLTTenantPolicy(Policy):
         # Each VOLT object owns exactly one VCPE object
 
         if tenant.deleted:
-            self.logger.info("MODEL_POLICY: volttenant %s deleted, deleting vsg" % tenant)
+            self.logger.info("MODEL_POLICY: VOLTServiceInstance %s deleted, deleting vsg" % tenant)
             return
 
         cur_vsg = self.get_current_vsg(tenant)
 
         # Check to see if the wrong s-tag is set. This can only happen if the
-        # user changed the s-tag after the VoltTenant object was created.
+        # user changed the s-tag after the VOLTServiceInstance object was created.
         if cur_vsg and cur_vsg.instance:
             s_tags = Tag.objects.filter(content_type=cur_vsg.instance.self_content_type_id,
                                         object_id=cur_vsg.instance.id, name="s_tag")
             if s_tags and (s_tags[0].value != str(tenant.s_tag)):
-                self.logger.info("MODEL_POLICY: volttenant %s s_tag changed, deleting vsg" % tenant)
+                self.logger.info("MODEL_POLICY: VOLTServiceInstance %s s_tag changed, deleting vsg" % tenant)
                 cur_vsg.delete()
                 cur_vsg = None
 

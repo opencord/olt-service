@@ -20,7 +20,7 @@ accessor:
   password: "@/opt/xos/services/volt/credentials/xosadmin@opencord.org"
 required_models:
   - VOLTService
-  - VOLTTenant  
+  - VOLTServiceInstance
   - VSGService
   - VSGServiceInstance
   - ServiceInstanceLink

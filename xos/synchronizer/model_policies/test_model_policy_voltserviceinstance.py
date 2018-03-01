@@ -39,9 +39,9 @@ def get_models_fn(service_name, xproto_name):
             return name
     raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 
-class TestModelPolicyVOLTTenant(unittest.TestCase):
+class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
-        global VOLTTenantPolicy, MockObjectList
+        global VOLTServiceInstancePolicy, MockObjectList
 
         self.sys_path_save = sys.path
         sys.path.append(xos_dir)
@@ -58,8 +58,8 @@ class TestModelPolicyVOLTTenant(unittest.TestCase):
                                                          get_models_fn("../profiles/rcord", "rcord.xproto")])
 
         import synchronizers.new_base.modelaccessor
-        import model_policy_volttenant
-        from model_policy_volttenant import VOLTTenantPolicy, model_accessor
+        import model_policy_voltserviceinstance
+        from model_policy_voltserviceinstance import VOLTServiceInstancePolicy, model_accessor
 
         from mock_modelaccessor import MockObjectList
 
@@ -71,8 +71,8 @@ class TestModelPolicyVOLTTenant(unittest.TestCase):
         # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         model_accessor.reset_all_object_stores()
 
-        self.policy = VOLTTenantPolicy()
-        self.tenant = VOLTTenant(s_tag=111, c_tag=222, service_specific_id=1234)
+        self.policy = VOLTServiceInstancePolicy()
+        self.tenant = VOLTServiceInstance(s_tag=111, c_tag=222, service_specific_id=1234)
 
         self.vsg_service = VSGService(name="the vsg service")
 
@@ -80,15 +80,15 @@ class TestModelPolicyVOLTTenant(unittest.TestCase):
         sys.path = self.sys_path_save
 
     def test_handle_create(self):
-        with patch.object(VOLTTenantPolicy, "manage_vsg") as manage_vsg, \
-                patch.object(VOLTTenantPolicy, "cleanup_orphans") as cleanup_orphans:
+        with patch.object(VOLTServiceInstancePolicy, "manage_vsg") as manage_vsg, \
+                patch.object(VOLTServiceInstancePolicy, "cleanup_orphans") as cleanup_orphans:
             self.policy.handle_create(self.tenant)
             manage_vsg.assert_called_with(self.tenant)
             cleanup_orphans.assert_called_with(self.tenant)
 
     def test_manage_vsg(self):
-        with patch.object(VOLTTenantPolicy, "get_current_vsg") as get_current_vsg, \
-                patch.object(VOLTTenantPolicy, "create_vsg") as create_vsg, \
+        with patch.object(VOLTServiceInstancePolicy, "get_current_vsg") as get_current_vsg, \
+                patch.object(VOLTServiceInstancePolicy, "create_vsg") as create_vsg, \
                 patch.object(VSGService.objects, "get_items") as vsg_items:
 
             vsg_items.return_value = [self.vsg_service]
