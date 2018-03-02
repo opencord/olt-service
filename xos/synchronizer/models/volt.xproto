@@ -1,48 +1,35 @@
 option name = "volt";
 
 message VOLTService (Service){
-     option verbose_name = "vOLT Service";
-     option kind = "vOLT";
+    option verbose_name = "vOLT Service";
+    option kind = "vOLT";
 }
 
 message VOLTServiceInstance (ServiceInstance){
-     option kind = "vOLT";
-     option owner_class_name = "VOLTService";
-     option verbose_name = "vOLT Service Instance";
+    option kind = "vOLT";
+    option owner_class_name = "VOLTService";
+    option verbose_name = "vOLT Service Instance";
 
-     optional manytoone creator->User:created_volts = 3 [db_index = True, null = True, blank = True];
-}
-
-message AccessAgent (XOSBase){
-     option verbose_name = "Access Agent";
-
-     required string name = 1 [help_text = "name of agent", max_length = 254, null = False, db_index = False, blank = False];
-     required manytoone volt_service->VOLTService:access_agents = 2 [db_index = True, null = False, blank = False];
-     optional string mac = 3 [help_text = "MAC Address or Access Agent", max_length = 32, null = True, db_index = False, blank = True];
+    optional manytoone creator->User:created_volts = 1 [db_index = True, null = True, blank = True];
+    required string onu_type = 2 [help_text = "ONU Type", default = "v-ontani", null = False, db_index = False, blank = False];
+    optional string description = 3 [max_length = 254, null = True, db_index = False, blank = True];
 }
 
 message VOLTDevice (XOSBase){
-     option verbose_name = "vOLT Device";
+    option verbose_name = "vOLT Device";
 
-     required string name = 1 [help_text = "name of device", max_length = 254, null = False, db_index = False, blank = False];
-     required manytoone volt_service->VOLTService:volt_devices = 2 [db_index = True, null = False, blank = False];
-     optional string openflow_id = 3 [help_text = "OpenFlow ID", max_length = 254, null = True, db_index = False, blank = True];
-     optional string driver = 4 [help_text = "driver", max_length = 254, null = True, db_index = False, blank = True];
-     optional manytoone access_agent->AccessAgent:volt_devices = 5 [db_index = True, null = True, blank = True];
+    required manytoone volt_service->VOLTService:volt_devices = 1 [db_index = True, null = False, blank = False];
+    required string name = 2 [help_text = "name of device", max_length = 254, null = False, db_index = False, blank = False];
+    required string device_id = 3 [help_text = "Device ID", max_length = 254, null = False, db_index = False, blank = False];
+    required string device_type = 4 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
+    required string host = 5 [help_text = "Host", max_length = 254, null = False, db_index = False, blank = False];
+    required int32 port = 6 [help_text = "Fabric port", null = False, db_index = False, blank = False];
 }
 
-message AccessDevice (XOSBase){
-     option verbose_name = "Access Device";
+message VOLTDevicePort (XOSBase){
+    option verbose_name = "vOLT Device Port";
 
-     required manytoone volt_device->VOLTDevice:access_devices = 1 [db_index = True, null = False, blank = False];
-     optional int32 uplink = 2 [db_index = False, null = True, blank = True];
-     optional int32 vlan = 3 [db_index = False, null = True, blank = True];
-}
-
-message AgentPortMapping (XOSBase){
-     option verbose_name = "Agent Port Mapping";
-
-     required manytoone access_agent->AccessAgent:port_mappings = 1 [db_index = True, null = False, blank = False];
-     optional string mac = 2 [help_text = "MAC Address", max_length = 32, null = True, db_index = False, blank = True];
-     optional string port = 3 [help_text = "Openflow port ID", max_length = 32, null = True, db_index = False, blank = True];
+    required manytoone volt_device->VOLTDevice:ports = 1 [db_index = True, null = False, blank = False];
+    required string port_id = 2 [help_text = "Port ID", max_length = 254, null = False, db_index = False, blank = False, tosca_key = True];
+    required int32 s_tag = 3 [help_text = "S Tag", null = False, db_index = False, blank = False];
 }
