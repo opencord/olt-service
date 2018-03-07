@@ -4,6 +4,15 @@ option app_label = "volt";
 message VOLTService (Service){
     option verbose_name = "vOLT Service";
     option kind = "vOLT";
+
+    required string voltha_url = 2 [max_length = 254, null = False, db_index = False, blank = False];
+    optional string voltha_user = 3 [max_length = 254, null = True, db_index = False, blank = True];
+    optional string voltha_pass = 4 [max_length = 254, null = True, db_index = False, blank = True];
+    required string p_onos_url = 5 [max_length = 254, null = False, db_index = False, blank = False];
+    optional string p_onos_user = 6 [max_length = 254, null = True, db_index = False, blank = True];
+    optional string p_onos_pass = 7 [max_length = 254, null = True, db_index = False, blank = True];
+
+    required string onu_provisioning = 8 [default = "allow_all", choices = "(('allow_all', 'Allow All'), ('pre_provisioned', 'Pre-provisione'), ('oss', 'OSS'))", null = False, db_index = False, blank = False];
 }
 
 message VOLTServiceInstance (ServiceInstance){
@@ -11,25 +20,42 @@ message VOLTServiceInstance (ServiceInstance){
     option owner_class_name = "VOLTService";
     option verbose_name = "vOLT Service Instance";
 
-    required string onu_type = 2 [help_text = "ONU Type", default = "v-ontani", null = False, db_index = False, blank = False];
-    optional string description = 3 [max_length = 254, null = True, db_index = False, blank = True];
+    optional string description = 1 [max_length = 254, null = True, db_index = False, blank = True];
 }
 
-message VOLTDevice (XOSBase){
-    option verbose_name = "vOLT Device";
+message OLTDevice (XOSBase){
+    option verbose_name = "OLT Device";
+    option description="Represents a physical OLT device";
 
     required manytoone volt_service->VOLTService:volt_devices = 1 [db_index = True, null = False, blank = False];
     required string name = 2 [help_text = "name of device", max_length = 254, null = False, db_index = False, blank = False];
-    required string device_id = 3 [help_text = "Device ID", max_length = 254, null = False, db_index = False, blank = False];
-    required string device_type = 4 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
-    required string host = 5 [help_text = "Host", max_length = 254, null = False, db_index = False, blank = False];
-    required int32 port = 6 [help_text = "Fabric port", null = False, db_index = False, blank = False];
+    required string device_type = 3 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
+    required string host = 4 [help_text = "Host", max_length = 254, null = False, db_index = False, blank = False];
+    required int32 port = 5 [help_text = "Fabric port", null = False, db_index = False, blank = False];
+
+    optional string device_id = 10 [help_text = "Device ID", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string admin_state = 11 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string oper_status = 12 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string of_id = 13 [help_text = "openflow id", null = True, db_index = False, blank = False, feedback_state = True];
+
+    required string uplink = 14 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
+    required string vlan = 15 [default="3", help_text = "same as S-Tag", null = True, db_index = False, blank = False];
+    required string driver = 16 [default="pmc-olt", help_text = "Olt driver", null = True, db_index = False, blank = False];
 }
 
-message VOLTDevicePort (XOSBase){
-    option verbose_name = "vOLT Device Port";
+message ONUDevice (XOSBase){
+    option verbose_name = "ONU Device";
+    option description = "Represents a physical ONU device";
 
-    required manytoone volt_device->VOLTDevice:ports = 1 [db_index = True, null = False, blank = False];
-    required string port_id = 2 [help_text = "Port ID", max_length = 254, null = False, db_index = False, blank = False, tosca_key = True];
-    required int32 s_tag = 3 [help_text = "S Tag", null = False, db_index = False, blank = False];
+    required manytoone volt_device->OLTDevice:onu_devices = 1 [db_index = True, null = False, blank = False];
+    required string serial_number = 1 [max_length = 254, null = False, db_index = False, blank = False];
+}
+
+message PONPort (XOSBase){
+    option verbose_name = "PON Port";
+
+    required string name = 1 [db_index = True, null = False, blank = False];
+    required manytoone volt_device->OLTDevice:ports = 2 [db_index = True, null = False, blank = False];
+    required string port_id = 3 [help_text = "Port ID (Feedback State)", max_length = 254, null = False, db_index = False, blank = False, tosca_key = True];
+    required int32 s_tag = 4 [help_text = "S Tag", null = False, db_index = False, blank = False];
 }
