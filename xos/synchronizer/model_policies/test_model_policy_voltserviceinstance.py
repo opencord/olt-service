@@ -88,7 +88,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
     def test_manage_vsg(self):
         with patch.object(VOLTServiceInstancePolicy, "get_current_vsg") as get_current_vsg, \
-                patch.object(VOLTServiceInstancePolicy, "create_vsg") as create_vsg, \
+                patch.object(VOLTServiceInstancePolicy, "create_eastbound_instance") as create_vsg, \
                 patch.object(VSGService.objects, "get_items") as vsg_items:
 
             vsg_items.return_value = [self.vsg_service]
@@ -119,7 +119,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
                 patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
 
             vsg_items.return_value = [self.vsg_service]
-            self.policy.create_vsg(self.tenant)
+            self.policy.create_eastbound_instance(self.tenant)
 
             # Should have created a vsg
 
