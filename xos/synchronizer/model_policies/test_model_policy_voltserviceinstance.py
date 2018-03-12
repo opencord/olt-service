@@ -88,7 +88,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
     def test_manage_vsg(self):
         with patch.object(VOLTServiceInstancePolicy, "get_current_vsg") as get_current_vsg, \
-                patch.object(VOLTServiceInstancePolicy, "create_vsg") as create_vsg, \
+                patch.object(VOLTServiceInstancePolicy, "create_eastbound_instance") as create_vsg, \
                 patch.object(VSGService.objects, "get_items") as vsg_items:
 
             vsg_items.return_value = [self.vsg_service]
@@ -114,25 +114,34 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         self.assertEqual(vsg, None)
 
     def test_create_vsg(self):
-        with patch.object(VSGService.objects, "get_items") as vsg_items, \
-                patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
+        # with patch.object(model_accessor, "get_model_class") as mock_model_accessor, \
+        with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
                 patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
 
-            vsg_items.return_value = [self.vsg_service]
-            self.policy.create_vsg(self.tenant)
+            # mock_model_accessor.return_value = VSGServiceInstance
+
+            link = Mock()
+            link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
+
+            si = Mock()
+            si.creator = 1
+            si.subscribed_links.all.return_value = []
+            si.owner.subscribed_dependencies.all.return_value = [link]
+
+            self.policy.create_eastbound_instance(si)
 
             # Should have created a vsg
 
             self.assertEqual(save_vsg.call_count, 1)
             vsg = save_vsg.call_args[0][0]
-            self.assertEqual(vsg.creator, self.tenant.creator)
+            self.assertEqual(vsg.creator, si.creator)
 
             # Should have created a link from OLT to vsg
 
             self.assertEqual(save_link.call_count, 1)
             link = save_link.call_args[0][0]
             self.assertEqual(link.provider_service_instance, vsg)
-            self.assertEqual(link.subscriber_service_instance, self.tenant)
+            self.assertEqual(link.subscriber_service_instance, si)
 
     def test_handle_delete(self):
         self.policy.handle_delete(self.tenant)

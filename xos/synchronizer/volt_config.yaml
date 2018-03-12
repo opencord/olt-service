@@ -21,8 +21,6 @@ accessor:
 required_models:
   - VOLTService
   - VOLTServiceInstance
-  - VSGService
-  - VSGServiceInstance
   - ServiceInstanceLink
 dependency_graph: "/opt/xos/synchronizers/volt/model-deps"
 model_policies_dir: "/opt/xos/synchronizers/volt/model_policies"

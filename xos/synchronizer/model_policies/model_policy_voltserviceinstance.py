@@ -48,18 +48,32 @@ class VOLTServiceInstancePolicy(Policy):
             return link.provider_service_instance.leaf_model
         return None
 
-    def create_vsg(self, tenant):
-        vsgServices = VSGService.objects.all()
-        if not vsgServices:
-            raise XOSConfigurationError("No VSG Services available")
+    def create_eastbound_instance(self, si):
 
-        self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating vsg" % tenant)
+        chain = si.subscribed_links.all()
 
-        cur_vsg = VSGServiceInstance(owner=vsgServices[0])
-        cur_vsg.creator = tenant.creator
-        cur_vsg.save()
-        link = ServiceInstanceLink(provider_service_instance=cur_vsg, subscriber_service_instance=tenant)
-        link.save()
+        # Already has a chain
+        if len(chain) > 0 and not si.is_new:
+            self.logger.debug("MODEL_POLICY: Subscriber %s is already part of a chain" % si.id)
+            return
+
+        # if it does not have a chain,
+        # Find links to the next element in the service chain
+        # and create one
+
+        links = si.owner.subscribed_dependencies.all()
+
+        for link in links:
+            si_class = link.provider_service.get_service_instance_class_name()
+            self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating %s" % (si, si_class))
+
+            eastbound_si_class = model_accessor.get_model_class(si_class)
+            eastbound_si = eastbound_si_class()
+            eastbound_si.creator = si.creator
+            eastbound_si.owner_id = link.provider_service_id
+            eastbound_si.save()
+            link = ServiceInstanceLink(provider_service_instance=eastbound_si, subscriber_service_instance=si)
+            link.save()
 
     def manage_vsg(self, tenant):
         # Each VOLT object owns exactly one VCPE object
@@ -81,7 +95,7 @@ class VOLTServiceInstancePolicy(Policy):
                 cur_vsg = None
 
         if cur_vsg is None:
-            self.create_vsg(tenant)
+            self.create_eastbound_instance(tenant)
 
     def cleanup_orphans(self, tenant):
         # ensure vOLT only has one vCPE
