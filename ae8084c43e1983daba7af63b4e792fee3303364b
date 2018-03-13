@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cb07765f_d9fbf421",
+        "filename": "xos/synchronizer/model_policies/model_policy_voltserviceinstance.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2018-03-13T23:13:14Z",
+      "side": 1,
+      "message": "debugging statements?",
+      "range": {
+        "startLine": 70,
+        "startChar": 12,
+        "endLine": 70,
+        "endChar": 26
+      },
+      "revId": "ae8084c43e1983daba7af63b4e792fee3303364b",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
