@@ -14,7 +14,7 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, VSGService, VSGServiceInstance, model_accessor
+from synchronizers.new_base.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, model_accessor
 from synchronizers.new_base.policy import Policy
 
 class VOLTServiceInstancePolicy(Policy):
