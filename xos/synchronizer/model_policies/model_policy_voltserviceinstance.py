@@ -69,7 +69,6 @@ class VOLTServiceInstancePolicy(Policy):
 
             eastbound_si_class = model_accessor.get_model_class(si_class)
             eastbound_si = eastbound_si_class()
-            eastbound_si.creator = si.creator
             eastbound_si.owner_id = link.provider_service_id
             eastbound_si.save()
             link = ServiceInstanceLink(provider_service_instance=eastbound_si, subscriber_service_instance=si)

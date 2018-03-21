@@ -124,7 +124,6 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
             link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
 
             si = Mock()
-            si.creator = 1
             si.subscribed_links.all.return_value = []
             si.owner.subscribed_dependencies.all.return_value = [link]
 
@@ -134,7 +133,6 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
             self.assertEqual(save_vsg.call_count, 1)
             vsg = save_vsg.call_args[0][0]
-            self.assertEqual(vsg.creator, si.creator)
 
             # Should have created a link from OLT to vsg
 

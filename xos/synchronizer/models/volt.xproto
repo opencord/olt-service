@@ -10,7 +10,6 @@ message VOLTServiceInstance (ServiceInstance){
     option owner_class_name = "VOLTService";
     option verbose_name = "vOLT Service Instance";
 
-    optional manytoone creator->User:created_volts = 1 [db_index = True, null = True, blank = True];
     required string onu_type = 2 [help_text = "ONU Type", default = "v-ontani", null = False, db_index = False, blank = False];
     optional string description = 3 [max_length = 254, null = True, db_index = False, blank = True];
 }
