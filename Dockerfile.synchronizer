@@ -13,15 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This Dockerfile is DEPRECATED and will be removed imminently.
-
 # docker build -t xosproject/volt-synchronizer:candidate -f Dockerfile.synchronizer .
 
 # xosproject/volt-synchronizer
 
 FROM xosproject/xos-synchronizer-base:candidate
 
-ADD . /opt/xos/synchronizers/volt
+ADD xos/synchronizer /opt/xos/synchronizers/volt
+ADD VERSION /opt/xos/synchronizers/volt/
 
 ENTRYPOINT []
 
