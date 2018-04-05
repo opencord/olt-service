@@ -22,6 +22,30 @@
       "revId": "4a8b4d6e40aaa9aaf6fc90e2087110b78c133cde",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "be7e6b92_587d40b8",
+        "filename": "xos/synchronizer/steps/test_sync_olt_device.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-04-05T15:22:44Z",
+      "side": 1,
+      "message": "I know... that needs to be there as long as the synchronizer framework is not a library...",
+      "parentUuid": "17d3d0b3_dfb2ce1f",
+      "range": {
+        "startLine": 25,
+        "startChar": 37,
+        "endLine": 25,
+        "endChar": 54
+      },
+      "revId": "4a8b4d6e40aaa9aaf6fc90e2087110b78c133cde",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
     }
   ]
 }
