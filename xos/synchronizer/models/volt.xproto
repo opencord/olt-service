@@ -37,8 +37,9 @@ message OLTDevice (XOSBase){
     optional string admin_state = 11 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
     optional string oper_status = 12 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
     optional string of_id = 13 [help_text = "openflow id", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string dp_id = 14 [help_text = "datapath id", null = True, db_index = False, blank = False, feedback_state = True];
 
-    required string uplink = 14 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
+    required string uplink = 15 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
     required string driver = 16 [default="pmc-olt", help_text = "Olt driver", null = True, db_index = False, blank = False];
 }
 
