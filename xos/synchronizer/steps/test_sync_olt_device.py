@@ -109,42 +109,25 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o = None
         sys.path = self.sys_path_save
 
-    def test_format_url(self):
-        url = self.sync_step.format_url("onf.com")
-        self.assertEqual(url, "http://onf.com")
-        url = self.sync_step.format_url("http://onf.com")
-        self.assertEqual(url, "http://onf.com")
 
-    def test_get_voltha_info(self):
-        voltha_dict = self.sync_step.get_voltha_info(self.o)
-
-        self.assertEqual(voltha_dict["url"], "http://voltha_url")
-        self.assertEqual(voltha_dict["user"], "voltha_user")
-        self.assertEqual(voltha_dict["pass"], "voltha_pass")
-
-    def test_get_onos_info(self):
-        p_onos_dict = self.sync_step.get_p_onos_info(self.o)
-
-        self.assertEqual(p_onos_dict["url"], "http://p_onos_url")
-        self.assertEqual(p_onos_dict["user"], "p_onos_user")
-        self.assertEqual(p_onos_dict["pass"], "p_onos_pass")
 
     @requests_mock.Mocker()
     def test_get_of_id_from_device(self, m):
         logical_devices = {
             "items": [
-                {"root_device_id": "123", "id": "abc"},
+                {"root_device_id": "123", "id": "abc", "datapath_id": "55334486016"},
                 {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
             ]
         }
         m.get("http://voltha_url/api/v1/logical_devices", status_code=200, json=logical_devices)
         self.o.device_id = "123"
-        of_id = self.sync_step.get_of_id_from_device(self.o)
-        self.assertEqual(of_id, "abc")
+        self.o = self.sync_step.get_ids_from_logical_device(self.o)
+        self.assertEqual(self.o.of_id, "abc")
+        self.assertEqual(self.o.dp_id, "0000000ce2314000")
 
         with self.assertRaises(Exception) as e:
             self.o.device_id = "idonotexist"
-            self.sync_step.get_of_id_from_device(self.o)
+            self.sync_step.get_ids_from_logical_device(self.o)
         self.assertEqual(e.exception.message, "Can't find a logical device for device id: idonotexist")
 
     @requests_mock.Mocker()
@@ -191,7 +174,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.get("http://voltha_url/api/v1/devices/123", json={"oper_status": "ENABLED", "admin_state": "ACTIVE"})
         logical_devices = {
             "items": [
-                {"root_device_id": "123", "id": "abc"},
+                {"root_device_id": "123", "id": "abc", "datapath_id": "55334486016"},
                 {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
             ]
         }
@@ -203,6 +186,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.assertEqual(self.o.admin_state, "ACTIVE")
         self.assertEqual(self.o.oper_status, "ENABLED")
         self.assertEqual(self.o.of_id, "abc")
+        self.assertEqual(self.o.dp_id, "0000000ce2314000")
         self.o.save.assert_called_once()
 
     @requests_mock.Mocker()
