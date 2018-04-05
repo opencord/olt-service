@@ -26,6 +26,6 @@ topology_template:
         name: volt
         must-exist: true
         voltha_url: 10.128.22.3:8882
-        p_onos_url: 192.168.99.100:31181
+        p_onos_url: 10.128.22.3:8181
         p_onos_user: karaf
         p_onos_pass: karaf

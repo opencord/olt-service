@@ -21,6 +21,7 @@ from multistructlog import create_logger
 from time import sleep
 import requests
 from requests.auth import HTTPBasicAuth
+from helpers import Helpers
 
 log = create_logger(Config().get('logging'))
 
@@ -30,31 +31,8 @@ class SyncOLTDevice(SyncStep):
     observes = OLTDevice
 
     @staticmethod
-    def format_url(url):
-        if 'http' in url:
-            return url
-        else:
-            return 'http://%s' % url
-
-    @staticmethod
-    def get_voltha_info(o):
-        return {
-            'url': SyncOLTDevice.format_url(o.volt_service.voltha_url),
-            'user': o.volt_service.voltha_user,
-            'pass': o.volt_service.voltha_pass
-        }
-
-    @staticmethod
-    def get_p_onos_info(o):
-        return {
-            'url': SyncOLTDevice.format_url(o.volt_service.p_onos_url),
-            'user': o.volt_service.p_onos_user,
-            'pass': o.volt_service.p_onos_pass
-        }
-
-    @staticmethod
-    def get_of_id_from_device(o):
-        voltha_url = SyncOLTDevice.get_voltha_info(o)['url']
+    def get_ids_from_logical_device(o):
+        voltha_url = Helpers.get_voltha_info(o.volt_service)['url']
 
         r = requests.get(voltha_url + "/api/v1/logical_devices")
 
@@ -65,7 +43,10 @@ class SyncOLTDevice(SyncStep):
 
         for ld in res["items"]:
             if ld["root_device_id"] == o.device_id:
-                return ld["id"]
+                o.of_id = ld["id"]
+                o.dp_id = "of:" + Helpers.datapath_id_to_hex(ld["datapath_id"]) # convert to hex
+                return o
+
         raise Exception("Can't find a logical device for device id: %s" % o.device_id)
 
 
@@ -75,7 +56,7 @@ class SyncOLTDevice(SyncStep):
         # If the device has feedback_state is already present in voltha
         if not o.device_id and not o.admin_state and not o.oper_status and not o.of_id:
             log.info("Pushing device to VOLTHA", object=str(o), **o.tologdict())
-            voltha_url = self.get_voltha_info(o)['url']
+            voltha_url = Helpers.get_voltha_info(o.volt_service)['url']
 
             data = {
                 "type": o.device_type,
@@ -123,7 +104,7 @@ class SyncOLTDevice(SyncStep):
             o.oper_status = r['oper_status']
 
             # find of_id of device
-            o.of_id = self.get_of_id_from_device(o)
+            o = self.get_ids_from_logical_device(o)
             o.save()
         else:
             log.info("Device already exists in VOLTHA", object=str(o), **o.tologdict())
@@ -136,7 +117,7 @@ class SyncOLTDevice(SyncStep):
         # add device info to P-ONOS
         data = {
           "devices": {
-            o.of_id: {
+            o.dp_id: {
               "basic": {
                 "driver": o.driver
               },
@@ -148,7 +129,7 @@ class SyncOLTDevice(SyncStep):
           }
         }
 
-        onos= self.get_p_onos_info(o)
+        onos= Helpers.get_p_onos_info(o.volt_service)
 
         r = requests.post(onos['url'] + '/onos/v1/network/configuration/', data=json.dumps(data), auth=HTTPBasicAuth(onos['user'], onos['pass']))
 
@@ -163,8 +144,8 @@ class SyncOLTDevice(SyncStep):
 
     def delete_record(self, o):
 
-        voltha_url = self.get_voltha_info(o)['url']
-        onos = self.get_p_onos_info(o)
+        voltha_url = Helpers.get_voltha_info(o.volt_service)['url']
+        onos = Helpers.get_p_onos_info(o.volt_service)
         if not o.device_id:
             log.error("Device %s has no device_id" % o.name)
 
