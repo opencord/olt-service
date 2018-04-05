@@ -23,6 +23,7 @@ test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 xos_dir=os.path.join(test_path, "../../..")
 if not os.path.exists(os.path.join(test_path, "new_base")):
     xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
+    services_dir = os.path.join(xos_dir, "../../xos_services")
 sys.path.append(xos_dir)
 sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 # END Hack to load synchronizer framework
@@ -36,9 +37,41 @@ Config.init(config, "synchronizer-config-schema.yaml")
 
 from sync_olt_device import SyncOLTDevice
 
+# generate model from xproto
+def get_models_fn(service_name, xproto_name):
+    name = os.path.join(service_name, "xos", xproto_name)
+    if os.path.exists(os.path.join(services_dir, name)):
+        return name
+    else:
+        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
+        if os.path.exists(os.path.join(services_dir, name)):
+            return name
+    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
+# END generate model from xproto
+
+def match_onos_req(req):
+    r = req.json()['devices']
+    if not r['abc']:
+        return False
+    else:
+        if not r['abc']['basic']['driver'] == 'pmc-olt':
+            return False
+        if not r['abc']['accessDevice']['vlan'] == "s_tag" or not r['abc']['accessDevice']['uplink'] == "129":
+            return False
+    return True
+
 class TestSyncOLTDevice(unittest.TestCase):
 
     def setUp(self):
+        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
+        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
+                                                         get_models_fn("vsg", "vsg.xproto"),
+                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
+
+        pon_port = Mock()
+        pon_port.port_id = "00ff00"
+        pon_port.s_tag = "s_tag"
+
         # create a mock service instance
         o = Mock()
         o.volt_service.voltha_url = "voltha_url"
@@ -52,12 +85,19 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.host = "172.17.0.1"
         o.port = "50060"
         o.uplink = "129"
-        o.vlan = "3"
         o.driver = "pmc-olt"
+
+        # feedback state
+        o.device_id = None
+        o.admin_state = None
+        o.oper_status = None
+        o.of_id = None
 
         o.tologdict.return_value = {'name': "Mock VOLTServiceInstance"}
 
         o.save.return_value = "Saved"
+
+        o.ports.all.return_value = [pon_port]
 
         self.o = o
 
@@ -152,17 +192,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url/api/v1/logical_devices", status_code=200, json=logical_devices)
 
-        def match_onos_req(req):
-            r = req.json()['devices']
-            if not r['abc']:
-                return False
-            else:
-                if not r['abc']['basic']['driver'] == 'pmc-olt':
-                    return False
-                if not r['abc']['accessDevice']['vlan'] == "3" or not r['abc']['accessDevice']['uplink'] == "129":
-                    return False
-            return True
-
         m.post("http://p_onos_url/onos/v1/network/configuration/", status_code=200, additional_matcher=match_onos_req, json={})
 
         SyncOLTDevice().sync_record(self.o)
@@ -170,6 +199,21 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.assertEqual(self.o.oper_status, "ENABLED")
         self.assertEqual(self.o.of_id, "abc")
         self.o.save.assert_called_once()
+
+    @requests_mock.Mocker()
+    def test_sync_record_already_existing_in_voltha(self, m):
+
+        # mock device feedback state
+        self.o.device_id = "123"
+        self.o.admin_state = "ACTIVE"
+        self.o.oper_status = "ENABLED"
+        self.o.of_id = "abc"
+
+        m.post("http://p_onos_url/onos/v1/network/configuration/", status_code=200, additional_matcher=match_onos_req, json={})
+
+        SyncOLTDevice().sync_record(self.o)
+        self.o.save.assert_not_called()
+
 
     @requests_mock.Mocker()
     def test_delete_record(self, m):
