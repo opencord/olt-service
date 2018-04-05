@@ -110,25 +110,7 @@ class TestSyncOLTDevice(unittest.TestCase):
     def tearDown(self):
         self.o = None
 
-    def test_format_url(self):
-        url = self.sync_step.format_url("onf.com")
-        self.assertEqual(url, "http://onf.com")
-        url = self.sync_step.format_url("http://onf.com")
-        self.assertEqual(url, "http://onf.com")
 
-    def test_get_voltha_info(self):
-        voltha_dict = self.sync_step.get_voltha_info(self.o)
-
-        self.assertEqual(voltha_dict["url"], "http://voltha_url")
-        self.assertEqual(voltha_dict["user"], "voltha_user")
-        self.assertEqual(voltha_dict["pass"], "voltha_pass")
-
-    def test_get_onos_info(self):
-        p_onos_dict = self.sync_step.get_p_onos_info(self.o)
-
-        self.assertEqual(p_onos_dict["url"], "http://p_onos_url")
-        self.assertEqual(p_onos_dict["user"], "p_onos_user")
-        self.assertEqual(p_onos_dict["pass"], "p_onos_pass")
 
     @requests_mock.Mocker()
     def test_get_of_id_from_device(self, m):

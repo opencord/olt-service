@@ -21,6 +21,7 @@ from multistructlog import create_logger
 from time import sleep
 import requests
 from requests.auth import HTTPBasicAuth
+from helpers import Helpers
 
 log = create_logger(Config().get('logging'))
 
@@ -30,31 +31,8 @@ class SyncOLTDevice(SyncStep):
     observes = OLTDevice
 
     @staticmethod
-    def format_url(url):
-        if 'http' in url:
-            return url
-        else:
-            return 'http://%s' % url
-
-    @staticmethod
-    def get_voltha_info(o):
-        return {
-            'url': SyncOLTDevice.format_url(o.volt_service.voltha_url),
-            'user': o.volt_service.voltha_user,
-            'pass': o.volt_service.voltha_pass
-        }
-
-    @staticmethod
-    def get_p_onos_info(o):
-        return {
-            'url': SyncOLTDevice.format_url(o.volt_service.p_onos_url),
-            'user': o.volt_service.p_onos_user,
-            'pass': o.volt_service.p_onos_pass
-        }
-
-    @staticmethod
     def get_of_id_from_device(o):
-        voltha_url = SyncOLTDevice.get_voltha_info(o)['url']
+        voltha_url = Helpers.get_voltha_info(o)['url']
 
         r = requests.get(voltha_url + "/api/v1/logical_devices")
 
@@ -75,7 +53,7 @@ class SyncOLTDevice(SyncStep):
         # If the device has feedback_state is already present in voltha
         if not o.device_id and not o.admin_state and not o.oper_status and not o.of_id:
             log.info("Pushing device to VOLTHA", object=str(o), **o.tologdict())
-            voltha_url = self.get_voltha_info(o)['url']
+            voltha_url = Helpers.get_voltha_info(o)['url']
 
             data = {
                 "type": o.device_type,
@@ -148,7 +126,7 @@ class SyncOLTDevice(SyncStep):
           }
         }
 
-        onos= self.get_p_onos_info(o)
+        onos= Helpers.get_p_onos_info(o)
 
         r = requests.post(onos['url'] + '/onos/v1/network/configuration/', data=json.dumps(data), auth=HTTPBasicAuth(onos['user'], onos['pass']))
 
@@ -163,8 +141,8 @@ class SyncOLTDevice(SyncStep):
 
     def delete_record(self, o):
 
-        voltha_url = self.get_voltha_info(o)['url']
-        onos = self.get_p_onos_info(o)
+        voltha_url = Helpers.get_voltha_info(o)['url']
+        onos = Helpers.get_p_onos_info(o)
         if not o.device_id:
             log.error("Device %s has no device_id" % o.name)
 
