@@ -39,7 +39,6 @@ message OLTDevice (XOSBase){
     optional string of_id = 13 [help_text = "openflow id", null = True, db_index = False, blank = False, feedback_state = True];
 
     required string uplink = 14 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
-    required string vlan = 15 [default="3", help_text = "same as S-Tag", null = True, db_index = False, blank = False];
     required string driver = 16 [default="pmc-olt", help_text = "Olt driver", null = True, db_index = False, blank = False];
 }
 
@@ -55,7 +54,7 @@ message PONPort (XOSBase){
     option verbose_name = "PON Port";
 
     required string name = 1 [db_index = True, null = False, blank = False];
-    required manytoone volt_device->OLTDevice:ports = 2 [db_index = True, null = False, blank = False];
-    required string port_id = 3 [help_text = "Port ID (Feedback State)", max_length = 254, null = False, db_index = False, blank = False];
+    required manytoone olt_device->OLTDevice:ports = 2 [db_index = True, null = False, blank = False];
+    required string port_id = 3 [help_text = "Port ID", max_length = 254, null = False, db_index = False, blank = False];
     required int32 s_tag = 4 [help_text = "S Tag", null = False, db_index = False, blank = False];
 }

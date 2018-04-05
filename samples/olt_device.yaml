@@ -17,6 +17,7 @@
 tosca_definitions_version: tosca_simple_yaml_1_0
 imports:
   - custom_types/oltdevice.yaml
+  - custom_types/ponport.yaml
   - custom_types/voltservice.yaml
 description: Create a simulated OLT Device in VOLTHA
 topology_template:
@@ -38,4 +39,15 @@ topology_template:
       requirements:
         - volt_service:
             node: service#volt
+            relationship: tosca.relationships.BelongsToOne
+
+    pon_port:
+      type: tosca.nodes.PONPort
+      properties:
+        name: test_olt_port_1
+        port_id: ff00ff
+        s_tag: 111
+      requirements:
+        - olt_device:
+            node: device#olt
             relationship: tosca.relationships.BelongsToOne
