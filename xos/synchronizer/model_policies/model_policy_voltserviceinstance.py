@@ -54,7 +54,7 @@ class VOLTServiceInstancePolicy(Policy):
 
         # Already has a chain
         if len(chain) > 0 and not si.is_new:
-            self.logger.debug("MODEL_POLICY: Subscriber %s is already part of a chain" % si.id)
+            self.logger.debug("MODEL_POLICY: VOLTServiceInstance %s is already part of a chain" % si.id)
             return
 
         # if it does not have a chain,
