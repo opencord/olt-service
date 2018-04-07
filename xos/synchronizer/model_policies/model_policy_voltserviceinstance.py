@@ -85,7 +85,7 @@ class VOLTServiceInstancePolicy(Policy):
 
         # Check to see if the wrong s-tag is set. This can only happen if the
         # user changed the s-tag after the VOLTServiceInstance object was created.
-        if cur_vsg and cur_vsg.instance:
+        if cur_vsg and hasattr(cur_vsg, 'instance') and cur_vsg.instance:
             s_tags = Tag.objects.filter(content_type=cur_vsg.instance.self_content_type_id,
                                         object_id=cur_vsg.instance.id, name="s_tag")
             if s_tags and (s_tags[0].value != str(tenant.s_tag)):
