@@ -37,6 +37,9 @@ topology_template:
         device_type: simulated_olt
         host: 172.17.0.1
         port: 50060
+        switch_datapath_id: of:0000000ce2314000
+        switch_port: "5"
+        outer_tpid: "0x8100"
       requirements:
         - volt_service:
             node: service#volt
@@ -66,5 +69,5 @@ topology_template:
         olt_device: volt-1
         olt_port: volt-port-1
         uni_port_id: 101
-#        ip_address: 10.8.2.1
-#        switch_datapath_id: of:0000000ce2314000
+        mac_address: 00:AA:00:00:00:01
+        ip_address: 10.8.2.1

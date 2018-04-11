@@ -41,6 +41,10 @@ message OLTDevice (XOSBase){
 
     required string uplink = 15 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
     required string driver = 16 [default="pmc-olt", help_text = "Olt driver", null = True, db_index = False, blank = False];
+
+    optional string switch_datapath_id = 17 [help_text = "Fabric switch to which the OLT is connected", null = False, db_index = False, blank = False];
+    optional string switch_port = 18 [help_text = "Fabric port to which the OLT is connected", null = False, db_index = False, blank = False];
+    optional string outer_tpid = 19 [help_text = "Outer VLAN id field EtherType", null = False, db_index = False, blank = False];
 }
 
 message ONUDevice (XOSBase){
