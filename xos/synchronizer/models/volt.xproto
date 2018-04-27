@@ -28,7 +28,7 @@ message OLTDevice (XOSBase){
     option description="Represents a physical OLT device";
 
     required manytoone volt_service->VOLTService:volt_devices = 1 [db_index = True, null = False, blank = False];
-    required string name = 2 [help_text = "name of device", max_length = 254, null = False, db_index = False, blank = False];
+    required string name = 2 [help_text = "name of device", max_length = 254, null = False, db_index = False, blank = False, unique = True];
     required string device_type = 3 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
     required string host = 4 [help_text = "Host", max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
     required int32 port = 5 [help_text = "Fabric port", null = False, db_index = False, blank = False, tosca_key=True];
@@ -58,7 +58,7 @@ message ONUDevice (XOSBase){
 message PONPort (XOSBase){
     option verbose_name = "PON Port";
 
-    required string name = 1 [db_index = True, null = False, blank = False];
+    required string name = 1 [db_index = True, null = False, blank = False, unique_with="olt_device"];
     required manytoone olt_device->OLTDevice:ports = 2 [db_index = True, null = False, blank = False];
     required string port_id = 3 [help_text = "Port ID", max_length = 254, null = False, db_index = False, blank = False];
     required int32 s_tag = 4 [help_text = "S Tag", null = False, db_index = False, blank = False];
