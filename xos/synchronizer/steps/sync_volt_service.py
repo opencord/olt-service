@@ -26,36 +26,19 @@ log = create_logger(Config().get('logging'))
 
 class SyncOLTService(SyncStep):
     provides = [VOLTService]
-
     observes = VOLTService
 
-    @staticmethod
-    def format_url(url):
-        if 'http' in url:
-            return url
-        else:
-            return 'http://%s' % url
-
-    @staticmethod
-    def get_p_onos_info(o):
-        return {
-            'url': SyncOLTDevice.format_url(o.volt_service.p_onos_url),
-            'user': o.volt_service.p_onos_user,
-            'pass': o.volt_service.p_onos_pass
-        }
-
     def sync_record(self, o):
-        log.info("sync'ing olt service", object=str(o), **o.tologdict())
+        log.info("synching OLT service", object=str(o), **o.tologdict())
 
         if o.onu_provisioning == "allow_all":
-            # tell ONOS to create the ONU device (POST xosapi/v1/volt/onudevices)
+            # TODO: Tell ONOS to create the ONU device (POST xosapi/v1/volt/onudevices)
             pass
         if o.onu_provisioning == "pre_provisioned" or o.onu_provisioning == "oss":
-            # tell ONOS to update the ONU device (POST xosapi/v1/volt/onudevices/<id>)
-            # NOTE ONOS will need to find the <id>
-            # NOTE if onu_provisioning == oss then XOS will need to make a call to the oss server to validate the onu
+            # TODO: Tell ONOS to update the ONU device (POST xosapi/v1/volt/onudevices/<id>)
+            # ONOS will need to find the <id>
+            # if onu_provisioning == oss then XOS will need to make a call to the oss server to validate the ONU
             pass
-
 
     def delete_record(self, o):
         pass

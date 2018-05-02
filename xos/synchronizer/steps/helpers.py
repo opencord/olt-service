@@ -24,16 +24,18 @@ class Helpers():
     def get_voltha_info(olt_service):
         return {
             'url': Helpers.format_url(olt_service.voltha_url),
+            'port': olt_service.voltha_port,
             'user': olt_service.voltha_user,
             'pass': olt_service.voltha_pass
         }
 
     @staticmethod
-    def get_p_onos_info(olt_service):
+    def get_onos_voltha_info(olt_service):
         return {
-            'url': Helpers.format_url(olt_service.p_onos_url),
-            'user': olt_service.p_onos_user,
-            'pass': olt_service.p_onos_pass
+            'url': Helpers.format_url(olt_service.onos_voltha_url),
+            'port': olt_service.onos_voltha_port,
+            'user': olt_service.onos_voltha_user,
+            'pass': olt_service.onos_voltha_pass
         }
 
     @staticmethod
