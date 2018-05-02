@@ -2,6 +2,52 @@
   "comments": [
     {
       "key": {
+        "uuid": "2068494e_2f3123f5",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-05-02T20:51:13Z",
+      "side": 1,
+      "message": "missing comma",
+      "range": {
+        "startLine": 15,
+        "startChar": 60,
+        "endLine": 15,
+        "endChar": 75
+      },
+      "revId": "71ae64bfb7cdc3eae2492c9d2a21fd713dbad021",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "03a01005_5ce6fa27",
+        "filename": "xos/synchronizer/steps/helpers.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-05-02T20:51:13Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be onos_voltha_url?",
+      "range": {
+        "startLine": 35,
+        "startChar": 50,
+        "endLine": 35,
+        "endChar": 60
+      },
+      "revId": "71ae64bfb7cdc3eae2492c9d2a21fd713dbad021",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "edc4686b_a7793854",
         "filename": "xos/synchronizer/steps/test_sync_olt_device.py",
         "patchSetId": 1
