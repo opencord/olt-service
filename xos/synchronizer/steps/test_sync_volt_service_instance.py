@@ -78,9 +78,9 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.tologdict.return_value = {}
 
         volt_service = Mock()
-        volt_service.p_onos_url = "p_onos_url"
-        volt_service.p_onos_user = "p_onos_user"
-        volt_service.p_onos_pass = "p_onos_pass"
+        volt_service.onos_voltha_url = "onos_voltha_url"
+        volt_service.onos_voltha_user = "onos_voltha_user"
+        volt_service.onos_voltha_pass = "onos_voltha_pass"
 
         si = Mock()
         si.get_westbound_service_instance_properties = mock_get_westbound_service_instance_properties
@@ -120,7 +120,7 @@ class TestSyncOLTDevice(unittest.TestCase):
     @requests_mock.Mocker()
     def test_do_sync(self, m):
 
-        m.post("http://p_onos_url/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=200, json={})
+        m.post("http://onos_voltha_url/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=200, json={})
 
         self.olt_device.dp_id = "of:dp_id"
 
@@ -136,7 +136,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
     @requests_mock.Mocker()
     def test_do_sync_fail(self, m):
-        m.post("http://p_onos_url/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=500, text="Mock Error")
+        m.post("http://onos_voltha_url/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=500, text="Mock Error")
 
         self.olt_device.dp_id = "of:dp_id"
 
@@ -151,7 +151,7 @@ class TestSyncOLTDevice(unittest.TestCase):
                 self.sync_step().sync_record(self.o)
 
             self.assertTrue(m.called)
-            self.assertEqual(e.exception.message, "Failed to add subscriber in P_ONOS: Mock Error")
+            self.assertEqual(e.exception.message, "Failed to add subscriber in onos voltha: Mock Error")
 
 
 if __name__ == "__main__":
