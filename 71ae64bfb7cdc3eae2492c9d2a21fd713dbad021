@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "edc4686b_a7793854",
+        "filename": "xos/synchronizer/steps/test_sync_olt_device.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-05-02T20:45:51Z",
+      "side": 1,
+      "message": "shouldn\u0027t this be voltha_url? (same for the others)",
+      "range": {
+        "startLine": 79,
+        "startChar": 23,
+        "endLine": 79,
+        "endChar": 33
+      },
+      "revId": "71ae64bfb7cdc3eae2492c9d2a21fd713dbad021",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
