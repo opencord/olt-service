@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "59a11b50_ee4652e9",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-05-03T18:48:13Z",
+      "side": 1,
+      "message": "We can\u0027t use column in xproto",
+      "range": {
+        "startLine": 8,
+        "startChar": 83,
+        "endLine": 8,
+        "endChar": 84
+      },
+      "revId": "00ef97019a14ee5fb3b7d74643e87ee5c773f9a8",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
