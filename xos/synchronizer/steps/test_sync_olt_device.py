@@ -126,7 +126,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         with self.assertRaises(Exception) as e:
             self.o.device_id = "idonotexist"
             self.sync_step.get_ids_from_logical_device(self.o)
-        self.assertEqual(e.exception.message, "Can't find a logical device for device id: idonotexist")
+        self.assertEqual(e.exception.message, "Can't find a logical_device for OLT device id: idonotexist")
 
     @requests_mock.Mocker()
     def test_sync_record_fail_add(self, m):
@@ -137,7 +137,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         with self.assertRaises(Exception) as e:
             self.sync_step().sync_record(self.o)
-        self.assertEqual(e.exception.message, "Failed to add device: MockError")
+        self.assertEqual(e.exception.message, "Failed to add OLT device: MockError")
 
     @requests_mock.Mocker()
     def test_sync_record_fail_no_id(self, m):
@@ -148,7 +148,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         with self.assertRaises(Exception) as e:
             self.sync_step().sync_record(self.o)
-        self.assertEqual(e.exception.message, "VOLTHA Device Id is empty, this probably means that the device is already provisioned in VOLTHA")
+        self.assertEqual(e.exception.message, "VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA")
 
     @requests_mock.Mocker()
     def test_sync_record_fail_enable(self, m):
@@ -160,7 +160,8 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         with self.assertRaises(Exception) as e:
             self.sync_step().sync_record(self.o)
-        self.assertEqual(e.exception.message, "Failed to enable device: EnableError")
+
+        self.assertEqual(e.exception.message, "Failed to enable OLT device: EnableError")
 
     @requests_mock.Mocker()
     def test_sync_record_success(self, m):
@@ -180,6 +181,9 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
+        # FIXME this is part of the block in the syncstep
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
+
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ACTIVE")
         self.assertEqual(self.o.oper_status, "ENABLED")
@@ -193,8 +197,12 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.admin_state = "ACTIVE"
         self.o.oper_status = "ENABLED"
         self.o.dp_id = "of:0000000ce2314000"
+        self.o.of_id = "0001000ce2314000"
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
+
+        # FIXME this is part of the block in the syncstep
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
 
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()

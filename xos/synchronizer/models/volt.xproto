@@ -29,7 +29,7 @@ message OLTDevice (XOSBase){
     option description="Represents a physical OLT device";
 
     required manytoone volt_service->VOLTService:volt_devices = 1 [db_index = True, null = False, blank = False];
-    required string name = 2 [help_text = "name of device", max_length = 254, null = False, db_index = False, blank = False, unique = True];
+    optional string name = 2 [help_text = "name of device", max_length = 254, null = True, db_index = False, blank = True, unique = True];
     required string device_type = 3 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
     required string host = 4 [help_text = "Host", max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
     required int32 port = 5 [help_text = "Fabric port", null = False, db_index = False, blank = False, tosca_key=True];

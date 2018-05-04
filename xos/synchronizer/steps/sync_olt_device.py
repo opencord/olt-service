@@ -46,128 +46,165 @@ class SyncOLTDevice(SyncStep):
                 o.dp_id = "of:%s" % (Helpers.datapath_id_to_hex(ld["datapath_id"])) # Convert to hex
                 return o
 
-        raise Exception("Can't find a logical device for device id: %s" % o.device_id)
+        raise Exception("Can't find a logical_device for OLT device id: %s" % o.device_id)
 
+    def pre_provision_olt_device(self, model):
+        log.info("Pre-provisioning OLT device in VOLTHA", object=str(model), **model.tologdict())
 
-    def sync_record(self, o):
-        log.info("Synching device", object=str(o), **o.tologdict())
+        voltha = Helpers.get_voltha_info(model.volt_service)
 
-        voltha = Helpers.get_voltha_info(o.volt_service)
-        onos_voltha = Helpers.get_onos_voltha_info(o.volt_service)
+        data = {
+            "type": model.device_type,
+            "host_and_port": "%s:%s" % (model.host, model.port)
+        }
+
+        if model.device_type == 'simulated_olt':
+            # Simulated devices won't accept host and port. This is to enable tests in voltha without having a real olt or ponsim
+            data.pop('host_and_port')
+            data['mac_address'] = "00:0c:e2:31:40:00"
+
+        log.info("Pushing OLT to Voltha", data=data)
+
+        request = requests.post("%s:%d/api/v1/devices" % (voltha['url'], voltha['port']), json=data)
+
+        if request.status_code != 200:
+            raise Exception("Failed to add OLT device: %s" % request.text)
+
+        log.info("Add device response", text=request.text)
+
+        res = request.json()
+
+        log.info("Add device json res", res=res)
+
+        if not res['id']:
+            raise Exception(
+                'VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA')
+        else:
+            model.device_id = res['id'];
+
+        return model
+
+    def activate_olt(self, model):
+
+        voltha = Helpers.get_voltha_info(model.volt_service)
+
+        # Enable device
+        request = requests.post("%s:%d/api/v1/devices/%s/enable" % (voltha['url'], voltha['port'], model.device_id))
+
+        if request.status_code != 200:
+            raise Exception("Failed to enable OLT device: %s" % request.text)
+
+        # Read state
+        request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
+        while request['oper_status'] == "ACTIVATING":
+            log.info("Waiting for OLT device %s (%s) to activate" % (model.name, model.device_id))
+            sleep(5)
+            request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
+
+        model.admin_state = request['admin_state']
+        model.oper_status = request['oper_status']
+
+        # Find the of_id of the device
+        model = self.get_ids_from_logical_device(model)
+        model.save()
+
+        return model
+
+    def configure_onos(self, model):
+
+        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
         onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
-        # If the device has feedback_state is already present in voltha
-        if not o.device_id and not o.admin_state and not o.oper_status and not o.of_id:
-            log.info("Pushing device to VOLTHA", object=str(o), **o.tologdict())
-
-            data = {
-                "type": o.device_type,
-                "host_and_port": "%s:%s" % (o.host, o.port)
-            }
-
-            if o.device_type == 'simulated_olt':
-                # Simulated devices will not accept host and port. This is for test only
-                data.pop('host_and_port')
-                data['mac_address'] = "00:0c:e2:31:40:00"
-
-            log.info("Pushing OLT to Voltha", data=data)
-
-            request = requests.post("%s:%d/api/v1/devices" % (voltha['url'], voltha['port']), json=data)
-
-            if request.status_code != 200:
-                raise Exception("Failed to add device: %s" % request.text)
-
-            log.info("Add device response", text=request.text)
-
-            res = request.json()
-
-            log.info("Add device json res", res=res)
-
-            if not res['id']:
-                raise Exception('VOLTHA Device Id is empty, this probably means that the device is already provisioned in VOLTHA')
-            else:
-                o.device_id = res['id'];
-
-            # Enable device
-            request = requests.post("%s:%d/api/v1/devices/%s/enable" % (voltha['url'], voltha['port'], o.device_id))
-
-            if request.status_code != 200:
-                raise Exception("Failed to enable device: %s" % request.text)
-
-            # Read state
-            request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], o.device_id)).json()
-            while request['oper_status'] == "ACTIVATING":
-                log.info("Waiting for device %s (%s) to activate" % (o.name, o.device_id))
-                sleep(5)
-                request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], o.device_id)).json()
-
-            o.admin_state = request['admin_state']
-            o.oper_status = request['oper_status']
-
-            # Find the of_id of the device
-            o = self.get_ids_from_logical_device(o)
-            o.save()
-        else:
-            log.info("Device already exists in VOLTHA", object=str(o), **o.tologdict())
-
-
-        # Do we need to move this synchronization in a PON_PORT specific step?
         # For now, we assume that each OLT has only one port
-        vlan = o.ports.all()[0].s_tag
+        vlan = model.ports.all()[0].s_tag
 
         # Add device info to onos-voltha
         data = {
           "devices": {
-            o.dp_id: {
+            model.dp_id: {
               "basic": {
-                "driver": o.driver
+                "driver": model.driver
               },
               "accessDevice": {
-                "uplink": o.uplink,
+                "uplink": model.uplink,
                 "vlan": vlan
               }
             }
           }
         }
 
-        request = requests.post("%s:%d/onos/v1/network/configuration/" % (onos_voltha['url'], onos_voltha['port']), data=json.dumps(data), auth=onos_voltha_basic_auth)
+        url = "%s:%d/onos/v1/network/configuration/" % (onos_voltha['url'], onos_voltha['port'])
+        request = requests.post(url, json=data, auth=onos_voltha_basic_auth)
 
         if request.status_code != 200:
             log.error(request.text)
-            raise Exception("Failed to add device %s into ONOS" % o.name)
+            raise Exception("Failed to add OLT device %s into ONOS" % model.name)
         else:
             try:
                 print request.json()
             except Exception:
                 print request.text
+        return model
+
+    def hack_to_get_onos_to_load_the_proper_driver(self, model):
+        # Remove the device from ONOS
+        log.info("Updating ONOS driver")
+        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
+        onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
+        request = requests.delete("%s:%d/onos/v1/network/configuration/devices/%s" % (
+            onos_voltha['url'], onos_voltha['port'], model.of_id), auth=onos_voltha_basic_auth)
+
+        if request.status_code != 204:
+            log.error("Failed to remove OLT device from ONOS: %s - %s" % (model.name, model.of_id),
+                      rest_response=request.text,
+                      rest_status_code=request.status_code)
+            raise Exception("Failed to remove OLT device from ONOS")
+
+    def sync_record(self, model):
+        log.info("Synching device", object=str(model), **model.tologdict())
+
+        # If the device has feedback_state is already present in voltha
+        if not model.device_id and not model.admin_state and not model.oper_status and not model.of_id:
+            log.info("Pushing OLT device to VOLTHA", object=str(model), **model.tologdict())
+            model = self.pre_provision_olt_device(model)
+            self.activate_olt(model)
+        else:
+            log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
+
+        self.configure_onos(model)
+
+        # FIXME this is need to solve a bug in ONOS
+        self.hack_to_get_onos_to_load_the_proper_driver(model)
+        # FIXME END
 
     def delete_record(self, o):
-        log.info("Deleting device", object=str(o), **o.tologdict())
+        log.info("Deleting OLT device", object=str(o), **o.tologdict())
 
         voltha = Helpers.get_voltha_info(o.volt_service)
         onos_voltha = Helpers.get_onos_voltha_info(o.volt_service)
         onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
         if not o.device_id:
-            log.error("Device %s has no device_id" % o.name)
+            log.error("OLTDevice %s has no device_id" % o.name)
         else:
-            # Remove the device from ONOS
-            request = requests.delete("%s:%d/onos/v1/network/configuration/devices/%s" % (onos_voltha['url'], onos_voltha['port'], o.of_id), auth=onos_voltha_basic_auth)
-
-            if request.status_code != 200:
-                log.error("Failed to remove device from ONOS: %s - %s" % (o.name, o.of_id), rest_responese=request.text, rest_status_code=request.status_code)
-                raise Exception("Failed to remove device in ONOS")
-
-            # Disable the device
+            # Disable the OLT device
             request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], o.device_id))
 
             if request.status_code != 200:
-                log.error("Failed to disable device in VOLTHA: %s - %s" % (o.name, o.device_id), rest_responese=request.text, rest_status_code=request.status_code)
-                raise Exception("Failed to disable device in VOLTHA")
+                log.error("Failed to disable OLT device in VOLTHA: %s - %s" % (o.name, o.device_id), rest_response=request.text, rest_status_code=request.status_code)
+                raise Exception("Failed to disable OLT device in VOLTHA")
 
-            # Delete the device
+            # Delete the OLT device
             request = requests.delete("%s:%d/api/v1/devices/%s/delete" % (voltha['url'], voltha['port'], o.device_id))
 
             if request.status_code != 200:
-                log.error("Failed to delete device in VOLTHA: %s - %s" % (o.name, o.device_id), rest_responese=request.text, rest_status_code=request.status_code)
-                raise Exception("Failed to delete device in VOLTHA")
+                log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (o.name, o.device_id), rest_response=request.text, rest_status_code=request.status_code)
+                raise Exception("Failed to delete OLT device from VOLTHA")
+
+            # Remove the device from ONOS
+            request = requests.delete("%s:%d/onos/v1/network/configuration/devices/%s" % (
+            onos_voltha['url'], onos_voltha['port'], o.of_id), auth=onos_voltha_basic_auth)
+
+            if request.status_code != 204:
+                log.error("Failed to remove OLT device from ONOS: %s - %s" % (o.name, o.of_id), rest_response=request.text, rest_status_code=request.status_code)
+                raise Exception("Failed to remove OLT device from ONOS")
