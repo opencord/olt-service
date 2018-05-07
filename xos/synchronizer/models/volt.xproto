@@ -1,4 +1,5 @@
 option name = "volt";
+option app_label = "volt";
 
 message VOLTService (Service){
      option verbose_name = "vOLT Service";
