@@ -3,6 +3,7 @@ option name = "volt";
 message VOLTService (Service){
      option verbose_name = "vOLT Service";
      option kind = "vOLT";
+     option app_label = "volt";
 }
 
 message VOLTTenant (ServiceInstance){
