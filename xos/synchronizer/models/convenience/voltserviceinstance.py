@@ -48,7 +48,7 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
         # NOTE this assume that each VOLT has just 1 subscriber, is that right?
         links = self.stub.ServiceInstanceLink.objects.filter(provider_service_instance_id = self.id)
         for link in links:
-            subs = self.stub.CordSubscriberRoot.objects.filter(id=link.subscriber_service_instance_id)
+            subs = self.stub.ServiceInstance.objects.filter(id=link.subscriber_service_instance_id).leaf_model
             if subs:
                 return subs[0]
         return None
