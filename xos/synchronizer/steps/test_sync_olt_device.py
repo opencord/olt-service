@@ -182,7 +182,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
         # FIXME this is part of the block in the syncstep
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
 
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ACTIVE")
@@ -202,7 +202,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
         # FIXME this is part of the block in the syncstep
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
 
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()
@@ -212,7 +212,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.of_id = "0001000ce2314000"
         self.o.device_id = "123"
 
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
         m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
         m.delete("http://voltha_url:1234/api/v1/devices/123/delete", status_code=200)
 
