@@ -22,6 +22,30 @@
       "revId": "e37a10b770b2eef86cc99d06af2bb22a42a4261d",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "23046b51_cf70224c",
+        "filename": "xos/synchronizer/models/convenience/voltserviceinstance.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-05-16T23:51:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4e267638_bb6ea7d2",
+      "range": {
+        "startLine": 57,
+        "startChar": 37,
+        "endLine": 57,
+        "endChar": 44
+      },
+      "revId": "e37a10b770b2eef86cc99d06af2bb22a42a4261d",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
     }
   ]
 }
