@@ -46,12 +46,16 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
         log.warning(
             'VOLTServiceInstance.subscriber is DEPRECATED, use get_westbound_service_instance_properties instead')
         # NOTE this assume that each VOLT has just 1 subscriber, is that right?
-        links = self.stub.ServiceInstanceLink.objects.filter(provider_service_instance_id = self.id)
-        for link in links:
-            subs = self.stub.CordSubscriberRoot.objects.filter(id=link.subscriber_service_instance_id)
-            if subs:
-                return subs[0]
-        return None
+        try:
+            links = self.stub.ServiceInstanceLink.objects.filter(provider_service_instance_id = self.id)
+            for link in links:
+                subs = self.stub.ServiceInstance.objects.filter(id=link.subscriber_service_instance_id)
+                if subs:
+                    return subs[0].leaf_model
+            return None
+        except Exception, e:
+            log.warning('Error while locating subscriber for vOLTServiceInstance with id %s: %s' % (self.id, e.message))
+            return None
 
     @property
     def c_tag(self):
