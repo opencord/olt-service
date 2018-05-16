@@ -57,7 +57,13 @@ class TestSyncOLTDevice(unittest.TestCase):
         # END Setting up the config module
 
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+
+        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
+        # and apparently it is not overriding the generated model accessor
+        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
+                                                         get_models_fn("vsg", "vsg.xproto"),
+                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
         import synchronizers.new_base.modelaccessor
         from pull_olts import OLTDevicePullStep, model_accessor
 
