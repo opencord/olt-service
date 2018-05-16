@@ -188,6 +188,12 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
+<<<<<<< HEAD
+=======
+        # FIXME this is part of the block in the syncstep
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
+
+>>>>>>> [CORD-3068] Fix E2E test
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ACTIVE")
         self.assertEqual(self.o.oper_status, "ENABLED")
@@ -205,6 +211,12 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
+<<<<<<< HEAD
+=======
+        # FIXME this is part of the block in the syncstep
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
+
+>>>>>>> [CORD-3068] Fix E2E test
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()
 
