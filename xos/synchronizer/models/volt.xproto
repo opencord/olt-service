@@ -52,8 +52,15 @@ message ONUDevice (XOSBase){
     option verbose_name = "ONU Device";
     option description = "Represents a physical ONU device";
 
-    required manytoone volt_device->OLTDevice:onu_devices = 1 [db_index = True, null = False, blank = False];
-    required string serial_number = 1 [max_length = 254, null = False, db_index = False, blank = False];
+    required manytoone olt_device->OLTDevice:onu_devices = 1 [db_index = True, null = False, blank = False];
+    required string serial_number = 2 [max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
+    required string vendor = 3 [max_length = 254, null = False, db_index = False, blank = False];
+    required string device_id = 4 [max_length = 254, null = False, db_index = False, blank = False];
+
+    required string device_type = 5 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
+    optional string admin_state = 6 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string oper_status = 7 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string connect_status = 8 [help_text = "connect_status", null = True, db_index = False, blank = False, feedback_state = True];
 }
 
 message PONPort (XOSBase){

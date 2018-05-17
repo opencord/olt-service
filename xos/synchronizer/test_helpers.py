@@ -13,8 +13,11 @@
 # limitations under the License.
 
 import unittest
-from mock import patch, call, Mock, PropertyMock
+
+from mock import Mock
+
 from helpers import Helpers
+
 
 class TestHelpers(unittest.TestCase):
 

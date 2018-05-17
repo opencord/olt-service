@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from synchronizers.new_base.syncstep import SyncStep, DeferredException
-from synchronizers.new_base.modelaccessor import model_accessor
-from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, OLTDevice
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from xosconfig import Config
-from multistructlog import create_logger
-import requests
-from requests.auth import HTTPBasicAuth
 from helpers import Helpers
+
+import requests
+from multistructlog import create_logger
+from requests.auth import HTTPBasicAuth
+from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, OLTDevice, model_accessor
+from synchronizers.new_base.syncstep import SyncStep, DeferredException
+from xosconfig import Config
 
 log = create_logger(Config().get("logging"))
 

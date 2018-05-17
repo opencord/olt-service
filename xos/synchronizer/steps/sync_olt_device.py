@@ -12,15 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import json
-from synchronizers.new_base.SyncInstanceUsingAnsible import SyncStep
-from synchronizers.new_base.modelaccessor import OLTDevice
-
-from xosconfig import Config
-from multistructlog import create_logger
 from time import sleep
+
 import requests
+from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
+from synchronizers.new_base.SyncInstanceUsingAnsible import SyncStep
+from synchronizers.new_base.modelaccessor import OLTDevice, model_accessor
+from xosconfig import Config
+
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from helpers import Helpers
 
 log = create_logger(Config().get('logging'))

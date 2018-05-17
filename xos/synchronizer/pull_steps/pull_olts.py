@@ -22,39 +22,21 @@ import requests
 from requests import ConnectionError
 from requests.models import InvalidURL
 
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from helpers import Helpers
+
 log = create_logger(Config().get('logging'))
 
 class OLTDevicePullStep(PullStep):
     def __init__(self):
         super(OLTDevicePullStep, self).__init__(observed_model=OLTDevice)
 
-    # NOTE move helpers where they can be loaded by multiple modules?
-    @staticmethod
-    def format_url(url):
-        if 'http' in url:
-            return url
-        else:
-            return 'http://%s' % url
-
-    @staticmethod
-    def get_voltha_info(olt_service):
-        return {
-            'url': OLTDevicePullStep.format_url(olt_service.voltha_url),
-            'port': olt_service.voltha_port,
-            'user': olt_service.voltha_user,
-            'pass': olt_service.voltha_pass
-        }
-
-    @staticmethod
-    def datapath_id_to_hex(id):
-        if isinstance(id, basestring):
-            id = int(id)
-        return "{0:0{1}x}".format(id, 16)
-
     @staticmethod
     def get_ids_from_logical_device(o):
-        voltha_url = OLTDevicePullStep.get_voltha_info(o.volt_service)['url']
-        voltha_port = OLTDevicePullStep.get_voltha_info(o.volt_service)['port']
+        voltha_url = Helpers.get_voltha_info(o.volt_service)['url']
+        voltha_port = Helpers.get_voltha_info(o.volt_service)['port']
 
         r = requests.get("%s:%s/api/v1/logical_devices" % (voltha_url, voltha_port))
 
@@ -66,11 +48,10 @@ class OLTDevicePullStep(PullStep):
         for ld in res["items"]:
             if ld["root_device_id"] == o.device_id:
                 o.of_id = ld["id"]
-                o.dp_id = "of:" + OLTDevicePullStep.datapath_id_to_hex(ld["datapath_id"])  # convert to hex
+                o.dp_id = "of:" + Helpers.datapath_id_to_hex(ld["datapath_id"])  # convert to hex
                 return o
 
         raise Exception("Can't find a logical device for device id: %s" % o.device_id)
-    # end note
 
     def pull_records(self):
         log.info("pulling OLT devices from VOLTHA")
@@ -81,8 +62,8 @@ class OLTDevicePullStep(PullStep):
             log.warn('VOLTService not found')
             return
 
-        voltha_url = OLTDevicePullStep.get_voltha_info(self.volt_service)['url']
-        voltha_port = OLTDevicePullStep.get_voltha_info(self.volt_service)['port']
+        voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
+        voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
             r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port))

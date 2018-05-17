@@ -43,7 +43,7 @@ def get_models_fn(service_name, xproto_name):
 def mock_get_westbound_service_instance_properties(prop):
     return prop
 
-class TestSyncOLTDevice(unittest.TestCase):
+class TestSyncVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
         global DeferredException
 
