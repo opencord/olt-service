@@ -146,20 +146,6 @@ class SyncOLTDevice(SyncStep):
                 print request.text
         return model
 
-    def hack_to_get_onos_to_load_the_proper_driver(self, model):
-        # Remove the device from ONOS
-        log.info("Updating ONOS driver")
-        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
-        onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
-        request = requests.delete("%s:%d/onos/v1/network/configuration/devices/%s" % (
-            onos_voltha['url'], onos_voltha['port'], model.of_id), auth=onos_voltha_basic_auth)
-
-        if request.status_code != 204:
-            log.error("Failed to remove OLT device from ONOS: %s - %s" % (model.name, model.of_id),
-                      rest_response=request.text,
-                      rest_status_code=request.status_code)
-            raise Exception("Failed to remove OLT device from ONOS")
-
     def sync_record(self, model):
         log.info("Synching device", object=str(model), **model.tologdict())
 
@@ -172,10 +158,6 @@ class SyncOLTDevice(SyncStep):
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
 
         self.configure_onos(model)
-
-        # FIXME this is need to solve a bug in ONOS
-        self.hack_to_get_onos_to_load_the_proper_driver(model)
-        # FIXME END
 
     def delete_record(self, o):
         log.info("Deleting OLT device", object=str(o), **o.tologdict())

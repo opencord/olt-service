@@ -40,6 +40,7 @@ class OLTDevicePullStep(PullStep):
     def get_voltha_info(olt_service):
         return {
             'url': OLTDevicePullStep.format_url(olt_service.voltha_url),
+            'port': olt_service.voltha_port,
             'user': olt_service.voltha_user,
             'pass': olt_service.voltha_pass
         }
@@ -53,8 +54,9 @@ class OLTDevicePullStep(PullStep):
     @staticmethod
     def get_ids_from_logical_device(o):
         voltha_url = OLTDevicePullStep.get_voltha_info(o.volt_service)['url']
+        voltha_port = OLTDevicePullStep.get_voltha_info(o.volt_service)['port']
 
-        r = requests.get(voltha_url + "/api/v1/logical_devices")
+        r = requests.get("%s:%s/api/v1/logical_devices" % (voltha_url, voltha_port))
 
         if r.status_code != 200:
             raise Exception("Failed to retrieve logical devices from VOLTHA: %s" % r.text)
@@ -80,10 +82,10 @@ class OLTDevicePullStep(PullStep):
             return
 
         voltha_url = OLTDevicePullStep.get_voltha_info(self.volt_service)['url']
+        voltha_port = OLTDevicePullStep.get_voltha_info(self.volt_service)['port']
 
         try:
-            devices = []
-            r = requests.get(voltha_url + "/api/v1/devices")
+            r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port))
 
             if r.status_code != 200:
                 log.info("It was not possible to fetch devices from VOLTHA")
@@ -94,11 +96,7 @@ class OLTDevicePullStep(PullStep):
             log.debug("received devices", olts=devices)
 
             # TODO
-            # [X] for each device
-            # [X] check if exists, if not save it
-            # [X] if exists and enacted > updated it has already been sync'ed
-            # [X] keep track of the updated OLTs
-            # delete OLTS as OLTDevice.objects.all() - updated OLTs
+            # [ ] delete OLTS as OLTDevice.objects.all() - updated OLTs
 
             if r.status_code != 200:
                 log.info("It was not possible to fetch devices from VOLTHA")

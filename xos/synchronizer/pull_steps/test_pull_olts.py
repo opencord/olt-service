@@ -57,7 +57,13 @@ class TestSyncOLTDevice(unittest.TestCase):
         # END Setting up the config module
 
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+
+        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
+        # and apparently it is not overriding the generated model accessor
+        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
+                                                         get_models_fn("vsg", "vsg.xproto"),
+                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
         import synchronizers.new_base.modelaccessor
         from pull_olts import OLTDevicePullStep, model_accessor
 
@@ -73,6 +79,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.volt_service.voltha_url = "voltha_url"
         self.volt_service.voltha_user = "voltha_user"
         self.volt_service.voltha_pass = "voltha_pass"
+        self.volt_service.voltha_port = 1234
 
         # mock voltha responses
         self.devices = {
@@ -111,8 +118,8 @@ class TestSyncOLTDevice(unittest.TestCase):
                 patch.object(OLTDevice, "save") as mock_save:
             olt_service_mock.return_value = [self.volt_service]
 
-            m.get("http://voltha_url/api/v1/devices", status_code=200, json=self.devices)
-            m.get("http://voltha_url/api/v1/logical_devices", status_code=200, json=self.logical_devices)
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
             self.sync_step().pull_records()
 
@@ -139,8 +146,8 @@ class TestSyncOLTDevice(unittest.TestCase):
             olt_service_mock.return_value = [self.volt_service]
             mock_get.return_value = [existing_olt]
 
-            m.get("http://voltha_url/api/v1/devices", status_code=200, json=self.devices)
-            m.get("http://voltha_url/api/v1/logical_devices", status_code=200, json=self.logical_devices)
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
             self.sync_step().pull_records()
 
@@ -165,8 +172,8 @@ class TestSyncOLTDevice(unittest.TestCase):
             olt_service_mock.return_value = [self.volt_service]
             mock_get.return_value = existing_olt
 
-            m.get("http://voltha_url/api/v1/devices", status_code=200, json=self.devices)
-            m.get("http://voltha_url/api/v1/logical_devices", status_code=200, json=self.logical_devices)
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
             self.sync_step().pull_records()
 

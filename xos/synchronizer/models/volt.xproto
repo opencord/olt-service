@@ -41,7 +41,7 @@ message OLTDevice (XOSBase){
     optional string dp_id = 14 [help_text = "datapath id", null = True, db_index = False, blank = False, feedback_state = True];
 
     required string uplink = 15 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
-    required string driver = 16 [default="pmc-olt", help_text = "Olt driver", null = True, db_index = False, blank = False];
+    required string driver = 16 [default="voltha", help_text = "Olt driver", null = True, db_index = False, blank = False];
 
     optional string switch_datapath_id = 17 [help_text = "Fabric switch to which the OLT is connected", null = False, db_index = False, blank = False];
     optional string switch_port = 18 [help_text = "Fabric port to which the OLT is connected", null = False, db_index = False, blank = False];

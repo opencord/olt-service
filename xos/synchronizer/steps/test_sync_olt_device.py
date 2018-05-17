@@ -65,7 +65,14 @@ class TestSyncOLTDevice(unittest.TestCase):
         # END setting up the config module
 
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+
+        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
+        # and apparently it is not overriding the generated model accessor
+        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
+                                                         get_models_fn("vsg", "vsg.xproto"),
+                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
+
         import synchronizers.new_base.modelaccessor
         from sync_olt_device import SyncOLTDevice
         self.sync_step = SyncOLTDevice
@@ -181,9 +188,6 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
-        # FIXME this is part of the block in the syncstep
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
-
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ACTIVE")
         self.assertEqual(self.o.oper_status, "ENABLED")
@@ -201,9 +205,6 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
-        # FIXME this is part of the block in the syncstep
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
-
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()
 
@@ -212,7 +213,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.of_id = "0001000ce2314000"
         self.o.device_id = "123"
 
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=200)
+        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
         m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
         m.delete("http://voltha_url:1234/api/v1/devices/123/delete", status_code=200)
 
