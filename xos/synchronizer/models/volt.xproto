@@ -1,5 +1,6 @@
 option name = "volt";
 option app_label = "volt";
+option legacy="True";
 
 message VOLTService (Service){
     option verbose_name = "vOLT Service";
@@ -48,21 +49,6 @@ message OLTDevice (XOSBase){
     optional string outer_tpid = 19 [help_text = "Outer VLAN id field EtherType", null = False, db_index = False, blank = False];
 }
 
-message ONUDevice (XOSBase){
-    option verbose_name = "ONU Device";
-    option description = "Represents a physical ONU device";
-
-    required manytoone olt_device->OLTDevice:onu_devices = 1 [db_index = True, null = False, blank = False];
-    required string serial_number = 2 [max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
-    required string vendor = 3 [max_length = 254, null = False, db_index = False, blank = False];
-    required string device_id = 4 [max_length = 254, null = False, db_index = False, blank = False];
-
-    required string device_type = 5 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
-    optional string admin_state = 6 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
-    optional string oper_status = 7 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
-    optional string connect_status = 8 [help_text = "connect_status", null = True, db_index = False, blank = False, feedback_state = True];
-}
-
 message PONPort (XOSBase){
     option verbose_name = "PON Port";
 
@@ -70,4 +56,19 @@ message PONPort (XOSBase){
     required manytoone olt_device->OLTDevice:ports = 2 [db_index = True, null = False, blank = False];
     required string port_id = 3 [help_text = "Port ID", max_length = 254, null = False, db_index = False, blank = False];
     required int32 s_tag = 4 [help_text = "S Tag", null = False, db_index = False, blank = False];
+}
+
+message ONUDevice (XOSBase){
+    option verbose_name = "ONU Device";
+    option description = "Represents a physical ONU device";
+
+    required manytoone pon_port->PONPort:onu_devices = 1 [db_index = True, null = False, blank = False];
+    required string serial_number = 2 [max_length = 254, null = False, db_index = False, blank = False, tosca_key=True, unique = True];
+    required string vendor = 3 [max_length = 254, null = False, db_index = False, blank = False];
+    required string device_type = 4 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
+
+    optional string device_id = 5 [max_length = 254, null = True, db_index = False, blank = False, feedback_state = True];
+    optional string admin_state = 6 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string oper_status = 7 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string connect_status = 8 [help_text = "connect_status", null = True, db_index = False, blank = False, feedback_state = True];
 }

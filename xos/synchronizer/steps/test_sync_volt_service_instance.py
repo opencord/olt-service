@@ -91,12 +91,14 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         si = Mock()
         si.get_westbound_service_instance_properties = mock_get_westbound_service_instance_properties
 
-        olt_device = Mock()
-        olt_device.name = "Test OLT Device"
+        onu_device = Mock()
+        onu_device.name = "BRCM1234"
+        onu_device.pon_port.olt_device.dp_id = None
+        onu_device.pon_port.olt_device.name = "Test OLT Device"
 
         self.o = o
         self.si = si
-        self.olt_device = olt_device
+        self.onu_device = onu_device
         self.volt_service = volt_service
 
     def tearDown(self):
@@ -105,13 +107,13 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
     @requests_mock.Mocker()
     def test_do_not_sync(self, m):
-        self.olt_device.dp_id = None
+        self.onu_device.pon_port.olt_device.dp_id = None
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(OLTDevice.objects, "get") as olt_device_mock, \
+                patch.object(ONUDevice.objects, "get") as onu_device_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
             service_instance_mock.return_value = self.si
-            olt_device_mock.return_value = self.olt_device
+            onu_device_mock.return_value = self.onu_device
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(DeferredException) as e:
@@ -124,13 +126,13 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
     def test_do_sync(self, m):
         m.post("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=200, json={})
 
-        self.olt_device.dp_id = "of:dp_id"
+        self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(OLTDevice.objects, "get") as olt_device_mock, \
+                patch.object(ONUDevice.objects, "get") as onu_device_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
             service_instance_mock.return_value = self.si
-            olt_device_mock.return_value = self.olt_device
+            onu_device_mock.return_value = self.onu_device
             olt_service_mock.return_value = self.volt_service
 
             self.sync_step().sync_record(self.o)
@@ -140,13 +142,13 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
     def test_do_sync_fail(self, m):
         m.post("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=500, text="Mock Error")
 
-        self.olt_device.dp_id = "of:dp_id"
+        self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(OLTDevice.objects, "get") as olt_device_mock, \
+                patch.object(ONUDevice.objects, "get") as onu_device_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
             service_instance_mock.return_value = self.si
-            olt_device_mock.return_value = self.olt_device
+            onu_device_mock.return_value = self.onu_device
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(Exception) as e:
