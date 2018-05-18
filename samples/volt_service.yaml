@@ -25,7 +25,9 @@ topology_template:
       properties:
         name: volt
         must-exist: true
-        voltha_url: 10.128.22.3:8882
-        p_onos_url: 10.128.22.3:8181
-        p_onos_user: karaf
-        p_onos_pass: karaf
+        voltha_url: 10.128.22.3
+        voltha_port: 8882
+        onos_voltha_url: 10.128.22.3
+        onos_voltha_port: 8181
+        onos_voltha_user: karaf
+        onos_voltha_pass: karaf

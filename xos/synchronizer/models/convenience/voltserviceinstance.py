@@ -17,10 +17,7 @@
 from xosapi.orm import ORMWrapper, register_convenience_wrapper
 from xosapi.convenience.serviceinstance import ORMWrapperServiceInstance
 
-from xosconfig import Config
-from multistructlog import create_logger
-
-log = create_logger(Config().get('logging'))
+import logging as log
 
 class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
 
@@ -64,32 +61,25 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
         return self.subscriber.c_tag
 
     def get_olt_device_by_subscriber(self):
+        pon_port = self.get_pon_port_by_subscriber()
+        return pon_port.olt_device
+
+    def get_pon_port_by_subscriber(self):
         si = self.stub.ServiceInstance.objects.get(id=self.id)
-
-        olt_device_name = si.get_westbound_service_instance_properties("olt_device")
-
-        olt_device = self.stub.OLTDevice.objects.get(name=olt_device_name)
-        return olt_device
-
-    def get_olt_port_by_subscriber(self):
-        si = self.stub.ServiceInstance.objects.get(id=self.id)
-
-        olt_port_name = si.get_westbound_service_instance_properties("olt_port")
-
-        olt_device = self.get_olt_device_by_subscriber()
-        olt_port = self.stub.PONPort.objects.get(name=olt_port_name, olt_device_id=olt_device.id)
-        return olt_port
+        onu_sn = si.get_westbound_service_instance_properties("onu_device")
+        onu = self.stub.ONUDevice.objects.get(serial_number=onu_sn)
+        return onu.pon_port
 
     @property
     def s_tag(self):
         try:
-            olt_port = self.get_olt_port_by_subscriber()
+            pon_port = self.get_pon_port_by_subscriber()
 
-            if olt_port:
-                return olt_port.s_tag
+            if pon_port:
+                return pon_port.s_tag
             return None
         except Exception, e:
-            log.warning('Error while reading s_tag: %s' % e.message)
+            log.exception('Error while reading s_tag: %s' % e.message)
             return None
 
     @property
@@ -100,7 +90,7 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
                 return olt_device.switch_datapath_id
             return None
         except Exception, e:
-            log.warning('Error while reading switch_datapath_id: %s' % e.message)
+            log.exception('Error while reading switch_datapath_id: %s' % e.message)
             return None
 
     @property
@@ -111,7 +101,7 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
                 return olt_device.switch_port
             return None
         except Exception, e:
-            log.warning('Error while reading switch_port: %s' % e.message)
+            log.exception('Error while reading switch_port: %s' % e.message)
             return None
 
     @property
@@ -122,7 +112,7 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
                 return olt_device.outer_tpid
             return None
         except Exception, e:
-            log.warning('Error while reading outer_tpid: %s' % e.message)
+            log.exception('Error while reading outer_tpid: %s' % e.message)
             return None
 
 
