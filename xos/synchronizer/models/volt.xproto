@@ -14,7 +14,7 @@ message VOLTService (Service){
     required int32 onos_voltha_port = 6 [help_text = "The Voltha API port. By default 8181", default=8181, null = False, db_index = False, blank = False];
     required string onos_voltha_user = 7 [help_text = "The ONOS Voltha username. By default sdn", max_length = 254, default="onos", null = True, db_index = False, blank = False];
     required string onos_voltha_pass = 8 [help_text = "The ONOS Voltha password. By default rocks", max_length = 254, default="rocks", null = True, db_index = False, blank = False];
-    required string onu_provisioning = 9 [help_text = "If to automatically discover and provision the ONU or not", default = "allow_all", choices = "(('allow_all', 'Allow All'), ('pre_provisioned', 'Pre-provisione'), ('oss', 'OSS'))", null = False, db_index = False, blank = False];
+    required string onu_provisioning = 9 [help_text = "If to automatically discover and provision the ONU or not", default = "allow_all", choices = "(('allow_all', 'Allow All'), ('deny_all', 'Deny All'), ('custom_logic', 'Custom Logic'))", null = False, db_index = False, blank = False];
 }
 
 message VOLTServiceInstance (ServiceInstance){
