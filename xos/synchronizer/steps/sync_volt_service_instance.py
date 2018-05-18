@@ -20,7 +20,7 @@ from helpers import Helpers
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
-from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, OLTDevice, model_accessor
+from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, ONUDevice, model_accessor
 from synchronizers.new_base.syncstep import SyncStep, DeferredException
 from xosconfig import Config
 
@@ -42,9 +42,11 @@ class SyncVOLTServiceInstance(SyncStep):
         c_tag = si.get_westbound_service_instance_properties("c_tag")
         uni_port_id = si.get_westbound_service_instance_properties("uni_port_id")
 
-        olt_device_name = si.get_westbound_service_instance_properties("olt_device")
+        onu_device_name = si.get_westbound_service_instance_properties("onu_device")
 
-        olt_device = OLTDevice.objects.get(name=olt_device_name)
+        onu_device = ONUDevice.objects.get(serial_number=onu_device_name)
+
+        olt_device = onu_device.pon_port.olt_device
 
         if not olt_device.dp_id:
             raise DeferredException("Waiting for OLTDevice %s to be synchronized" % olt_device.name)

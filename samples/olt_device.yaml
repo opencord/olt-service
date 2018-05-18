@@ -17,6 +17,7 @@
 tosca_definitions_version: tosca_simple_yaml_1_0
 imports:
   - custom_types/oltdevice.yaml
+  - custom_types/onudevice.yaml
   - custom_types/ponport.yaml
   - custom_types/voltservice.yaml
 description: Create a simulated OLT Device in VOLTHA
@@ -36,6 +37,9 @@ topology_template:
         device_type: simulated_olt
         host: 172.17.0.1
         port: 50060
+        switch_datapath_id: of:0000000000000001
+        switch_port: "1"
+        outer_tpid: "0x8100"
       requirements:
         - volt_service:
             node: service#volt
@@ -50,4 +54,15 @@ topology_template:
       requirements:
         - olt_device:
             node: device#olt
+            relationship: tosca.relationships.BelongsToOne
+
+    onu:
+      type: tosca.nodes.ONUDevice
+      properties:
+        serial_number: BRCM1234
+        vendor: Broadcom
+        device_type: broadcom_onu
+      requirements:
+        - pon_port:
+            node: pon_port
             relationship: tosca.relationships.BelongsToOne
