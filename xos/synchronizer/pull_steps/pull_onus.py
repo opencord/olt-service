@@ -34,6 +34,8 @@ class ONUDevicePullStep(PullStep):
         super(ONUDevicePullStep, self).__init__(observed_model=ONUDevice)
 
     def pull_records(self):
+        return
+        # FIXME we need to pull PON Ports before
         log.info("pulling ONU devices from VOLTHA")
 
         try:
@@ -100,10 +102,10 @@ class ONUDevicePullStep(PullStep):
             model.oper_status = onu["oper_status"]
             model.connect_status = onu["connect_status"]
 
-            olt = OLTDevice.objects.get(device_id=onu["proxy_address"]["device_id"])
-
-            model.olt_device = olt
-            model.olt_device_id = olt.id
+            # olt = OLTDevice.objects.get(device_id=onu["proxy_address"]["device_id"])
+            #
+            # model.olt_device = olt
+            # model.olt_device_id = olt.id
 
             model.save()
 

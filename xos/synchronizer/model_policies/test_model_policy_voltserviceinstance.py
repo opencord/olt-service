@@ -16,7 +16,6 @@
 
 import unittest
 from mock import patch, call, Mock, PropertyMock
-import mock
 
 import os, sys
 

@@ -40,6 +40,8 @@ class SyncVOLTServiceInstance(SyncStep):
         log.info("Synching OLTServiceInstance", object=str(o), **o.tologdict())
 
         c_tag = si.get_westbound_service_instance_properties("c_tag")
+
+        # TODO understand if this can have a better modeling (VOLTHA should know this info for an ONU without manually inserting it in the subscriber)
         uni_port_id = si.get_westbound_service_instance_properties("uni_port_id")
 
         onu_device_name = si.get_westbound_service_instance_properties("onu_device")

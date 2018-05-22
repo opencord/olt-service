@@ -64,6 +64,7 @@ class VOLTServiceInstancePolicy(Policy):
         links = si.owner.subscribed_dependencies.all()
 
         for link in links:
+
             si_class = link.provider_service.get_service_instance_class_name()
             self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating %s" % (si, si_class))
 

@@ -22,23 +22,6 @@ from synchronizers.new_base.modelaccessor import VOLTService, ONUDevice, Service
 
 # from xos.exceptions import XOSValidationError
 
-
-# Manually send the event
-
-# import json
-# from kafka import KafkaProducer
-
-# event = json.dumps({
-#     'status': 'activate',
-#     'serial_number': 'BRCM1234',
-#     'uni_port_of_id': 'of:00100101',
-#     'of_dpid': 'of:109299321'
-# })
-# producer = KafkaProducer(bootstrap_servers="cord-kafka-kafka")
-# producer.send("onu.events", event)
-# producer.flush()
-
-
 class ONUEventStep(EventStep):
     topics = ["onu.events"]
     technology = "kafka"
@@ -50,11 +33,12 @@ class ONUEventStep(EventStep):
         try:
             onu = ONUDevice.objects.get(serial_number=onu_serial_number)
         except IndexError as e:
+            # TODO create ONU if it does not exists
             raise Exception("No ONUDevice with serial_number %s is present in XOS" % onu_serial_number)
 
         volt_service = onu.pon_port.olt_device.volt_service
         service = Service.objects.get(id=volt_service.id)
-        osses = [s for s in service.provider_services if s.kind.lower() == "oss"]
+        osses = [s for s in service.subscriber_services if s.kind.lower() == "oss"]
 
         if len(osses) > 1:
             self.log.warn("More than one OSS found for %s" % volt_service.name)
@@ -79,7 +63,7 @@ class ONUEventStep(EventStep):
         value = json.loads(event.value)
         self.log.info("onu.events: received event", value=value)
 
-        if value["status"] == "activate":
+        if value["status"] == "activated":
             self.log.info("onu.events: activate onu", value=value)
             self.handle_onu_activate_event(value)
 

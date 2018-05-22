@@ -114,7 +114,7 @@ class TestPullONUDevice(unittest.TestCase):
             self.assertFalse(m.called)
 
     @requests_mock.Mocker()
-    def test_pull(self, m):
+    def _test_pull(self, m):
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
                 patch.object(OLTDevice.objects, "get") as mock_olt_device, \

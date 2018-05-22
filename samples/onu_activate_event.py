@@ -13,5 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Manually send the event
 
-python volt-synchronizer.py
+import json
+from kafka import KafkaProducer
+
+event = json.dumps({
+    'status': 'activated',
+    'serial_number': 'BRCM1234',
+    'uni_port_id': 16,
+    'of_dpid': 'of:109299321'
+})
+producer = KafkaProducer(bootstrap_servers="cord-kafka-kafka")
+producer.send("onu.events", event)
+producer.flush()

@@ -77,7 +77,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.event = Mock()
         self.event.value = json.dumps({
-            'status': 'activate',
+            'status': 'activated',
             'serial_number': 'BRCM1234',
             'uni_port_of_id': 'of:00100101',
             'of_dpid': 'of:109299321'
@@ -88,14 +88,14 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.onu.pon_port.olt_device.volt_service.id = 1
 
         self.service = Mock(id=1)
-        self.service.provider_services = []
+        self.service.subscriber_services = []
 
         self.oss = Mock()
         self.oss.kind = "OSS"
         self.oss.leaf_model = Mock()
 
     def tearDown(self):
-        self.service.provider_services = []
+        self.service.subscriber_services = []
 
     def test_missing_onu(self):
         with patch.object(ONUDevice.objects, "get_items") as onu_device_mock:
@@ -119,7 +119,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             logInfo.assert_called_with("Not processing events as no OSS service is present (is it a provider of vOLT?")
 
     def test_call_oss(self):
-        self.service.provider_services = [self.oss]
+        self.service.subscriber_services = [self.oss]
 
         with patch.object(ONUDevice.objects, "get_items") as onu_device_mock , \
             patch.object(Service.objects, "get_items") as service_mock, \
