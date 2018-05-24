@@ -85,6 +85,10 @@ class TestPullONUDevice(unittest.TestCase):
         self.olt = Mock()
         self.olt.id = 1
 
+        # mock pon port
+        self.pon_port = Mock()
+        self.pon_port.id = 1
+
         # mock voltha responses
         self.devices = {
             "items": [
@@ -99,9 +103,8 @@ class TestPullONUDevice(unittest.TestCase):
                     "admin_state": "ENABLED",
                     "oper_status": "ACTIVE",
                     "connect_status": "REACHABLE",
-                    "proxy_address": {
-                        "device_id": "00010fc93996afea"
-                    }
+                    "parent_id": "00010fc93996afea",
+                    "parent_port_no": 1
                 }
             ]
         }
@@ -114,12 +117,14 @@ class TestPullONUDevice(unittest.TestCase):
             self.assertFalse(m.called)
 
     @requests_mock.Mocker()
-    def _test_pull(self, m):
+    def test_pull(self, m):
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
                 patch.object(OLTDevice.objects, "get") as mock_olt_device, \
+                patch.object(PONPort.objects, "get") as mock_pon_port, \
                 patch.object(ONUDevice, "save") as mock_save:
             olt_service_mock.return_value = [self.volt_service]
+            mock_pon_port.return_value = self.pon_port
             mock_olt_device.return_value = self.olt
 
             m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
@@ -134,7 +139,7 @@ class TestPullONUDevice(unittest.TestCase):
             # self.assertEqual(existing_olt.of_id, "of_id")
             # self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
 
-            mock_save.assert_called()
+            mock_save.assert_called_with()
 
     @requests_mock.Mocker()
     def _test_pull_existing(self, m):
