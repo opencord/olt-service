@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from synchronizers.new_base.pullstep import PullStep
-from synchronizers.new_base.modelaccessor import model_accessor, OLTDevice, VOLTService
+from synchronizers.new_base.modelaccessor import model_accessor, OLTDevice, VOLTService, PONPort, NNIPort
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -79,9 +79,6 @@ class OLTDevicePullStep(PullStep):
             # TODO
             # [ ] delete OLTS as OLTDevice.objects.all() - updated OLTs
 
-            if r.status_code != 200:
-                log.info("It was not possible to fetch devices from VOLTHA")
-
             olts_in_voltha = self.create_or_update_olts(devices)
 
         except ConnectionError, e:
@@ -102,10 +99,13 @@ class OLTDevicePullStep(PullStep):
                 else:
                     [host, port] = olt["host_and_port"].split(":")
                 model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
+
                 log.debug("OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
 
                 if model.enacted < model.updated:
                     log.info("Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
+                    # if we are not updating the device we still need to pull ports
+                    self.fetch_olt_ports(model)
                     return
 
             except IndexError:
@@ -115,6 +115,10 @@ class OLTDevicePullStep(PullStep):
                 if olt["type"] == "simulated_olt":
                     model.host = "172.17.0.1"
                     model.port = 50060
+                else:
+                    [host, port] = olt["host_and_port"].split(":")
+                    model.host = host
+                    model.port = int(port)
 
                 log.debug("OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
 
@@ -131,10 +135,85 @@ class OLTDevicePullStep(PullStep):
 
             model.save()
 
+            self.fetch_olt_ports(model)
+
             updated_olts.append(model)
 
         return updated_olts
 
+    def fetch_olt_ports(self, olt):
+        voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
+        voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
+
+        try:
+            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt.device_id))
+
+            if r.status_code != 200:
+                log.info("It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
+
+            ports = r.json()['items']
+
+            log.debug("received ports", ports=ports, olt=olt.device_id)
+
+            self.create_or_update_ports(ports, olt)
+
+        except ConnectionError, e:
+            log.warn("It was not possible to connect to VOLTHA", reason=e)
+            return
+        except InvalidURL, e:
+            log.warn("VOLTHA url is invalid, is it configured in the VOLTService?", reason=e)
+            return
+        return
+
+    def create_or_update_ports(self, ports, olt):
+        nni_ports = [p for p in ports if "ETHERNET_NNI" in p["type"]]
+        pon_ports = [p for p in ports if "PON_OLT" in p["type"]]
+
+        self.create_or_update_nni_port(nni_ports, olt)
+        self.create_or_update_pon_port(pon_ports, olt)
+
+    def create_or_update_pon_port(self, pon_ports, olt):
+
+        update_ports = []
+
+        for port in pon_ports:
+            try:
+                model = PONPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
+                log.debug("PONPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
+            except IndexError:
+                model = PONPort()
+                model.port_no = port["port_no"]
+                model.olt_device_id = olt.id
+                model.name = port["label"]
+                log.debug("PONPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+
+            model.admin_state = port["admin_state"]
+            model.oper_status = port["oper_status"]
+            model.save()
+            update_ports.append(model)
+        return update_ports
+
+    def create_or_update_nni_port(self, nni_ports, olt):
+        update_ports = []
+
+        for port in nni_ports:
+            try:
+                model = NNIPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
+                model.xos_managed = False
+                log.debug("NNIPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
+            except IndexError:
+                model = NNIPort()
+                model.port_no = port["port_no"]
+                model.olt_device_id = olt.id
+                model.name = port["label"]
+                model.xos_managed = False
+                log.debug("NNIPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+
+            model.admin_state = port["admin_state"]
+            model.oper_status = port["oper_status"]
+            model.save()
+            update_ports.append(model)
+        return update_ports
 
 
 

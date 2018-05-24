@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# curl -H "xos-username: admin@opencord.org" -H "xos-password: letmein" -X POST --data-binary @olt_device.yaml http://192.168.99.100:30007/run
+# curl -H "xos-username: admin@opencord.org" -H "xos-password: letmein" -X POST --data-binary @pon_port.yaml http://192.168.99.100:30007/run
 
 tosca_definitions_version: tosca_simple_yaml_1_0
 imports:
@@ -24,23 +24,21 @@ description: Create a simulated OLT Device in VOLTHA
 topology_template:
   node_templates:
 
-    service#volt:
-      type: tosca.nodes.VOLTService
-      properties:
-        name: volt
-        must-exist: true
-
     device#olt:
       type: tosca.nodes.OLTDevice
       properties:
-        name: test_olt
         device_type: simulated_olt
         host: 172.17.0.1
         port: 50060
-        switch_datapath_id: of:0000000000000001
-        switch_port: "1"
-        outer_tpid: "0x8100"
+        must-exist: true
+
+    pon_port:
+      type: tosca.nodes.PONPort
+      properties:
+        name: test_olt_port_1
+        port_no: 2
+        s_tag: 222
       requirements:
-        - volt_service:
-            node: service#volt
+        - olt_device:
+            node: device#olt
             relationship: tosca.relationships.BelongsToOne

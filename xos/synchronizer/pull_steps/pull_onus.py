@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from synchronizers.new_base.pullstep import PullStep
-from synchronizers.new_base.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice
+from synchronizers.new_base.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -34,8 +34,6 @@ class ONUDevicePullStep(PullStep):
         super(ONUDevicePullStep, self).__init__(observed_model=ONUDevice)
 
     def pull_records(self):
-        return
-        # FIXME we need to pull PON Ports before
         log.info("pulling ONU devices from VOLTHA")
 
         try:
@@ -84,7 +82,7 @@ class ONUDevicePullStep(PullStep):
                 log.debug("ONUDevice already exists, updating it", serial_number=onu["serial_number"])
 
                 if model.enacted < model.updated:
-                    log.info("Skipping pull on ONUDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
+                    log.info("Skipping pull on ONUDevice %s as enacted < updated" % model.serial_number, serial_number=model.serial_number, id=model.id, enacted=model.enacted, updated=model.updated)
                     return
 
             except IndexError:
@@ -101,11 +99,13 @@ class ONUDevicePullStep(PullStep):
             model.admin_state = onu["admin_state"]
             model.oper_status = onu["oper_status"]
             model.connect_status = onu["connect_status"]
+            model.xos_managed = False
 
-            # olt = OLTDevice.objects.get(device_id=onu["proxy_address"]["device_id"])
-            #
-            # model.olt_device = olt
-            # model.olt_device_id = olt.id
+            olt = OLTDevice.objects.get(device_id=onu["parent_id"])
+            pon_port = PONPort.objects.get(port_no=onu["parent_port_no"], olt_device_id=olt.id)
+
+            model.pon_port = pon_port
+            model.pon_port_id = pon_port.id
 
             model.save()
 

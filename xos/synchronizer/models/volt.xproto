@@ -48,13 +48,26 @@ message OLTDevice (XOSBase){
     optional string outer_tpid = 19 [help_text = "Outer VLAN id field EtherType", null = False, db_index = False, blank = False];
 }
 
-message PONPort (XOSBase){
+message PortBase (XOSBase){
+    option gui_hidden = True;
+
+    required string name = 1 [db_index = True, null = False, blank = False];
+    required int32 port_no = 3 [help_text = "Port ID", null = False, db_index = False, blank = False];
+
+    optional string admin_state = 4 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string oper_status = 5 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
+}
+
+message PONPort (PortBase){
     option verbose_name = "PON Port";
 
-    required string name = 1 [db_index = True, null = False, blank = False, unique_with="olt_device"];
-    required manytoone olt_device->OLTDevice:ports = 2 [db_index = True, null = False, blank = False];
-    required string port_id = 3 [help_text = "Port ID", max_length = 254, null = False, db_index = False, blank = False];
-    required int32 s_tag = 4 [help_text = "S Tag", null = False, db_index = False, blank = False];
+    required manytoone olt_device->OLTDevice:pon_ports = 1 [db_index = True, null = False, blank = False];
+    required int32 s_tag = 2 [help_text = "S Tag", null = False, db_index = False, blank = False];
+}
+
+message NNIPort (PortBase) {
+    option verbose_name = "NNI Port";
+    required manytoone olt_device->OLTDevice:nni_ports = 1 [db_index = True, null = False, blank = False];
 }
 
 message ONUDevice (XOSBase){

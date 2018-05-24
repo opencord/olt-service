@@ -17,7 +17,7 @@ from time import sleep
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
-from synchronizers.new_base.SyncInstanceUsingAnsible import SyncStep
+from synchronizers.new_base.syncstep import SyncStep, DeferredException
 from synchronizers.new_base.modelaccessor import OLTDevice, model_accessor
 from xosconfig import Config
 
@@ -115,11 +115,17 @@ class SyncOLTDevice(SyncStep):
 
     def configure_onos(self, model):
 
+        log.info("Adding OLT device in onos-voltha", object=str(model), **model.tologdict())
+
         onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
         onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
-        # For now, we assume that each OLT has only one port
-        vlan = model.ports.all()[0].s_tag
+        try:
+            # NOTE For now, we assume that each OLT has only one pon port
+            vlan = model.pon_ports.all()[0].s_tag
+        except Exception as e:
+            raise DeferredException("Waiting for pon_ports to come up")
+
 
         # Add device info to onos-voltha
         data = {
@@ -162,34 +168,34 @@ class SyncOLTDevice(SyncStep):
 
         self.configure_onos(model)
 
-    def delete_record(self, o):
-        log.info("Deleting OLT device", object=str(o), **o.tologdict())
+    def delete_record(self, model):
+        log.info("Deleting OLT device", object=str(model), **model.tologdict())
 
-        voltha = Helpers.get_voltha_info(o.volt_service)
-        onos_voltha = Helpers.get_onos_voltha_info(o.volt_service)
+        voltha = Helpers.get_voltha_info(model.volt_service)
+        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
         onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
-        if not o.device_id:
-            log.error("OLTDevice %s has no device_id" % o.name)
+        if not model.device_id:
+            log.error("OLTDevice %s has no device_id" % model.name)
         else:
             # Disable the OLT device
-            request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], o.device_id))
+            request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))
 
             if request.status_code != 200:
-                log.error("Failed to disable OLT device in VOLTHA: %s - %s" % (o.name, o.device_id), rest_response=request.text, rest_status_code=request.status_code)
+                log.error("Failed to disable OLT device in VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
                 raise Exception("Failed to disable OLT device in VOLTHA")
 
             # Delete the OLT device
-            request = requests.delete("%s:%d/api/v1/devices/%s/delete" % (voltha['url'], voltha['port'], o.device_id))
+            request = requests.delete("%s:%d/api/v1/devices/%s/delete" % (voltha['url'], voltha['port'], model.device_id))
 
             if request.status_code != 200:
-                log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (o.name, o.device_id), rest_response=request.text, rest_status_code=request.status_code)
+                log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
                 raise Exception("Failed to delete OLT device from VOLTHA")
 
             # Remove the device from ONOS
             request = requests.delete("%s:%d/onos/v1/network/configuration/devices/%s" % (
-            onos_voltha['url'], onos_voltha['port'], o.of_id), auth=onos_voltha_basic_auth)
+                onos_voltha['url'], onos_voltha['port'], model.of_id), auth=onos_voltha_basic_auth)
 
             if request.status_code != 204:
-                log.error("Failed to remove OLT device from ONOS: %s - %s" % (o.name, o.of_id), rest_response=request.text, rest_status_code=request.status_code)
+                log.error("Failed to remove OLT device from ONOS: %s - %s" % (model.name, model.of_id), rest_response=request.text, rest_status_code=request.status_code)
                 raise Exception("Failed to remove OLT device from ONOS")
