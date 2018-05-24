@@ -104,6 +104,25 @@ class TestSyncOLTDevice(unittest.TestCase):
             ]
         }
 
+        self.ports = {
+            "items": [
+                {
+                    "label": "PON port",
+                    "port_no": 1,
+                    "type": "PON_OLT",
+                    "admin_state": "ENABLED",
+                    "oper_status": "ACTIVE"
+                },
+                {
+                    "label": "NNI facing Ethernet port",
+                    "port_no": 2,
+                    "type": "ETHERNET_NNI",
+                    "admin_state": "ENABLED",
+                    "oper_status": "ACTIVE"
+                }
+            ]
+        }
+
     def tearDown(self):
         sys.path = self.sys_path_save
 
@@ -115,10 +134,13 @@ class TestSyncOLTDevice(unittest.TestCase):
     def test_pull(self, m):
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-                patch.object(OLTDevice, "save") as mock_save:
+                patch.object(OLTDevice, "save") as mock_olt_save, \
+                patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save:
             olt_service_mock.return_value = [self.volt_service]
 
             m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
             self.sync_step().pull_records()
@@ -131,7 +153,9 @@ class TestSyncOLTDevice(unittest.TestCase):
             # self.assertEqual(existing_olt.of_id, "of_id")
             # self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
 
-            mock_save.assert_called()
+            mock_olt_save.assert_called()
+            mock_pon_save.assert_called()
+            mock_nni_save.assert_called()
 
     @requests_mock.Mocker()
     def test_pull_existing(self, m):
@@ -141,12 +165,15 @@ class TestSyncOLTDevice(unittest.TestCase):
         existing_olt.updated = 1
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-        patch.object(OLTDevice.objects, "filter") as mock_get, \
-        patch.object(existing_olt, "save") as  mock_save:
+                patch.object(OLTDevice.objects, "filter") as mock_get, \
+                patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save, \
+                patch.object(existing_olt, "save") as  mock_olt_save:
             olt_service_mock.return_value = [self.volt_service]
             mock_get.return_value = [existing_olt]
 
             m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
             self.sync_step().pull_records()
@@ -158,26 +185,35 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(existing_olt.of_id, "of_id")
             self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
 
-            mock_save.assert_called()
+            mock_olt_save.assert_called()
+            mock_pon_save.assert_called()
+            mock_nni_save.assert_called()
 
     @requests_mock.Mocker()
     def test_pull_existing_do_not_sync(self, m):
         existing_olt = Mock()
         existing_olt.enacted = 1
         existing_olt.updated = 2
+        existing_olt.device_id = "test_id"
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-                patch.object(OLTDevice.objects, "get") as mock_get, \
-                patch.object(existing_olt, "save") as  mock_save:
+                patch.object(OLTDevice.objects, "filter") as mock_get, \
+                patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save, \
+                patch.object(existing_olt, "save") as mock_olt_save:
+
             olt_service_mock.return_value = [self.volt_service]
-            mock_get.return_value = existing_olt
+            mock_get.return_value = [existing_olt]
 
             m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
             self.sync_step().pull_records()
 
-            mock_save.assert_not_called()
+            mock_olt_save.assert_not_called()
+            mock_pon_save.assert_called()
+            mock_nni_save.assert_called()
 
 if __name__ == "__main__":
     unittest.main()
