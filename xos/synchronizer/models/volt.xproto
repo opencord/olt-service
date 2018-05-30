@@ -16,14 +16,6 @@ message VOLTService (Service){
     required string onos_voltha_pass = 8 [help_text = "The ONOS Voltha password. By default rocks", max_length = 254, default="rocks", null = True, db_index = False, blank = False];
 }
 
-message VOLTServiceInstance (ServiceInstance){
-    option kind = "vOLT";
-    option owner_class_name = "VOLTService";
-    option verbose_name = "vOLT Service Instance";
-
-    optional string description = 1 [max_length = 254, null = True, db_index = False, blank = True];
-}
-
 message OLTDevice (XOSBase){
     option verbose_name = "OLT Device";
     option description="Represents a physical OLT device";
@@ -83,4 +75,13 @@ message ONUDevice (XOSBase){
     optional string admin_state = 6 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
     optional string oper_status = 7 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
     optional string connect_status = 8 [help_text = "connect_status", null = True, db_index = False, blank = False, feedback_state = True];
+}
+
+message VOLTServiceInstance (ServiceInstance){
+    option kind = "vOLT";
+    option owner_class_name = "VOLTService";
+    option verbose_name = "vOLT Service Instance";
+
+    optional string description = 1 [max_length = 254, null = True, db_index = False, blank = True];
+    optional manytoone onu_device->ONUDevice:volt_service_instances = 1 [db_index = True, null = True, blank = False];
 }

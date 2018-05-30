@@ -14,7 +14,6 @@
 
 import random
 
-from core.models.xosbase import *
 from xos.exceptions import XOSValidationError
 
 from models_decl import VOLTService_decl
@@ -36,16 +35,44 @@ class VOLTService(VOLTService_decl):
         except IndexError, e:
             return False
 
-
 class VOLTServiceInstance(VOLTServiceInstance_decl):
     class Meta:
-        proxy = True 
-
+        proxy = True
 
 class OLTDevice(OLTDevice_decl):
     class Meta:
-        proxy = True 
+        proxy = True
 
+    def get_volt_si(self):
+        return VOLTServiceInstance.objects.all()
+
+    def delete(self, *args, **kwargs):
+
+        onus = []
+        pon_ports = self.pon_ports.all()
+        for port in pon_ports:
+            onus = onus + list(port.onu_devices.all())
+
+
+        if len(onus) > 0:
+            onus = [o.id for o in onus]
+
+            # find the ONUs used by VOLTServiceInstances
+            used_onus = [o.onu_device_id for o in self.get_volt_si()]
+
+            # find the intersection between the onus associated with this OLT and the used one
+            used_onus_to_delete = [o for o in onus if o in used_onus]
+
+            if len(used_onus_to_delete) > 0:
+                if hasattr(self, "device_id") and self.device_id:
+                    item = self.device_id
+                elif hasattr(self, "name") and self.name:
+                    item = self.name
+                else:
+                    item = self.id
+                raise XOSValidationError('OLT "%s" can\'t be deleted as it has subscribers associated with its ONUs' % item)
+
+        super(OLTDevice, self).delete(*args, **kwargs)
 
 class PONPort(PONPort_decl):
     class Meta:

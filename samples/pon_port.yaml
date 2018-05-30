@@ -35,10 +35,20 @@ topology_template:
     pon_port:
       type: tosca.nodes.PONPort
       properties:
-        name: test_olt_port_1
+        name: test_pon_port_1
         port_no: 2
         s_tag: 222
       requirements:
         - olt_device:
             node: device#olt
+            relationship: tosca.relationships.BelongsToOne
+
+    onu:
+      type: tosca.nodes.ONUDevice
+      properties:
+        serial_number: BRCM1234
+        vendor: Broadcom
+      requirements:
+        - pon_port:
+            node: pon_port
             relationship: tosca.relationships.BelongsToOne

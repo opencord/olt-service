@@ -71,53 +71,22 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         model_accessor.reset_all_object_stores()
 
         self.policy = VOLTServiceInstancePolicy()
-        self.tenant = VOLTServiceInstance(s_tag=111, c_tag=222, service_specific_id=1234)
-
-        self.vsg_service = VSGService(name="the vsg service")
+        self.si = Mock()
 
     def tearDown(self):
         sys.path = self.sys_path_save
 
     def test_handle_create(self):
-        with patch.object(VOLTServiceInstancePolicy, "manage_vsg") as manage_vsg, \
-                patch.object(VOLTServiceInstancePolicy, "cleanup_orphans") as cleanup_orphans:
-            self.policy.handle_create(self.tenant)
-            manage_vsg.assert_called_with(self.tenant)
-            cleanup_orphans.assert_called_with(self.tenant)
+        with patch.object(VOLTServiceInstancePolicy, "create_eastbound_instance") as create_eastbound_instance, \
+            patch.object(VOLTServiceInstancePolicy, "associate_onu_device") as associate_onu_device:
 
-    def test_manage_vsg(self):
-        with patch.object(VOLTServiceInstancePolicy, "get_current_vsg") as get_current_vsg, \
-                patch.object(VOLTServiceInstancePolicy, "create_eastbound_instance") as create_vsg, \
-                patch.object(VSGService.objects, "get_items") as vsg_items:
-
-            vsg_items.return_value = [self.vsg_service]
-            get_current_vsg.return_value = None
-            self.policy.manage_vsg(self.tenant)
-
-            create_vsg.assert_called()
-
-    def test_get_current_vsg(self):
-        with patch.object(ServiceInstanceLink.objects, "get_items") as link_items:
-            vsg = VSGServiceInstance()
-            link = ServiceInstanceLink(provider_service_instance=vsg, subscriber_service_instance_id=self.tenant.id)
-
-            link_items.return_value = [link]
-
-            vsg = self.policy.get_current_vsg(self.tenant)
-
-            self.assertNotEqual(vsg, None)
-
-    def test_get_current_vsg_noexist(self):
-        vsg = self.policy.get_current_vsg(self.tenant)
-
-        self.assertEqual(vsg, None)
+            self.policy.handle_create(self.si)
+            create_eastbound_instance.assert_called_with(self.si)
+            associate_onu_device.assert_called_with(self.si)
 
     def test_create_vsg(self):
-        # with patch.object(model_accessor, "get_model_class") as mock_model_accessor, \
         with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
-                patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
-
-            # mock_model_accessor.return_value = VSGServiceInstance
+            patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
 
             link = Mock()
             link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
@@ -140,33 +109,26 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
             self.assertEqual(link.provider_service_instance, vsg)
             self.assertEqual(link.subscriber_service_instance, si)
 
+    def test_associate_onu(self):
+        with patch.object(ServiceInstance.objects, "get") as get_si, \
+            patch.object(ONUDevice.objects, "get") as get_onu:
+
+            mock_si = Mock()
+            mock_si.get_westbound_service_instance_properties.return_value = "BRCM1234"
+            get_si.return_value = mock_si
+
+            mock_onu = Mock()
+            mock_onu.id = 12
+            get_onu.return_value = mock_onu
+
+            self.policy.associate_onu_device(self.si)
+
+            self.assertEqual(self.si.onu_device_id, mock_onu.id)
+            self.si.save.assert_called()
+
     def test_handle_delete(self):
-        self.policy.handle_delete(self.tenant)
+        self.policy.handle_delete(self.si)
         # handle delete does nothing, and should trivially succeed
-
-    def test_cleanup_orphans(self):
-        with patch.object(ServiceInstanceLink, "delete", autospec=True) as delete_link, \
-                patch.object(VSGServiceInstance.objects, "get_items") as vsg_si_items, \
-                patch.object(ServiceInstanceLink.objects, "get_items") as link_items:
-
-            vsg1 = VSGServiceInstance(id=123)
-            vsg2 = VSGServiceInstance(id=456)
-            link1 = ServiceInstanceLink(provider_service_instance=vsg1, provider_service_instance_id=vsg1.id,
-                                        subscriber_service_instance=self.tenant, subscriber_service_instance_id=self.tenant.id)
-            link2 = ServiceInstanceLink(provider_service_instance=vsg2, provider_service_instance_id=vsg2.id,
-                                        subscriber_service_instance=self.tenant, subscriber_service_instance_id=self.tenant.id)
-
-            self.tenant.subscribed_links=MockObjectList(initial=[link1,link2])
-
-            vsg_si_items.return_value = [vsg1, vsg2]
-            link_items.return_value = [link1, link2]
-
-            self.policy.cleanup_orphans(self.tenant)
-
-            # Since there are two VSGs linked to this VOLT, cleanup_orphans() will have caused one of them to be
-            # deleted.
-
-            self.assertEqual(delete_link.call_count, 1)
 
 if __name__ == '__main__':
     unittest.main()

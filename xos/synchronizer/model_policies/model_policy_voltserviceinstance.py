@@ -14,39 +14,29 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, model_accessor
+from synchronizers.new_base.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, ONUDevice, ServiceInstance, model_accessor
 from synchronizers.new_base.policy import Policy
 
 class VOLTServiceInstancePolicy(Policy):
     model_name = "VOLTServiceInstance"
 
-    def handle_create(self, tenant):
-        return self.handle_update(tenant)
+    def handle_create(self, si):
+        return self.handle_update(si)
 
-    def handle_update(self, tenant):
+    def handle_update(self, si):
 
-        if (tenant.link_deleted_count > 0) and (not tenant.provided_links.exists()):
+        if (si.link_deleted_count > 0) and (not si.provided_links.exists()):
             # If this instance has no links pointing to it, delete
-            self.handle_delete(tenant)
-            if VOLTServiceInstance.objects.filter(id=tenant.id).exists():
-                tenant.delete()
+            self.handle_delete(si)
+            if VOLTServiceInstance.objects.filter(id=si.id).exists():
+                si.delete()
             return
 
-        self.manage_vsg(tenant)
-        self.cleanup_orphans(tenant)
+        self.create_eastbound_instance(si)
+        self.associate_onu_device(si)
 
-    def handle_delete(self, tenant):
+    def handle_delete(self, si):
         pass
-        # assume this is handled by ServiceInstanceLink being deleted
-        #if tenant.vcpe:
-        #    tenant.vcpe.delete()
-
-    def get_current_vsg(self, tenant):
-        for link in ServiceInstanceLink.objects.filter(subscriber_service_instance_id = tenant.id):
-            # NOTE: Assumes the first (and only?) link is to a vsg
-            # cast from ServiceInstance to VSGTenant
-            return link.provider_service_instance.leaf_model
-        return None
 
     def create_eastbound_instance(self, si):
 
@@ -75,33 +65,21 @@ class VOLTServiceInstancePolicy(Policy):
             link = ServiceInstanceLink(provider_service_instance=eastbound_si, subscriber_service_instance=si)
             link.save()
 
-    def manage_vsg(self, tenant):
-        # Each VOLT object owns exactly one VCPE object
+    def associate_onu_device(self, si):
 
-        if tenant.deleted:
-            self.logger.info("MODEL_POLICY: VOLTServiceInstance %s deleted, deleting vsg" % tenant)
-            return
+        self.logger.debug("MODEL_POLICY: attaching ONUDevice to VOLTServiceInstance %s" % si.id)
 
-        cur_vsg = self.get_current_vsg(tenant)
+        base_si = ServiceInstance.objects.get(id=si.id)
+        try:
+            onu_device_serial_number = base_si.get_westbound_service_instance_properties("onu_device")
+        except Exception as e:
+            raise Exception(
+                "VOLTServiceInstance %s has no westbound ServiceInstance specifying the onu_device, you need to manually specify it" % self.id)
 
-        # Check to see if the wrong s-tag is set. This can only happen if the
-        # user changed the s-tag after the VOLTServiceInstance object was created.
-        if cur_vsg and hasattr(cur_vsg, 'instance') and cur_vsg.instance:
-            s_tags = Tag.objects.filter(content_type=cur_vsg.instance.self_content_type_id,
-                                        object_id=cur_vsg.instance.id, name="s_tag")
-            if s_tags and (s_tags[0].value != str(tenant.s_tag)):
-                self.logger.info("MODEL_POLICY: VOLTServiceInstance %s s_tag changed, deleting vsg" % tenant)
-                cur_vsg.delete()
-                cur_vsg = None
+        try:
+            onu = ONUDevice.objects.get(serial_number=onu_device_serial_number)
+        except IndexError:
+            raise Exception("ONUDevice with serial number %s can't be found" % onu_device_serial_number)
 
-        if cur_vsg is None:
-            self.create_eastbound_instance(tenant)
-
-    def cleanup_orphans(self, tenant):
-        # ensure vOLT only has one vCPE
-        cur_vsg = self.get_current_vsg(tenant)
-
-        links = tenant.subscribed_links.all()
-        for link in links:
-            if (link.provider_service_instance_id != cur_vsg.id):
-                link.delete()
+        si.onu_device_id = onu.id
+        si.save()
