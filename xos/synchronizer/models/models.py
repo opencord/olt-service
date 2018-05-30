@@ -14,7 +14,7 @@
 
 import random
 
-from core.models.xosbase import *
+from core.models import Service
 from xos.exceptions import XOSValidationError
 
 from models_decl import VOLTService_decl
@@ -44,8 +44,37 @@ class VOLTServiceInstance(VOLTServiceInstance_decl):
 
 class OLTDevice(OLTDevice_decl):
     class Meta:
-        proxy = True 
+        proxy = True
 
+    def delete(self, *args, **kwargs):
+
+        onus = []
+        pon_ports = self.pon_ports.all()
+        for port in pon_ports:
+            onus = onus + port.onu_devices.all()
+
+        if len(onus) > 0:
+            onus = [o.serial_number for o in onus]
+            # check if any subscriber is using any of this ONUs
+            volt = Service.objects.get(id=self.volt_service.id)
+            rcord = volt.subscriber_services[0]
+            subscribers = rcord.leaf_model.service_instances.all()
+
+            # NOTE this assume we know how the subscriber model is defined,
+            # similar to an hardcoded dependency
+            used_onus = [s.onu_device for s in subscribers]
+            onus_to_delete = [o for o in onus if o in used_onus]
+
+            if len(onus_to_delete) > 0:
+                if hasattr(self, "device_id") and self.device_id:
+                    item = self.device_id
+                elif hasattr(self, "name") and self.name:
+                    item = self.name
+                else:
+                    item = self.id
+                raise XOSValidationError('OLT "%s" can\'t be deleted as it has subscribers associated with its ONUs' % item)
+
+        super(OLTDevice, self).delete(*args, **kwargs)
 
 class PONPort(PONPort_decl):
     class Meta:
