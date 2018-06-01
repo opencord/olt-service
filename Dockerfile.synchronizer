@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# docker build -t xosproject/volt-synchronizer:candidate -f Dockerfile.synchronizer .
+
 # xosproject/volt-synchronizer
 
 FROM xosproject/xos-synchronizer-base:candidate
