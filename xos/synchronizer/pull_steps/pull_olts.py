@@ -179,13 +179,13 @@ class OLTDevicePullStep(PullStep):
         for port in pon_ports:
             try:
                 model = PONPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
-                log.debug("PONPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.debug("PONPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
             except IndexError:
                 model = PONPort()
                 model.port_no = port["port_no"]
                 model.olt_device_id = olt.id
                 model.name = port["label"]
-                log.debug("PONPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.debug("PONPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
 
             model.admin_state = port["admin_state"]
             model.oper_status = port["oper_status"]
@@ -200,14 +200,14 @@ class OLTDevicePullStep(PullStep):
             try:
                 model = NNIPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
                 model.xos_managed = False
-                log.debug("NNIPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.debug("NNIPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
             except IndexError:
                 model = NNIPort()
                 model.port_no = port["port_no"]
                 model.olt_device_id = olt.id
                 model.name = port["label"]
                 model.xos_managed = False
-                log.debug("NNIPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.debug("NNIPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
 
             model.admin_state = port["admin_state"]
             model.oper_status = port["oper_status"]
