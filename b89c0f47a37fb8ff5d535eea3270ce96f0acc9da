@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "886c198a_f13c404d",
+        "filename": "xos/synchronizer/steps/sync_onu_device.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2018-06-04T23:55:37Z",
+      "side": 1,
+      "message": "Should we change this to \u0027Disabling\u0027? Removing gives the wrong impression.",
+      "range": {
+        "startLine": 40,
+        "startChar": 22,
+        "endLine": 40,
+        "endChar": 30
+      },
+      "revId": "b89c0f47a37fb8ff5d535eea3270ce96f0acc9da",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
