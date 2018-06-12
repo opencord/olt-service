@@ -25,11 +25,6 @@ topology_template:
       type: tosca.nodes.RCORDSubscriber
       properties:
         name: My House
-        service_specific_id: "123"
-        firewall_enable: false
-        cdn_enable: false
-        url_filter_enable: false
-        url_filter_level: R
         c_tag: 111
         onu_device: BRCM1234
         uni_port_id: 101
