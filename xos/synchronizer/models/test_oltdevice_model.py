@@ -40,13 +40,24 @@ class TestOLTDeviceModel(unittest.TestCase):
 
         from models import OLTDevice
 
-        print OLTDevice
-
         self.olt_device = OLTDevice()
         self.olt_device.id = None # this is a new model
         self.olt_device.is_new = True
         self.olt_device.device_id = 1234
 
+    def test_create_mac_address(self):
+        from models import OLTDevice
+        olt = OLTDevice()
+
+        olt.host = "1.1.1.1"
+        olt.port = "9101"
+        olt.mac_address = "00:0c:d5:00:05:40"
+
+        with self.assertRaises(Exception) as e:
+            olt.save()
+
+        self.assertEqual(e.exception.message,
+                         "You can't specify both host/port and mac_address for OLTDevice [host=%s, port=%s, mac_address=%s]" % (olt.host, olt.port, olt.mac_address))
 
     def test_delete(self):
         self.olt_device.delete()
