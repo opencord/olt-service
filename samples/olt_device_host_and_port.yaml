@@ -1,0 +1,44 @@
+# Copyright 2017-present Open Networking Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# curl -H "xos-username: admin@opencord.org" -H "xos-password: letmein" -X POST --data-binary @olt_device_host_and_port.yaml http://192.168.99.100:30007/run
+
+tosca_definitions_version: tosca_simple_yaml_1_0
+imports:
+  - custom_types/oltdevice.yaml
+  - custom_types/voltservice.yaml
+description: Create a simulated OLT Device in VOLTHA
+topology_template:
+  node_templates:
+
+    service#volt:
+      type: tosca.nodes.VOLTService
+      properties:
+        name: volt
+        must-exist: true
+
+    device#olt:
+      type: tosca.nodes.OLTDevice
+      properties:
+        name: test_olt
+        device_type: ponsim
+        host: 172.17.0.1
+        port: 50060
+        switch_datapath_id: of:0000000000000001
+        switch_port: "1"
+        outer_tpid: "0x8100"
+      requirements:
+        - volt_service:
+            node: service#volt
+            relationship: tosca.relationships.BelongsToOne

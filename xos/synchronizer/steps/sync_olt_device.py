@@ -57,14 +57,13 @@ class SyncOLTDevice(SyncStep):
         voltha = Helpers.get_voltha_info(model.volt_service)
 
         data = {
-            "type": model.device_type,
-            "host_and_port": "%s:%s" % (model.host, model.port)
+            "type": model.device_type
         }
 
-        if model.device_type == 'simulated_olt':
-            # Simulated devices won't accept host and port. This is to enable tests in voltha without having a real olt or ponsim
-            data.pop('host_and_port')
-            data['mac_address'] = "00:0c:e2:31:40:00"
+        if hasattr(model, "host") and hasattr(model, "port"):
+            data["host_and_port"] = "%s:%s" % (model.host, model.port)
+        elif hasattr(model, "mac_address"):
+            data["mac_address"] = model.mac_address
 
         log.info("Pushing OLT to Voltha", data=data)
 

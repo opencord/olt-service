@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import unittest
+import functools
 from mock import patch, call, Mock, PropertyMock
 import requests_mock
 
@@ -51,6 +52,12 @@ def match_onos_req(req):
             return False
     return True
 
+def match_json(desired, req):
+    if desired!=req.json():
+        raise Exception("Got request %s, but body is not matching" % req.url)
+        return False
+    return True
+
 class TestSyncOLTDevice(unittest.TestCase):
     def setUp(self):
         global DeferredException
@@ -82,7 +89,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         pon_port.port_id = "00ff00"
         pon_port.s_tag = "s_tag"
 
-        # Create a mock service instance
+        # Create a mock OLTDevice
         o = Mock()
         o.volt_service.voltha_url = "voltha_url"
         o.volt_service.voltha_port = 1234
@@ -176,7 +183,13 @@ class TestSyncOLTDevice(unittest.TestCase):
         """
         If device.enable succed should fetch the state, retrieve the of_id and push it to ONOS
         """
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"})
+
+        expected_conf = {
+            "type": self.o.device_type,
+            "host_and_port": "%s:%s" % (self.o.host, self.o.port)
+        }
+
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"}, additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
         m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ENABLED", "admin_state": "ACTIVE"})
         logical_devices = {
@@ -188,6 +201,42 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
+
+        self.sync_step().sync_record(self.o)
+        self.assertEqual(self.o.admin_state, "ACTIVE")
+        self.assertEqual(self.o.oper_status, "ENABLED")
+        self.assertEqual(self.o.of_id, "0001000ce2314000")
+        self.o.save.assert_called_once()
+
+    @requests_mock.Mocker()
+    def test_sync_record_success_mac_address(self, m):
+        """
+        A device should be pre-provisioned via mac_address, the the process is the same
+        """
+
+        del self.o.host
+        del self.o.port
+        self.o.mac_address = "00:0c:e2:31:40:00"
+
+        expected_conf = {
+            "type": self.o.device_type,
+            "mac_address": self.o.mac_address
+        }
+
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"},
+               additional_matcher=functools.partial(match_json, expected_conf))
+        m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
+        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ENABLED", "admin_state": "ACTIVE"})
+        logical_devices = {
+            "items": [
+                {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
+                {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
+            ]
+        }
+        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
+
+        m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code=200,
+               additional_matcher=match_onos_req, json={})
 
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ACTIVE")

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# curl -H "xos-username: admin@opencord.org" -H "xos-password: letmein" -X POST --data-binary @olt_device.yaml http://192.168.99.100:30007/run
+# curl -H "xos-username: admin@opencord.org" -H "xos-password: letmein" -X POST --data-binary @olt_device_mac_address.yaml http://192.168.99.100:30007/run
 
 tosca_definitions_version: tosca_simple_yaml_1_0
 imports:
@@ -33,8 +33,7 @@ topology_template:
       properties:
         name: test_olt
         device_type: simulated_olt
-        host: 172.17.0.1
-        port: 50060
+        mac_address: 00:0c:e2:31:40:00
         switch_datapath_id: of:0000000000000001
         switch_port: "1"
         outer_tpid: "0x8100"
