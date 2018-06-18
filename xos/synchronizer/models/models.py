@@ -46,6 +46,13 @@ class OLTDevice(OLTDevice_decl):
     def get_volt_si(self):
         return VOLTServiceInstance.objects.all()
 
+    def save(self, *args, **kwargs):
+
+        if (self.host or self.port) and self.mac_address:
+            raise XOSValidationError("You can't specify both host/port and mac_address for OLTDevice [host=%s, port=%s, mac_address=%s]" % (self.host, self.port, self.mac_address))
+
+        super(OLTDevice, self).save(*args, **kwargs)
+
     def delete(self, *args, **kwargs):
 
         onus = []
