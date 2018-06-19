@@ -74,7 +74,7 @@ message ONUDevice (XOSBase){
     required string device_type = 4 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False];
 
     optional string device_id = 5 [max_length = 254, null = True, db_index = False, blank = False, feedback_state = True];
-    optional string admin_state = 6 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
+    optional string admin_state = 6 [choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))", default="ENABLED", help_text = "admin_state", null = True, db_index = False, blank = False];
     optional string oper_status = 7 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
     optional string connect_status = 8 [help_text = "connect_status", null = True, db_index = False, blank = False, feedback_state = True];
 }

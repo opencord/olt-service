@@ -87,10 +87,12 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         sys.path = self.sys_path_save
 
     @requests_mock.Mocker()
-    def test_do_nothing(self, m):
+    def test_enable(self, m):
+        m.post("http://voltha_url:1234/api/v1/devices/test_id/enable")
+
         self.o.admin_state = "ENABLED"
         self.sync_step().sync_record(self.o)
-        self.assertFalse(m.called)
+        self.assertTrue(m.called)
 
     @requests_mock.Mocker()
     def test_disable(self, m):
