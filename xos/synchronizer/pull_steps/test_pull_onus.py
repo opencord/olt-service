@@ -109,6 +109,11 @@ class TestPullONUDevice(unittest.TestCase):
             ]
         }
 
+        # TODO add ports
+        self.ports = {
+            "items": []
+        }
+
     def tearDown(self):
         sys.path = self.sys_path_save
 
@@ -122,70 +127,27 @@ class TestPullONUDevice(unittest.TestCase):
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
                 patch.object(OLTDevice.objects, "get") as mock_olt_device, \
                 patch.object(PONPort.objects, "get") as mock_pon_port, \
-                patch.object(ONUDevice, "save") as mock_save:
+                patch.object(ONUDevice, "save", autospec=True) as mock_save:
             olt_service_mock.return_value = [self.volt_service]
             mock_pon_port.return_value = self.pon_port
             mock_olt_device.return_value = self.olt
 
             m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
 
             self.sync_step().pull_records()
 
-            # TODO how to asster this?
-            # self.assertEqual(existing_olt.admin_state, "ENABLED")
-            # self.assertEqual(existing_olt.oper_status, "ACTIVE")
-            # self.assertEqual(existing_olt.volt_service_id, "volt_service_id")
-            # self.assertEqual(existing_olt.device_id, "test_id")
-            # self.assertEqual(existing_olt.of_id, "of_id")
-            # self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
+            saved_onu = mock_save.call_args[0][0]
 
-            mock_save.assert_called_with()
+            self.assertEqual(saved_onu.admin_state, "ENABLED")
+            self.assertEqual(saved_onu.oper_status, "ACTIVE")
+            self.assertEqual(saved_onu.connect_status, "REACHABLE")
+            self.assertEqual(saved_onu.device_type, "broadcom_onu")
+            self.assertEqual(saved_onu.vendor, "Broadcom")
+            self.assertEqual(saved_onu.device_id, "0001130158f01b2d")
 
-    @requests_mock.Mocker()
-    def _test_pull_existing(self, m):
+            self.assertEqual(mock_save.call_count, 1)
 
-        existing_olt = Mock()
-        existing_olt.enacted = 2
-        existing_olt.updated = 1
-
-        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-        patch.object(OLTDevice.objects, "filter") as mock_get, \
-        patch.object(existing_olt, "save") as  mock_save:
-            olt_service_mock.return_value = [self.volt_service]
-            mock_get.return_value = [existing_olt]
-
-            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
-            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
-
-            self.sync_step().pull_records()
-
-            self.assertEqual(existing_olt.admin_state, "ENABLED")
-            self.assertEqual(existing_olt.oper_status, "ACTIVE")
-            self.assertEqual(existing_olt.volt_service_id, "volt_service_id")
-            self.assertEqual(existing_olt.device_id, "test_id")
-            self.assertEqual(existing_olt.of_id, "of_id")
-            self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
-
-            mock_save.assert_called()
-
-    @requests_mock.Mocker()
-    def _test_pull_existing_do_not_sync(self, m):
-        existing_olt = Mock()
-        existing_olt.enacted = 1
-        existing_olt.updated = 2
-
-        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-                patch.object(OLTDevice.objects, "get") as mock_get, \
-                patch.object(existing_olt, "save") as  mock_save:
-            olt_service_mock.return_value = [self.volt_service]
-            mock_get.return_value = existing_olt
-
-            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
-            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
-
-            self.sync_step().pull_records()
-
-            mock_save.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()

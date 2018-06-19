@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from synchronizers.new_base.pullstep import PullStep
-from synchronizers.new_base.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort
+from synchronizers.new_base.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort, PONONUPort, UNIPort
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -57,7 +57,7 @@ class ONUDevicePullStep(PullStep):
             log.debug("received devices", onus=devices)
 
             # TODO
-            # [ ] delete ONUS as ONUDevice.objects.all() - updated OLTs
+            # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
 
             if r.status_code != 200:
                 log.info("It was not possible to fetch devices from VOLTHA")
@@ -83,6 +83,8 @@ class ONUDevicePullStep(PullStep):
 
                 if model.enacted < model.updated:
                     log.info("Skipping pull on ONUDevice %s as enacted < updated" % model.serial_number, serial_number=model.serial_number, id=model.id, enacted=model.enacted, updated=model.updated)
+                    # if we are not updating the device we still need to pull ports
+                    self.fetch_onu_ports(model)
                     return
 
             except IndexError:
@@ -109,12 +111,83 @@ class ONUDevicePullStep(PullStep):
 
             model.save()
 
+            self.fetch_onu_ports(model)
+
             updated_onus.append(model)
 
         return updated_onus
 
+    def fetch_onu_ports(self, onu):
+        voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
+        voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
+        try:
+            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, onu.device_id))
 
+            if r.status_code != 200:
+                log.info("It was not possible to fetch ports from VOLTHA for ONUDevice %s" % onu.device_id)
 
+            ports = r.json()['items']
+
+            log.debug("received ports", ports=ports, onu=onu.device_id)
+
+            self.create_or_update_ports(ports, onu)
+
+        except ConnectionError, e:
+            log.warn("It was not possible to connect to VOLTHA", reason=e)
+            return
+        except InvalidURL, e:
+            log.warn("VOLTHA url is invalid, is it configured in the VOLTService?", reason=e)
+            return
+        return
+
+    def create_or_update_ports(self, ports, onu):
+        uni_ports = [p for p in ports if "ETHERNET_UNI" in p["type"]]
+        pon_onu_ports = [p for p in ports if "PON_ONU" in p["type"]]
+
+        self.create_or_update_uni_port(uni_ports, onu)
+        self.create_or_update_pon_onu_port(pon_onu_ports, onu)
+
+    def create_or_update_uni_port(self, uni_ports, onu):
+        update_ports = []
+
+        for port in uni_ports:
+            try:
+                model = UNIPort.objects.filter(port_no=port["port_no"], onu_device_id=onu.id)[0]
+                log.debug("UNIPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
+            except IndexError:
+                model = UNIPort()
+                model.port_no = port["port_no"]
+                model.onu_device_id = onu.id
+                model.name = port["label"]
+                log.debug("UNIPort is new, creating it", port_no=port["port_no"], onu_device_id=onu.id)
+
+            model.admin_state = port["admin_state"]
+            model.oper_status = port["oper_status"]
+            model.save()
+            update_ports.append(model)
+        return update_ports
+
+    def create_or_update_pon_onu_port(self, pon_onu_ports, onu):
+        update_ports = []
+
+        for port in pon_onu_ports:
+            try:
+                model = PONONUPort.objects.filter(port_no=port["port_no"], onu_device_id=onu.id)[0]
+                model.xos_managed = False
+                log.debug("PONONUPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
+            except IndexError:
+                model = PONONUPort()
+                model.port_no = port["port_no"]
+                model.onu_device_id = onu.id
+                model.name = port["label"]
+                model.xos_managed = False
+                log.debug("PONONUPort is new, creating it", port_no=port["port_no"], onu_device_id=onu.id)
+
+            model.admin_state = port["admin_state"]
+            model.oper_status = port["oper_status"]
+            model.save()
+            update_ports.append(model)
+        return update_ports
 
 

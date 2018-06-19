@@ -52,7 +52,8 @@ message PortBase (XOSBase){
 }
 
 message PONPort (PortBase){
-    option verbose_name = "PON Port";
+    option verbose_name = "OLT PON Port";
+    option description="OLT Side PON Port";
 
     required manytoone olt_device->OLTDevice:pon_ports = 1 [db_index = True, null = False, blank = False];
     required int32 s_tag = 2 [help_text = "S Tag", null = False, db_index = False, blank = False];
@@ -76,6 +77,17 @@ message ONUDevice (XOSBase){
     optional string admin_state = 6 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
     optional string oper_status = 7 [help_text = "oper_status", null = True, db_index = False, blank = False, feedback_state = True];
     optional string connect_status = 8 [help_text = "connect_status", null = True, db_index = False, blank = False, feedback_state = True];
+}
+
+message PONONUPort (PortBase) {
+    option verbose_name = "ONU PON Port";
+    option description="ONU Side PON Port";
+    required manytoone onu_device->ONUDevice:pononu_ports = 1 [db_index = True, null = False, blank = False];
+}
+
+message UNIPort (PortBase) {
+    option verbose_name = "UNI Port";
+    required manytoone onu_device->ONUDevice:uni_ports = 1 [db_index = True, null = False, blank = False];
 }
 
 message VOLTServiceInstance (ServiceInstance){
