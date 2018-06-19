@@ -31,14 +31,29 @@ class SyncONUDevice(SyncStep):
 
     observes = ONUDevice
 
+    def disable_onu(self, o):
+        volt_service = o.pon_port.olt_device.volt_service
+        voltha = Helpers.get_voltha_info(volt_service)
+
+        log.info("Disabling device %s in voltha" % o.device_id)
+        request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], o.device_id))
+
+        if request.status_code != 200:
+            raise Exception("Failed to disable ONU device %s: %s" % (o.serial_number, request.text))
+
+    def enable_onu(self, o):
+        volt_service = o.pon_port.olt_device.volt_service
+        voltha = Helpers.get_voltha_info(volt_service)
+
+        log.info("Enabling device %s in voltha" % o.device_id)
+        request = requests.post("%s:%d/api/v1/devices/%s/enable" % (voltha['url'], voltha['port'], o.device_id))
+
+        if request.status_code != 200:
+            raise Exception("Failed to enable ONU device %s: %s" % (o.serial_number, request.text))
+
     def sync_record(self, o):
 
         if o.admin_state == "DISABLED":
-            volt_service = o.pon_port.olt_device.volt_service
-            voltha = Helpers.get_voltha_info(volt_service)
-
-            log.info("Disabling device %s in voltha" % o.device_id)
-            request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], o.device_id))
-
-            if request.status_code != 200:
-                raise Exception("Failed to disable ONU device: %s" % request.text)
+            self.disable_onu(o)
+        if o.admin_state == "ENABLED":
+            self.enable_onu(o)
