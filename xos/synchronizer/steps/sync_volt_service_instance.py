@@ -20,7 +20,7 @@ from helpers import Helpers
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
-from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, ONUDevice, model_accessor
+from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, model_accessor
 from synchronizers.new_base.syncstep import SyncStep, DeferredException
 from xosconfig import Config
 
@@ -41,14 +41,10 @@ class SyncVOLTServiceInstance(SyncStep):
 
         c_tag = si.get_westbound_service_instance_properties("c_tag")
 
-        # TODO understand if this can have a better modeling (VOLTHA should know this info for an ONU without manually inserting it in the subscriber)
-        uni_port_id = si.get_westbound_service_instance_properties("uni_port_id")
+        olt_device = o.onu_device.pon_port.olt_device
 
-        onu_device_name = si.get_westbound_service_instance_properties("onu_device")
-
-        onu_device = ONUDevice.objects.get(serial_number=onu_device_name)
-
-        olt_device = onu_device.pon_port.olt_device
+        # NOTE each ONU has only one UNI port!
+        uni_port_id = o.onu_device.uni_ports.first().port_no
 
         if not olt_device.dp_id:
             raise DeferredException("Waiting for OLTDevice %s to be synchronized" % olt_device.name)

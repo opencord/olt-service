@@ -76,12 +76,6 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
         self.sync_step = SyncVOLTServiceInstance
 
-        # create a mock service instance
-        o = Mock()
-        o.id = 1
-        o.owner_id = "volt_service"
-        o.tologdict.return_value = {}
-
         volt_service = Mock()
         volt_service.onos_voltha_url = "onos_voltha_url"
         volt_service.onos_voltha_port = 4321
@@ -91,10 +85,21 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         si = Mock()
         si.get_westbound_service_instance_properties = mock_get_westbound_service_instance_properties
 
+        uni_port = Mock()
+        uni_port.port_no = "uni_port_id"
+
         onu_device = Mock()
         onu_device.name = "BRCM1234"
         onu_device.pon_port.olt_device.dp_id = None
         onu_device.pon_port.olt_device.name = "Test OLT Device"
+        onu_device.uni_ports.first.return_value = uni_port
+
+        # create a mock service instance
+        o = Mock()
+        o.id = 1
+        o.owner_id = "volt_service"
+        o.onu_device = onu_device
+        o.tologdict.return_value = {}
 
         self.o = o
         self.si = si
@@ -110,10 +115,8 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         self.onu_device.pon_port.olt_device.dp_id = None
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(ONUDevice.objects, "get") as onu_device_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
             service_instance_mock.return_value = self.si
-            onu_device_mock.return_value = self.onu_device
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(DeferredException) as e:
@@ -129,10 +132,8 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(ONUDevice.objects, "get") as onu_device_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
             service_instance_mock.return_value = self.si
-            onu_device_mock.return_value = self.onu_device
             olt_service_mock.return_value = self.volt_service
 
             self.sync_step().sync_record(self.o)
@@ -145,10 +146,8 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(ONUDevice.objects, "get") as onu_device_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
             service_instance_mock.return_value = self.si
-            onu_device_mock.return_value = self.onu_device
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(Exception) as e:

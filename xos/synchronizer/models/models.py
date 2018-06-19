@@ -22,6 +22,8 @@ from models_decl import OLTDevice_decl
 from models_decl import PONPort_decl
 from models_decl import NNIPort_decl
 from models_decl import ONUDevice_decl
+from models_decl import PONONUPort_decl
+from models_decl import UNIPort_decl
 
 class VOLTService(VOLTService_decl):
     class Meta:
@@ -125,5 +127,13 @@ class NNIPort(NNIPort_decl):
 
 class ONUDevice(ONUDevice_decl):
     class Meta:
-        proxy = True 
+        proxy = True
+
+class PONONUPort(PONONUPort_decl):
+    class Meta:
+        proxy = True
+
+class UNIPort(UNIPort_decl):
+    class Meta:
+        proxy = True
 
