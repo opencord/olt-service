@@ -165,6 +165,7 @@ class SyncOLTDevice(SyncStep):
         else:
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
 
+        # TODO configure onos only if we have: Switch datapath id, Switch port, Uplink
         self.configure_onos(model)
 
     def delete_record(self, model):

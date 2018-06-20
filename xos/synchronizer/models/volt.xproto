@@ -22,10 +22,10 @@ message OLTDevice (XOSBase){
 
     required manytoone volt_service->VOLTService:volt_devices = 1 [db_index = True, null = False, blank = False];
     optional string name = 2 [help_text = "name of device", max_length = 254, null = True, db_index = False, blank = True, unique = True];
-    required string device_type = 3 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, null = False, db_index = False, blank = False, tosca_key=True];
+    required string device_type = 3 [help_text = "Device Type", default = "openolt", max_length = 254, null = False, db_index = False, blank = False];
     optional string host = 4 [help_text = "Device IP", max_length = 254, null = True, db_index = False, blank = True];
-    optional int32 port = 5 [help_text = "Device port", null = True, db_index = False, blank = True, tosca_key_one_of=host];
-    optional string mac_address = 6 [help_text = "Device mac address", null = True, db_index = False, blank = True, tosca_key_one_of=host];
+    optional int32 port = 5 [help_text = "Device port", null = True, db_index = False, blank = True];
+    optional string mac_address = 6 [help_text = "Device mac address", null = True, db_index = False, blank = True];
 
     optional string device_id = 10 [help_text = "Device ID", null = True, db_index = False, blank = False, feedback_state = True];
     optional string admin_state = 11 [help_text = "admin_state", null = True, db_index = False, blank = False, feedback_state = True];
@@ -33,7 +33,7 @@ message OLTDevice (XOSBase){
     optional string of_id = 13 [help_text = "openflow id", null = True, db_index = False, blank = False, feedback_state = True];
     optional string dp_id = 14 [help_text = "datapath id", null = True, db_index = False, blank = False, feedback_state = True];
 
-    required string uplink = 15 [default="129", help_text = "uplink port", null = False, db_index = False, blank = False];
+    required string uplink = 15 [help_text = "uplink port", null = False, db_index = False, blank = False];
     required string driver = 16 [default="voltha", help_text = "Olt driver", null = True, db_index = False, blank = False];
 
     optional string switch_datapath_id = 17 [help_text = "Fabric switch to which the OLT is connected", null = False, db_index = False, blank = False];
