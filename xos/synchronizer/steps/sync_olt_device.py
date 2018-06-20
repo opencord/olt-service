@@ -88,6 +88,8 @@ class SyncOLTDevice(SyncStep):
 
     def activate_olt(self, model):
 
+        attempted = 0
+
         voltha = Helpers.get_voltha_info(model.volt_service)
 
         # Enable device
@@ -96,15 +98,23 @@ class SyncOLTDevice(SyncStep):
         if request.status_code != 200:
             raise Exception("Failed to enable OLT device: %s" % request.text)
 
+        model.backend_status = "Waiting for device to be activated"
+        model.save(always_update_timestamp=False) # we don't want to kickoff a new loop
+
         # Read state
         request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
-        while request['oper_status'] == "ACTIVATING":
+        while request['oper_status'] == "ACTIVATING" and attempted < 120:
             log.info("Waiting for OLT device %s (%s) to activate" % (model.name, model.device_id))
             sleep(5)
             request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
+            attempted = attempted + 1
+
 
         model.admin_state = request['admin_state']
         model.oper_status = request['oper_status']
+
+        if model.oper_status != "ACTIVE":
+            raise Exception("It was not possible to active OLTDevice with id %s" % model.id)
 
         # Find the of_id of the device
         model = self.get_ids_from_logical_device(model)
