@@ -32,6 +32,8 @@ class SyncOLTDevice(SyncStep):
     provides = [OLTDevice]
     observes = OLTDevice
 
+    max_attempt = 120  # we give 10 minutes to the OLT to activate
+
     @staticmethod
     def get_ids_from_logical_device(o):
         voltha = Helpers.get_voltha_info(o.volt_service)
@@ -88,6 +90,8 @@ class SyncOLTDevice(SyncStep):
 
     def activate_olt(self, model):
 
+        attempted = 0
+
         voltha = Helpers.get_voltha_info(model.volt_service)
 
         # Enable device
@@ -96,15 +100,23 @@ class SyncOLTDevice(SyncStep):
         if request.status_code != 200:
             raise Exception("Failed to enable OLT device: %s" % request.text)
 
+        model.backend_status = "Waiting for device to be activated"
+        model.save(always_update_timestamp=False) # we don't want to kickoff a new loop
+
         # Read state
         request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
-        while request['oper_status'] == "ACTIVATING":
+        while request['oper_status'] == "ACTIVATING" and attempted < self.max_attempt:
             log.info("Waiting for OLT device %s (%s) to activate" % (model.name, model.device_id))
             sleep(5)
             request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
+            attempted = attempted + 1
+
 
         model.admin_state = request['admin_state']
         model.oper_status = request['oper_status']
+
+        if model.oper_status != "ACTIVE":
+            raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
 
         # Find the of_id of the device
         model = self.get_ids_from_logical_device(model)
@@ -162,11 +174,17 @@ class SyncOLTDevice(SyncStep):
             log.info("Pushing OLT device to VOLTHA", object=str(model), **model.tologdict())
             model = self.pre_provision_olt_device(model)
             self.activate_olt(model)
+        elif model.oper_status != "ACTIVE":
+            raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
         else:
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
 
         # TODO configure onos only if we have: Switch datapath id, Switch port, Uplink
-        self.configure_onos(model)
+        if model.switch_datapath_id and model.switch_port and model.uplink:
+            log.info("Pushing OLT device to ONOS-VOLTHA", object=str(model), **model.tologdict())
+            self.configure_onos(model)
+        else:
+            raise DeferredException("Not pushing OLTDevice (%s) to ONOS-VOLTHA as parameters are missing" %  model.id)
 
     def delete_record(self, model):
         log.info("Deleting OLT device", object=str(model), **model.tologdict())

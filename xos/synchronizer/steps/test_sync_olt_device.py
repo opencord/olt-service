@@ -111,6 +111,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.admin_state = None
         o.oper_status = None
         o.of_id = None
+        o.id = 1
 
         o.tologdict.return_value = {'name': "Mock VOLTServiceInstance"}
 
@@ -191,7 +192,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"}, additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ENABLED", "admin_state": "ACTIVE"})
+        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED"})
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
@@ -203,10 +204,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
 
         self.sync_step().sync_record(self.o)
-        self.assertEqual(self.o.admin_state, "ACTIVE")
-        self.assertEqual(self.o.oper_status, "ENABLED")
+        self.assertEqual(self.o.admin_state, "ENABLED")
+        self.assertEqual(self.o.oper_status, "ACTIVE")
         self.assertEqual(self.o.of_id, "0001000ce2314000")
-        self.o.save.assert_called_once()
+        self.assertEqual(self.o.save.call_count, 2) # we're updating the backend_status when activating and then adding logical device ids
 
     @requests_mock.Mocker()
     def test_sync_record_success_mac_address(self, m):
@@ -226,7 +227,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"},
                additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ENABLED", "admin_state": "ACTIVE"})
+        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED"})
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
@@ -239,17 +240,55 @@ class TestSyncOLTDevice(unittest.TestCase):
                additional_matcher=match_onos_req, json={})
 
         self.sync_step().sync_record(self.o)
-        self.assertEqual(self.o.admin_state, "ACTIVE")
-        self.assertEqual(self.o.oper_status, "ENABLED")
+        self.assertEqual(self.o.admin_state, "ENABLED")
+        self.assertEqual(self.o.oper_status, "ACTIVE")
         self.assertEqual(self.o.of_id, "0001000ce2314000")
-        self.o.save.assert_called_once()
+        self.assertEqual(self.o.save.call_count, 2)
+
+    @requests_mock.Mocker()
+    def test_sync_record_enable_timeout(self, m):
+        """
+        If device.enable fails we need to tell the suer
+        """
+
+        expected_conf = {
+            "type": self.o.device_type,
+            "host_and_port": "%s:%s" % (self.o.host, self.o.port)
+        }
+
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"},
+               additional_matcher=functools.partial(match_json, expected_conf))
+        m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
+        m.get("http://voltha_url:1234/api/v1/devices/123", [
+                  {"json": {"oper_status": "ACTIVATING", "admin_state": "ENABLED"}, "status_code": 200},
+                  {"json": {"oper_status": "ERROR", "admin_state": "FAILED"}, "status_code": 200}
+              ])
+
+        logical_devices = {
+            "items": [
+                {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
+                {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
+            ]
+        }
+        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
+
+        m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code=200,
+               additional_matcher=match_onos_req, json={})
+
+        with self.assertRaises(Exception) as e:
+            self.sync_step().sync_record(self.o)
+
+        self.assertEqual(e.exception.message, "It was not possible to activate OLTDevice with id 1")
+        self.assertEqual(self.o.oper_status, "ERROR")
+        self.assertEqual(self.o.admin_state, "FAILED")
+        self.assertEqual(self.o.save.call_count, 1)
 
     @requests_mock.Mocker()
     def test_sync_record_already_existing_in_voltha(self, m):
         # mock device feedback state
         self.o.device_id = "123"
-        self.o.admin_state = "ACTIVE"
-        self.o.oper_status = "ENABLED"
+        self.o.admin_state = "ENABLED"
+        self.o.oper_status = "ACTIVE"
         self.o.dp_id = "of:0000000ce2314000"
         self.o.of_id = "0001000ce2314000"
 
