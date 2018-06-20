@@ -45,6 +45,9 @@ class TestOLTDeviceModel(unittest.TestCase):
         self.olt_device.is_new = True
         self.olt_device.device_id = 1234
 
+    def tearDown(self):
+        self.module_patcher.stop()
+
     def test_create_mac_address(self):
         from models import OLTDevice
         olt = OLTDevice()
@@ -83,6 +86,46 @@ class TestOLTDeviceModel(unittest.TestCase):
 
             self.assertEqual(e.exception.message, 'OLT "1234" can\'t be deleted as it has subscribers associated with its ONUs')
             self.models_decl.OLTDevice_decl.delete.assert_not_called()
+
+class TestONUDeviceModel(unittest.TestCase):
+
+    def setUp(self):
+        self.xos = XOS
+
+        self.models_decl = Mock()
+        self.models_decl.ONUDevice_decl = MagicMock
+        self.models_decl.ONUDevice_decl.delete = Mock()
+
+        modules = {
+            'xos.exceptions': self.xos.exceptions,
+            'models_decl': self.models_decl,
+        }
+
+        self.module_patcher = patch.dict('sys.modules', modules)
+        self.module_patcher.start()
+
+        from models import ONUDevice
+
+        self.onu_device = ONUDevice()
+        self.onu_device.id = None  # this is a new model
+        self.onu_device.is_new = True
+        self.onu_device.serial_number = 1234
+
+    def test_delete(self):
+        self.onu_device.delete()
+        self.models_decl.ONUDevice_decl.delete.assert_called()
+
+    def test_prevent_delete(self):
+        volt_si_1 = Mock()
+        volt_si_1.onu_device_id = self.onu_device.id
+        self.onu_device.volt_service_instances.all.return_value = [volt_si_1]
+
+        with self.assertRaises(Exception) as e:
+            self.onu_device.delete()
+
+        self.assertEqual(e.exception.message,
+                         'ONU "1234" can\'t be deleted as it has subscribers associated with it')
+        self.models_decl.OLTDevice_decl.delete.assert_not_called()
 
 if __name__ == '__main__':
     unittest.main()
