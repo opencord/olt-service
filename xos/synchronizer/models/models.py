@@ -129,6 +129,13 @@ class ONUDevice(ONUDevice_decl):
     class Meta:
         proxy = True
 
+    def delete(self, *args, **kwargs):
+
+        if len(self.volt_service_instances.all()) > 0:
+            raise XOSValidationError('ONU "%s" can\'t be deleted as it has subscribers associated with it' % self.serial_number)
+
+        super(ONUDevice, self).delete(*args, **kwargs)
+
 class PONONUPort(PONONUPort_decl):
     class Meta:
         proxy = True
