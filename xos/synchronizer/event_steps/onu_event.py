@@ -56,7 +56,7 @@ class ONUEventStep(EventStep):
             try:
                 oss.validate_onu(event)
             except Exception, e:
-                self.log.exception("Failing to validate ONU in OSS Service %s" % oss.name)
+                self.log.exception("Failing to validate ONU in OSS Service %s" % oss.name, onu_serial_number=event["serial_number"])
                 raise e
 
     def process_event(self, event):
