@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "16aa35db_18676e83",
+        "filename": "xos/synchronizer/event_steps/onu_event.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2018-06-21T21:36:57Z",
+      "side": 1,
+      "message": "Does the string need need multiple %s or similar if you\u0027re putting both items in the error string?",
+      "range": {
+        "startLine": 59,
+        "startChar": 74,
+        "endLine": 59,
+        "endChar": 131
+      },
+      "revId": "e778223791336dad570c38eb47bf66599fa24e42",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}
