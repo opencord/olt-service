@@ -98,13 +98,14 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.service.subscriber_services = []
 
     def test_missing_onu(self):
+        self.event_step.max_onu_retry = 0
         with patch.object(ONUDevice.objects, "get_items") as onu_device_mock:
             onu_device_mock.side_effect = IndexError("No ONU")
 
         with self.assertRaises(Exception) as e:
             self.event_step.process_event(self.event)
 
-        self.assertEqual(e.exception.message, "No ONUDevice with serial_number %s is present in XOS" % self.onu.serial_number)
+        self.assertEqual(e.exception.message, "onu.events: No ONUDevice with serial_number %s is present in XOS" % self.onu.serial_number)
 
     def test_do_nothing(self):
         with patch.object(ONUDevice.objects, "get_items") as onu_device_mock , \
@@ -116,7 +117,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
             self.event_step.process_event(self.event)
 
-            logInfo.assert_called_with("Not processing events as no OSS service is present (is it a provider of vOLT?")
+            logInfo.assert_called_with("onu.events: Not processing events as no OSS service is present (is it a provider of vOLT?")
 
     def test_call_oss(self):
         self.service.subscriber_services = [self.oss]

@@ -15,6 +15,7 @@
 
 
 import json
+import time
 import os
 import sys
 from synchronizers.new_base.eventstep import EventStep
@@ -26,22 +27,29 @@ class ONUEventStep(EventStep):
     topics = ["onu.events"]
     technology = "kafka"
 
+    max_onu_retry = 50
+
     def __init__(self, *args, **kwargs):
         super(ONUEventStep, self).__init__(*args, **kwargs)
 
-    def get_oss_service(self, onu_serial_number):
+    def get_oss_service(self, onu_serial_number, retry=0):
         try:
             onu = ONUDevice.objects.get(serial_number=onu_serial_number)
         except IndexError as e:
-            # TODO create ONU if it does not exists
-            raise Exception("No ONUDevice with serial_number %s is present in XOS" % onu_serial_number)
+            self.log.info("onu.events: get_oss_service", retry=retry, max_onu_retry=self.max_onu_retry)
+            if retry < self.max_onu_retry:
+                self.log.info("onu.events: No ONUDevice with serial_number %s is present in XOS, keep trying" % onu_serial_number)
+                time.sleep(10)
+                return self.get_oss_service(onu_serial_number, retry + 1)
+            else:
+                raise Exception("onu.events: No ONUDevice with serial_number %s is present in XOS" % onu_serial_number)
 
         volt_service = onu.pon_port.olt_device.volt_service
         service = Service.objects.get(id=volt_service.id)
         osses = [s for s in service.subscriber_services if s.kind.lower() == "oss"]
 
         if len(osses) > 1:
-            self.log.warn("More than one OSS found for %s" % volt_service.name)
+            self.log.warn("onu.events: More than one OSS found for %s" % volt_service.name)
         try:
             return osses[0].leaf_model
         except IndexError as e:
@@ -51,12 +59,13 @@ class ONUEventStep(EventStep):
         oss = self.get_oss_service(event["serial_number"])
 
         if not oss:
-            self.log.info("Not processing events as no OSS service is present (is it a provider of vOLT?")
+            self.log.info("onu.events: Not processing events as no OSS service is present (is it a provider of vOLT?")
         else:
             try:
+                self.log.info("onu.events: Calling OSS for ONUDevice with serial_number %s" % event["serial_number"])
                 oss.validate_onu(event)
             except Exception, e:
-                self.log.exception("Failing to validate ONU in OSS Service %s" % oss.name)
+                self.log.exception("onu.events: Failing to validate ONU in OSS Service %s" % oss.name)
                 raise e
 
     def process_event(self, event):
