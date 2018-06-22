@@ -24,6 +24,6 @@ event = json.dumps({
     'uni_port_id': 16,
     'of_dpid': 'of:109299321'
 })
-producer = KafkaProducer(bootstrap_servers="cord-kafka-kafka")
+producer = KafkaProducer(bootstrap_servers="cord-kafka")
 producer.send("onu.events", event)
 producer.flush()
