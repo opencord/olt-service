@@ -155,5 +155,18 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
                 self.assertTrue(m.called)
                 self.assertEqual(e.exception.message, "Failed to add subscriber in onos voltha: Mock Error")
 
+    @requests_mock.Mocker()
+    def test_delete(self, m):
+        m.delete("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id", status_code=204)
+
+        self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
+
+        with patch.object(VOLTService.objects, "get") as olt_service_mock:
+            olt_service_mock.return_value = self.volt_service
+
+            self.sync_step().delete_record(self.o)
+            self.assertTrue(m.called)
+            self.assertEqual(m.call_count, 1)
+
 if __name__ == "__main__":
     unittest.main()

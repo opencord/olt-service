@@ -67,4 +67,25 @@ class SyncVOLTServiceInstance(SyncStep):
         if request.status_code != 200:
             raise Exception("Failed to add subscriber in onos-voltha: %s" % request.text)
 
-        log.info("onos voltha response", response=request.text)
+        log.info("Added Subscriber in onos voltha", response=request.text)
+    
+    def delete_record(self, o):
+
+        log.info("Removing OLTServiceInstance", object=str(o), **o.tologdict())
+
+        volt_service = VOLTService.objects.get(id=o.owner_id)
+        onos_voltha = Helpers.get_onos_voltha_info(volt_service)
+        onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
+
+        olt_device = o.onu_device.pon_port.olt_device
+        # NOTE each ONU has only one UNI port!
+        uni_port_id = o.onu_device.uni_ports.first().port_no
+
+        full_url = "%s:%d/onos/olt/oltapp/%s/%s" % (onos_voltha['url'], onos_voltha['port'], olt_device.dp_id, uni_port_id)
+
+        request = requests.delete(full_url, auth=onos_voltha_basic_auth)
+
+        if request.status_code != 204:
+            raise Exception("Failed to remove subscriber from onos-voltha: %s" % request.text)
+
+        log.info("Removed Subscriber from onos voltha", response=request.text)

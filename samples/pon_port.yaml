@@ -27,9 +27,7 @@ topology_template:
     device#olt:
       type: tosca.nodes.OLTDevice
       properties:
-        device_type: simulated_olt
-        host: 172.17.0.1
-        port: 50060
+        name: test_olt
         must-exist: true
 
     pon_port:
