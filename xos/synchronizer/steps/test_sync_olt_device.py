@@ -46,7 +46,7 @@ def match_onos_req(req):
     if not request['of:0000000ce2314000']:
         return False
     else:
-        if not request['of:0000000ce2314000']['basic']['driver'] == 'pmc-olt':
+        if not request['of:0000000ce2314000']['basic']['driver'] == 'voltha':
             return False
         if not request['of:0000000ce2314000']['accessDevice']['vlan'] == "s_tag" or not request['of:0000000ce2314000']['accessDevice']['uplink'] == "129":
             return False
@@ -104,7 +104,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.host = "172.17.0.1"
         o.port = "50060"
         o.uplink = "129"
-        o.driver = "pmc-olt"
+        o.driver = "voltha"
 
         # feedback state
         o.device_id = None
