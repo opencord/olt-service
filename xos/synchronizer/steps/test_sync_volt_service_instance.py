@@ -58,7 +58,6 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
-        from synchronizers.new_base.syncstep import DeferredException
         from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
         # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
 
@@ -68,6 +67,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
                                                          get_models_fn("vsg", "vsg.xproto"),
                                                          get_models_fn("../profiles/rcord", "rcord.xproto")])
         import synchronizers.new_base.modelaccessor
+        from synchronizers.new_base.syncstep import DeferredException
         from sync_volt_service_instance import SyncVOLTServiceInstance, model_accessor
 
         # import all class names to globals
