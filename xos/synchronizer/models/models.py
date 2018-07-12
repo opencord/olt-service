@@ -83,6 +83,10 @@ class OLTDevice(OLTDevice_decl):
 
         super(OLTDevice, self).delete(*args, **kwargs)
 
+class PortBase(PortBase_decl):
+    class Meta:
+        proxy = True
+
 class PONPort(PONPort_decl):
     class Meta:
         proxy = True
