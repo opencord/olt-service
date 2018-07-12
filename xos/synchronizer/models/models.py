@@ -19,6 +19,7 @@ from xos.exceptions import XOSValidationError
 from models_decl import VOLTService_decl
 from models_decl import VOLTServiceInstance_decl
 from models_decl import OLTDevice_decl
+from models_decl import PortBase_decl
 from models_decl import PONPort_decl
 from models_decl import NNIPort_decl
 from models_decl import ONUDevice_decl
@@ -82,6 +83,10 @@ class OLTDevice(OLTDevice_decl):
                 raise XOSValidationError('OLT "%s" can\'t be deleted as it has subscribers associated with its ONUs' % item)
 
         super(OLTDevice, self).delete(*args, **kwargs)
+
+class PortBase(PortBase_decl):
+    class Meta:
+        proxy = True
 
 class PONPort(PONPort_decl):
     class Meta:
