@@ -1,3 +1,6 @@
 .idea/
 *.pyc
 .DS_Store
+
+xos/.coverage
+xos/htmlcov

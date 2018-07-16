@@ -148,16 +148,44 @@ class ONUDevicePullStep(PullStep):
         self.create_or_update_uni_port(uni_ports, onu)
         self.create_or_update_pon_onu_port(pon_onu_ports, onu)
 
+    def get_onu_port_id(self, port, onu):
+        # find the correct port id as represented in the logical_device
+        logical_device_id = onu.pon_port.olt_device.of_id
+
+        voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
+        voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
+
+        try:
+            r = requests.get("%s:%s/api/v1/logical_devices/%s/ports" % (voltha_url, voltha_port, logical_device_id))
+
+            if r.status_code != 200:
+                log.info("It was not possible to fetch ports from VOLTHA for logical_device %s" % logical_device_id)
+
+            logical_ports = r.json()['items']
+            log.info("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
+
+            ports = [p['id'] for p in logical_ports if p['device_id'] == onu.device_id]
+            # log.info("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)
+            return int(ports[0])
+
+        except ConnectionError, e:
+            log.warn("It was not possible to connect to VOLTHA", reason=e)
+            return
+        except InvalidURL, e:
+            log.warn("VOLTHA url is invalid, is it configured in the VOLTService?", reason=e)
+            return
+
     def create_or_update_uni_port(self, uni_ports, onu):
         update_ports = []
 
         for port in uni_ports:
+            port_no = self.get_onu_port_id(port, onu)
             try:
-                model = UNIPort.objects.filter(port_no=port["port_no"], onu_device_id=onu.id)[0]
-                log.debug("UNIPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
+                model = UNIPort.objects.filter(port_no=port_no, onu_device_id=onu.id)[0]
+                log.debug("UNIPort already exists, updating it", port_no=port_no, onu_device_id=onu.id)
             except IndexError:
                 model = UNIPort()
-                model.port_no = port["port_no"]
+                model.port_no = port_no
                 model.onu_device_id = onu.id
                 model.name = port["label"]
                 log.debug("UNIPort is new, creating it", port_no=port["port_no"], onu_device_id=onu.id)
