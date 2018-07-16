@@ -20,6 +20,7 @@ imports:
   - custom_types/onudevice.yaml
   - custom_types/ponport.yaml
   - custom_types/voltservice.yaml
+  - custom_types/uniport.yaml
 description: Create a simulated OLT Device in VOLTHA
 topology_template:
   node_templates:
@@ -41,7 +42,7 @@ topology_template:
             node: device#olt
             relationship: tosca.relationships.BelongsToOne
 
-    onu:
+    device#onu:
       type: tosca.nodes.ONUDevice
       properties:
         serial_number: BRCM1234
@@ -49,4 +50,14 @@ topology_template:
       requirements:
         - pon_port:
             node: pon_port
+            relationship: tosca.relationships.BelongsToOne
+    
+    uni_port:
+      type: tosca.nodes.UNIPort
+      properties:
+        name: test_uni_port_1
+        port_no: 2
+      requirements:
+        - onu_device:
+            node: device#onu
             relationship: tosca.relationships.BelongsToOne
