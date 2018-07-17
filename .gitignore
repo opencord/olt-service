@@ -2,5 +2,8 @@
 *.pyc
 .DS_Store
 
-xos/.coverage
-xos/htmlcov
+.coverage
+htmlcov
+coverage.xml
+nose2-junit.xml
+
