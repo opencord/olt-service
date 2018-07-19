@@ -164,7 +164,7 @@ class ONUDevicePullStep(PullStep):
             logical_ports = r.json()['items']
             log.info("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
 
-            ports = [p['id'] for p in logical_ports if p['device_id'] == onu.device_id]
+            ports = [p['ofp_port']['port_no'] for p in logical_ports if p['device_id'] == onu.device_id]
             # log.info("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)
             return int(ports[0])
 
@@ -217,5 +217,3 @@ class ONUDevicePullStep(PullStep):
             model.save()
             update_ports.append(model)
         return update_ports
-
-
