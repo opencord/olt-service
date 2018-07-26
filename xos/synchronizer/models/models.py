@@ -92,6 +92,8 @@ class PONPort(PONPort_decl):
     class Meta:
         proxy = True
 
+    # TODO remove s_tag, it has been moved to the subscriber
+
     def generate_tag(self):
         # NOTE this method will loop if available c_tags are ended
         tag = random.randint(16, 4096)
