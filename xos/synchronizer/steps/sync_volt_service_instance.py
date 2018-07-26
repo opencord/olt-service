@@ -40,6 +40,7 @@ class SyncVOLTServiceInstance(SyncStep):
         log.info("Synching OLTServiceInstance", object=str(o), **o.tologdict())
 
         c_tag = si.get_westbound_service_instance_properties("c_tag")
+        s_tag = si.get_westbound_service_instance_properties("s_tag")
 
         olt_device = o.onu_device.pon_port.olt_device
 
@@ -51,6 +52,7 @@ class SyncVOLTServiceInstance(SyncStep):
 
         log.debug("Adding subscriber with info",
                  c_tag = c_tag,
+                 s_tag = s_tag,
                  uni_port_id = uni_port_id,
                  dp_id = olt_device.dp_id)
 
@@ -58,11 +60,18 @@ class SyncVOLTServiceInstance(SyncStep):
         onos_voltha = Helpers.get_onos_voltha_info(volt_service)
         onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
-        full_url = "%s:%d/onos/olt/oltapp/%s/%s/%s" % (onos_voltha['url'], onos_voltha['port'], olt_device.dp_id, uni_port_id, c_tag)
+        full_url = "%s:%d/onos/olt/oltapp/subscribers" % (onos_voltha['url'], onos_voltha['port'])
 
-        log.info("Sending request to onos-voltha", url=full_url)
+        data = {
+            "deviceId" : olt_device.dp_id,
+            "port" : uni_port_id,
+            "sVlan" : s_tag,
+            "cVlan" : c_tag
+        }
 
-        request = requests.post(full_url, auth=onos_voltha_basic_auth)
+        log.info("Sending request to onos-voltha", url=full_url, data=data)
+
+        request = requests.post(full_url, auth=onos_voltha_basic_auth, json=data)
 
         if request.status_code != 200:
             raise Exception("Failed to add subscriber in onos-voltha: %s" % request.text)

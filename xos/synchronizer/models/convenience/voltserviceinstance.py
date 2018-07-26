@@ -70,17 +70,17 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
         onu = self.stub.ONUDevice.objects.get(serial_number=onu_sn)
         return onu.pon_port
 
-    @property
-    def s_tag(self):
-        try:
-            pon_port = self.get_pon_port_by_subscriber()
+    # @property
+    # def s_tag(self):
+    #     try:
+    #         pon_port = self.get_pon_port_by_subscriber()
 
-            if pon_port:
-                return pon_port.s_tag
-            return None
-        except Exception, e:
-            log.exception('Error while reading s_tag: %s' % e.message)
-            return None
+    #         if pon_port:
+    #             return pon_port.s_tag
+    #         return None
+    #     except Exception, e:
+    #         log.exception('Error while reading s_tag: %s' % e.message)
+    #         return None
 
     @property
     def switch_datapath_id(self):
