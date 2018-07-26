@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "8bc2dff9_9268d841",
+        "filename": "xos/synchronizer/steps/sync_volt_service_instance.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2018-07-26T21:25:39Z",
+      "side": 1,
+      "message": "oltapp/subscribers",
+      "revId": "b024e569e959d32f48b5001d274ffc2500d11bcd",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "15d398be_71794820",
         "filename": "xos/synchronizer/steps/sync_volt_service_instance.py",
         "patchSetId": 2
