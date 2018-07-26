@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import unittest
+import functools
 from mock import patch, call, Mock, PropertyMock
 import requests_mock
 
@@ -42,6 +43,12 @@ def get_models_fn(service_name, xproto_name):
 
 def mock_get_westbound_service_instance_properties(prop):
     return prop
+
+def match_json(desired, req):
+    if desired!=req.json():
+        raise Exception("Got request %s, but body is not matching" % req.url)
+        return False
+    return True
 
 class TestSyncVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
@@ -96,6 +103,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
         # create a mock service instance
         o = Mock()
+        o.policy_code = 1
         o.id = 1
         o.owner_id = "volt_service"
         o.onu_device = onu_device
@@ -127,9 +135,17 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
     @requests_mock.Mocker()
     def test_do_sync(self, m):
-        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=200, json={})
 
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
+        
+        expected_conf = {
+            "deviceId" : "of:dp_id",
+            "port" : "uni_port_id",
+            "sVlan" : "s_tag",
+            "cVlan" : "c_tag"
+        }
+
+        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/subscribers", status_code=200, json={}, additional_matcher=functools.partial(match_json, expected_conf))
 
         with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
                 patch.object(VOLTService.objects, "get") as olt_service_mock:
@@ -141,7 +157,15 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
     @requests_mock.Mocker()
     def test_do_sync_fail(self, m):
-        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id/c_tag", status_code=500, text="Mock Error")
+
+        expected_conf = {
+            "deviceId" : "of:dp_id",
+            "port" : "uni_port_id",
+            "sVlan" : "s_tag",
+            "cVlan" : "c_tag"
+        }
+
+        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/subscribers", status_code=500, text="Mock Error", additional_matcher=functools.partial(match_json, expected_conf))
 
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
 

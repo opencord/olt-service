@@ -52,11 +52,10 @@ message PortBase (XOSBase){
 }
 
 message PONPort (PortBase){
-    option verbose_name = "OLT PON Port";
-    option description="OLT Side PON Port";
+    option verbose_name = "PON Port";
+    option description="PON Port";
 
     required manytoone olt_device->OLTDevice:pon_ports = 1 [db_index = True, null = False, blank = False];
-    required int32 s_tag = 2 [help_text = "S Tag", null = False, db_index = False, blank = False];
 }
 
 message NNIPort (PortBase) {
@@ -80,8 +79,8 @@ message ONUDevice (XOSBase){
 }
 
 message PONONUPort (PortBase) {
-    option verbose_name = "ONU PON Port";
-    option description="ONU Side PON Port";
+    option verbose_name = "ANI Port";
+    option description="ANI Port";
     required manytoone onu_device->ONUDevice:pononu_ports = 1 [db_index = True, null = False, blank = False];
 }
 

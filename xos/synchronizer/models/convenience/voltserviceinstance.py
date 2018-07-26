@@ -21,45 +21,6 @@ import logging as log
 
 class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
 
-    @property
-    def vsg(self):
-        log.warning('VOLTServiceInstance.vsg is DEPRECATED, use get_westbound_service_instance_properties instead')
-        links = self.stub.ServiceInstanceLink.objects.filter(subscriber_service_instance_id = self.id)
-        for link in links:
-            # cast from ServiceInstance to VSGTenant
-            vsgs = self.stub.VSGServiceInstance.objects.filter(id = link.provider_service_instance.id)
-            if vsgs:
-                return vsgs[0]
-        return None
-
-    # DEPRECATED
-    @property
-    def vcpe(self):
-        log.warning('VOLTServiceInstance.vcpe is DEPRECATED, use VOLTServiceInstance.vsg instead')
-        return self.vsg
-
-    @property
-    def subscriber(self):
-        log.warning(
-            'VOLTServiceInstance.subscriber is DEPRECATED, use get_westbound_service_instance_properties instead')
-        # NOTE this assume that each VOLT has just 1 subscriber, is that right?
-        try:
-            links = self.stub.ServiceInstanceLink.objects.filter(provider_service_instance_id = self.id)
-            for link in links:
-                subs = self.stub.ServiceInstance.objects.filter(id=link.subscriber_service_instance_id)
-                if subs:
-                    return subs[0].leaf_model
-            return None
-        except Exception, e:
-            log.warning('Error while locating subscriber for vOLTServiceInstance with id %s: %s' % (self.id, e.message))
-            return None
-
-    @property
-    def c_tag(self):
-        log.warning(
-            'VOLTServiceInstance.c_tag is DEPRECATED, use get_westbound_service_instance_properties instead')
-        return self.subscriber.c_tag
-
     def get_olt_device_by_subscriber(self):
         pon_port = self.get_pon_port_by_subscriber()
         return pon_port.olt_device
@@ -69,18 +30,6 @@ class ORMWrapperVOLTServiceInstance(ORMWrapperServiceInstance):
         onu_sn = si.get_westbound_service_instance_properties("onu_device")
         onu = self.stub.ONUDevice.objects.get(serial_number=onu_sn)
         return onu.pon_port
-
-    @property
-    def s_tag(self):
-        try:
-            pon_port = self.get_pon_port_by_subscriber()
-
-            if pon_port:
-                return pon_port.s_tag
-            return None
-        except Exception, e:
-            log.exception('Error while reading s_tag: %s' % e.message)
-            return None
 
     @property
     def switch_datapath_id(self):
