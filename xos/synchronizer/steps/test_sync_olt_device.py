@@ -48,7 +48,7 @@ def match_onos_req(req):
     else:
         if not request['of:0000000ce2314000']['basic']['driver'] == 'voltha':
             return False
-        if not request['of:0000000ce2314000']['accessDevice']['vlan'] == "s_tag" or not request['of:0000000ce2314000']['accessDevice']['uplink'] == "129":
+        if not request['of:0000000ce2314000']['accessDevice']['vlan'] == 1 or not request['of:0000000ce2314000']['accessDevice']['uplink'] == "129":
             return False
     return True
 
@@ -87,7 +87,6 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         pon_port = Mock()
         pon_port.port_id = "00ff00"
-        pon_port.s_tag = "s_tag"
 
         # Create a mock OLTDevice
         o = Mock()
@@ -309,17 +308,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.sync_step().delete_record(self.o)
 
         # We don't need to assert here if there are no exceptions happening
-
-    def test_deferred_for_port(self):
-        self.o.pon_ports.all.side_effect = Exception
-        with self.assertRaises(DeferredException) as e:
-            self.sync_step().configure_onos(self.o)
-        self.assertEqual(e.exception.message, "Waiting for pon_ports to come up")
-
-        self.o.pon_ports.all.return_value = []
-        with self.assertRaises(DeferredException) as e:
-            self.sync_step().configure_onos(self.o)
-        self.assertEqual(e.exception.message, "Waiting for pon_ports to come up")
 
 if __name__ == "__main__":
     unittest.main()

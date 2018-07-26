@@ -131,13 +131,6 @@ class SyncOLTDevice(SyncStep):
         onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
         onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
-        try:
-            # NOTE For now, we assume that each OLT has only one pon port
-            vlan = model.pon_ports.all()[0].s_tag
-        except Exception as e:
-            raise DeferredException("Waiting for pon_ports to come up")
-
-
         # Add device info to onos-voltha
         data = {
           "devices": {
@@ -147,7 +140,7 @@ class SyncOLTDevice(SyncStep):
               },
               "accessDevice": {
                 "uplink": model.uplink,
-                "vlan": vlan
+                "vlan": 1
               }
             }
           }
