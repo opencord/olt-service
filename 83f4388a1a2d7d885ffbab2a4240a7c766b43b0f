@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "441c746f_971b1f8e",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 6
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2018-07-30T20:40:23Z",
+      "side": 1,
+      "message": "Should we change the model name too? or is that too disruptive right now?",
+      "range": {
+        "startLine": 81,
+        "startChar": 8,
+        "endLine": 81,
+        "endChar": 18
+      },
+      "revId": "83f4388a1a2d7d885ffbab2a4240a7c766b43b0f",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3bfba862_fa934abc",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 6
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2018-07-30T20:40:23Z",
+      "side": 1,
+      "message": "ANI port",
+      "range": {
+        "startLine": 82,
+        "startChar": 27,
+        "endLine": 82,
+        "endChar": 30
+      },
+      "revId": "83f4388a1a2d7d885ffbab2a4240a7c766b43b0f",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
