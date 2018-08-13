@@ -26,6 +26,5 @@ topology_template:
       properties:
         name: My House
         c_tag: 111
-        onu_device: 691d51a676f348319ca91972bc2bddcf
-        mac_address: 00:AA:00:00:00:01
-        ip_address: 10.8.2.1
+        s_tag: 222 
+        onu_device: BRCM1234 
