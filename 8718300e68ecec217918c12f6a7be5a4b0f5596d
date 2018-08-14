@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "373c2305_711c8683",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1000005
+      },
+      "writtenOn": "2018-08-14T17:38:09Z",
+      "side": 1,
+      "message": "what is the difference between this dp_id and the of_id above?",
+      "range": {
+        "startLine": 34,
+        "startChar": 20,
+        "endLine": 34,
+        "endChar": 25
+      },
+      "revId": "8718300e68ecec217918c12f6a7be5a4b0f5596d",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
