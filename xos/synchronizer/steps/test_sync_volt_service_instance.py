@@ -41,15 +41,6 @@ def get_models_fn(service_name, xproto_name):
     raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 # END generate model from xproto
 
-def mock_get_westbound_service_instance_properties(prop):
-    return prop
-
-def match_json(desired, req):
-    if desired!=req.json():
-        raise Exception("Got request %s, but body is not matching" % req.url)
-        return False
-    return True
-
 class TestSyncVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
         global DeferredException
@@ -89,9 +80,6 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         volt_service.onos_voltha_user = "onos_voltha_user"
         volt_service.onos_voltha_pass = "onos_voltha_pass"
 
-        si = Mock()
-        si.get_westbound_service_instance_properties = mock_get_westbound_service_instance_properties
-
         uni_port = Mock()
         uni_port.port_no = "uni_port_id"
 
@@ -110,7 +98,6 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         o.tologdict.return_value = {}
 
         self.o = o
-        self.si = si
         self.onu_device = onu_device
         self.volt_service = volt_service
 
@@ -122,9 +109,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
     def test_do_not_sync(self, m):
         self.onu_device.pon_port.olt_device.dp_id = None
 
-        with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(VOLTService.objects, "get") as olt_service_mock:
-            service_instance_mock.return_value = self.si
+        with patch.object(VOLTService.objects, "get") as olt_service_mock:
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(DeferredException) as e:
@@ -137,19 +122,10 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
     def test_do_sync(self, m):
 
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
-        
-        expected_conf = {
-            "deviceId" : "of:dp_id",
-            "port" : "uni_port_id",
-            "sVlan" : "s_tag",
-            "cVlan" : "c_tag"
-        }
 
-        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/subscribers", status_code=200, json={}, additional_matcher=functools.partial(match_json, expected_conf))
+        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id", status_code=200, json={})
 
-        with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(VOLTService.objects, "get") as olt_service_mock:
-            service_instance_mock.return_value = self.si
+        with patch.object(VOLTService.objects, "get") as olt_service_mock:
             olt_service_mock.return_value = self.volt_service
 
             self.sync_step().sync_record(self.o)
@@ -158,20 +134,11 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
     @requests_mock.Mocker()
     def test_do_sync_fail(self, m):
 
-        expected_conf = {
-            "deviceId" : "of:dp_id",
-            "port" : "uni_port_id",
-            "sVlan" : "s_tag",
-            "cVlan" : "c_tag"
-        }
-
-        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/subscribers", status_code=500, text="Mock Error", additional_matcher=functools.partial(match_json, expected_conf))
+        m.post("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id", status_code=500, text="Mock Error")
 
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
 
-        with patch.object(ServiceInstance.objects, "get") as service_instance_mock, \
-                patch.object(VOLTService.objects, "get") as olt_service_mock:
-            service_instance_mock.return_value = self.si
+        with patch.object(VOLTService.objects, "get") as olt_service_mock:
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(Exception) as e:
