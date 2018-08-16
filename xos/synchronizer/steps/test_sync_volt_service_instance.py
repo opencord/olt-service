@@ -130,6 +130,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
             self.sync_step().sync_record(self.o)
             self.assertTrue(m.called)
+            self.assertEqual(self.o.backend_handle, "of:dp_id/uni_port_id")
 
     @requests_mock.Mocker()
     def test_do_sync_fail(self, m):
@@ -151,6 +152,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         m.delete("http://onos_voltha_url:4321/onos/olt/oltapp/of:dp_id/uni_port_id", status_code=204)
 
         self.onu_device.pon_port.olt_device.dp_id = "of:dp_id"
+        self.o.backend_handle = "of:dp_id/uni_port_id"
 
         with patch.object(VOLTService.objects, "get") as olt_service_mock:
             olt_service_mock.return_value = self.volt_service
