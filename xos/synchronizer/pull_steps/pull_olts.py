@@ -76,7 +76,6 @@ class OLTDevicePullStep(PullStep):
 
             log.debug("[OLT pull step] received devices", olts=devices)
 
-
             olts_in_voltha = self.create_or_update_olts(devices)
 
             self.delete_olts(olts_in_voltha)
@@ -108,6 +107,7 @@ class OLTDevicePullStep(PullStep):
                     log.info("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
                     # if we are not updating the device we still need to pull ports
                     self.fetch_olt_ports(model)
+                    updated_olts.append(model)
                     continue
 
             except IndexError:
@@ -219,6 +219,7 @@ class OLTDevicePullStep(PullStep):
         return update_ports
 
     def delete_olts(self, olts_in_voltha):
+
         olts_id_in_voltha = [m.device_id for m in olts_in_voltha]
 
         xos_olts = OLTDevice.objects.all()
