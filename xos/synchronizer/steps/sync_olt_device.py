@@ -142,8 +142,10 @@ class SyncOLTDevice(SyncStep):
 
         voltha = Helpers.get_voltha_info(model.volt_service)
 
-        if not model.device_id:
-            log.error("OLTDevice %s has no device_id" % model.name)
+        if not model.device_id or model.backend_code == 2:
+            # NOTE if the device was not synchronized, just remove it from the data model
+            log.warning("OLTDevice %s has no device_id, it was never saved in VOLTHA" % model.name)
+            return
         else:
             # Disable the OLT device
             request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))

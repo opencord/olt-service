@@ -292,7 +292,14 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.sync_step().delete_record(self.o)
 
-        # We don't need to assert here if there are no exceptions happening
+        self.assertEqual(m.call_count, 2)
+
+    @requests_mock.Mocker()
+    def test_delete_unsynced_record(self, m):
+        
+        self.sync_step().delete_record(self.o)
+
+        self.assertEqual(m.call_count, 0)
 
 if __name__ == "__main__":
     unittest.main()
