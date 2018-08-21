@@ -162,7 +162,7 @@ class ONUDevicePullStep(PullStep):
                 log.info("It was not possible to fetch ports from VOLTHA for logical_device %s" % logical_device_id)
 
             logical_ports = r.json()['items']
-            log.info("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
+            log.debug("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
 
             ports = [p['ofp_port']['port_no'] for p in logical_ports if p['device_id'] == onu.device_id]
             # log.info("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)

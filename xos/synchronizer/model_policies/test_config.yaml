@@ -28,3 +28,4 @@ logging:
     'multistructlog':
       handlers:
           - console
+#      level: DEBUG

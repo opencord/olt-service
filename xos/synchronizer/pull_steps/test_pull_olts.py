@@ -215,5 +215,26 @@ class TestSyncOLTDevice(unittest.TestCase):
             mock_pon_save.assert_called()
             mock_nni_save.assert_called()
 
+    @requests_mock.Mocker()
+    def test_pull_deleted_object(self, m):
+        existing_olt = Mock()
+        existing_olt.enacted = 2
+        existing_olt.updated = 1
+        existing_olt.device_id = "test_id"
+
+        m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json={"items": []})
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice.objects, "get_items") as mock_get, \
+                patch.object(existing_olt, "delete") as mock_olt_delete:
+
+            olt_service_mock.return_value = [self.volt_service]
+            mock_get.return_value = [existing_olt]
+
+            self.sync_step().pull_records()
+
+            mock_olt_delete.assert_called()
+
+
 if __name__ == "__main__":
     unittest.main()

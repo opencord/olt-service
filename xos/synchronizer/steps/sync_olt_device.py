@@ -124,41 +124,6 @@ class SyncOLTDevice(SyncStep):
 
         return model
 
-    def configure_onos(self, model):
-
-        log.info("Adding OLT device in onos-voltha", object=str(model), **model.tologdict())
-
-        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
-        onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
-
-        # Add device info to onos-voltha
-        data = {
-          "devices": {
-            model.dp_id: {
-              "basic": {
-                "driver": model.driver
-              },
-              "accessDevice": {
-                "uplink": model.uplink,
-                "vlan": 1
-              }
-            }
-          }
-        }
-
-        url = "%s:%d/onos/v1/network/configuration/" % (onos_voltha['url'], onos_voltha['port'])
-        request = requests.post(url, json=data, auth=onos_voltha_basic_auth)
-
-        if request.status_code != 200:
-            log.error(request.text)
-            raise Exception("Failed to add OLT device %s into ONOS" % model.name)
-        else:
-            try:
-                print request.json()
-            except Exception:
-                print request.text
-        return model
-
     def sync_record(self, model):
         log.info("Synching device", object=str(model), **model.tologdict())
 
@@ -172,19 +137,10 @@ class SyncOLTDevice(SyncStep):
         else:
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
 
-        # TODO configure onos only if we have: Switch datapath id, Switch port, Uplink
-        if model.switch_datapath_id and model.switch_port and model.uplink:
-            log.info("Pushing OLT device to ONOS-VOLTHA", object=str(model), **model.tologdict())
-            self.configure_onos(model)
-        else:
-            raise DeferredException("Not pushing OLTDevice (%s) to ONOS-VOLTHA as parameters are missing" %  model.id)
-
     def delete_record(self, model):
         log.info("Deleting OLT device", object=str(model), **model.tologdict())
 
         voltha = Helpers.get_voltha_info(model.volt_service)
-        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
-        onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
 
         if not model.device_id:
             log.error("OLTDevice %s has no device_id" % model.name)
@@ -202,11 +158,3 @@ class SyncOLTDevice(SyncStep):
             if request.status_code != 200:
                 log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
                 raise Exception("Failed to delete OLT device from VOLTHA")
-
-            # Remove the device from ONOS
-            request = requests.delete("%s:%d/onos/v1/network/configuration/devices/%s" % (
-                onos_voltha['url'], onos_voltha['port'], model.of_id), auth=onos_voltha_basic_auth)
-
-            if request.status_code != 204:
-                log.error("Failed to remove OLT device from ONOS: %s - %s" % (model.name, model.of_id), rest_response=request.text, rest_status_code=request.status_code)
-                raise Exception("Failed to remove OLT device from ONOS")

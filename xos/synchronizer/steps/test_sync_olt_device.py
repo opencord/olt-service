@@ -94,10 +94,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.volt_service.voltha_port = 1234
         o.volt_service.voltha_user = "voltha_user"
         o.volt_service.voltha_pass = "voltha_pass"
-        o.volt_service.onos_voltha_url = "onos_voltha_url"
-        o.volt_service.onos_voltha_port = 4321
-        o.volt_service.onos_voltha_user = "onos_voltha_user"
-        o.volt_service.onos_voltha_pass = "onos_voltha_pass"
 
         o.device_type = "ponsim_olt"
         o.host = "172.17.0.1"
@@ -200,8 +196,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
-        m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
-
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.oper_status, "ACTIVE")
@@ -234,9 +228,6 @@ class TestSyncOLTDevice(unittest.TestCase):
             ]
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
-
-        m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code=200,
-               additional_matcher=match_onos_req, json={})
 
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ENABLED")
@@ -271,9 +262,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
-        m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code=200,
-               additional_matcher=match_onos_req, json={})
-
         with self.assertRaises(Exception) as e:
             self.sync_step().sync_record(self.o)
 
@@ -291,8 +279,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.dp_id = "of:0000000ce2314000"
         self.o.of_id = "0001000ce2314000"
 
-        m.post("http://onos_voltha_url:4321/onos/v1/network/configuration/", status_code = 200, additional_matcher=match_onos_req, json={})
-
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()
 
@@ -301,7 +287,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.of_id = "0001000ce2314000"
         self.o.device_id = "123"
 
-        m.delete("http://onos_voltha_url:4321/onos/v1/network/configuration/devices/0001000ce2314000", status_code=204)
         m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
         m.delete("http://voltha_url:1234/api/v1/devices/123/delete", status_code=200)
 
