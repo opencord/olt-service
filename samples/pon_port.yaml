@@ -36,7 +36,6 @@ topology_template:
       properties:
         name: test_pon_port_1
         port_no: 2
-        s_tag: 222
       requirements:
         - olt_device:
             node: device#olt
