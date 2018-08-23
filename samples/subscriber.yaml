@@ -28,3 +28,5 @@ topology_template:
         c_tag: 111
         s_tag: 222 
         onu_device: BRCM1234 
+        dp_id: of:0000000ce2314000
+        uplink: "129"
