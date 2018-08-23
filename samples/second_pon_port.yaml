@@ -1,0 +1,62 @@
+# Copyright 2017-present Open Networking Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# curl -H "xos-username: admin@opencord.org" -H "xos-password: letmein" -X POST --data-binary @pon_port.yaml http://192.168.99.100:30007/run
+
+tosca_definitions_version: tosca_simple_yaml_1_0
+imports:
+  - custom_types/oltdevice.yaml
+  - custom_types/onudevice.yaml
+  - custom_types/ponport.yaml
+  - custom_types/voltservice.yaml
+  - custom_types/uniport.yaml
+description: Create a simulated OLT Device in VOLTHA
+topology_template:
+  node_templates:
+
+    device#olt:
+      type: tosca.nodes.OLTDevice
+      properties:
+        name: test_olt
+        must-exist: true
+
+    pon_port2:
+      type: tosca.nodes.PONPort
+      properties:
+        name: test_pon_port_2
+        port_no: 3
+      requirements:
+        - olt_device:
+            node: device#olt
+            relationship: tosca.relationships.BelongsToOne
+
+    device#onu2:
+      type: tosca.nodes.ONUDevice
+      properties:
+        serial_number: BRCM1235
+        vendor: Broadcom
+      requirements:
+        - pon_port:
+            node: pon_port2
+            relationship: tosca.relationships.BelongsToOne
+    
+    uni_port2:
+      type: tosca.nodes.UNIPort
+      properties:
+        name: test_uni_port_2
+        port_no: 3
+      requirements:
+        - onu_device:
+            node: device#onu2
+            relationship: tosca.relationships.BelongsToOne

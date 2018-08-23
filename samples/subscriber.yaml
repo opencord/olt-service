@@ -28,3 +28,5 @@ topology_template:
         c_tag: 111
         s_tag: 222 
         onu_device: BRCM1234 
+        ip_address: "1.2.3.4"
+        mac_address: "11:22:33:44:55:66"
