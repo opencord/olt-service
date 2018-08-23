@@ -88,9 +88,14 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
             patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
 
+            subscriber_si = Mock()
+
             link = Mock()
             link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
             link.provider_service.name = "FabricCrossconnect"
+            link.provider_service.validate_links = Mock(return_value=[])
+            link.provider_service.acquire_service_instance = Mock(return_value=subscriber_si)
+            link.provider_service.leaf_model = link.provider_service
 
             si = Mock()
             si.subscribed_links.all.return_value = []
@@ -98,17 +103,30 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
             self.policy.create_eastbound_instance(si)
 
-            # Should have created a vsg
+            link.provider_service.validate_links.assert_called_with(si)
+            link.provider_service.acquire_service_instance.assert_called_with(si)
 
-            self.assertEqual(save_vsg.call_count, 1)
-            vsg = save_vsg.call_args[0][0]
+    def test_create_vsg_already_exists(self):
+        with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
+            patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
 
-            # Should have created a link from OLT to vsg
+            subscriber_si = Mock()
 
-            self.assertEqual(save_link.call_count, 1)
-            link = save_link.call_args[0][0]
-            self.assertEqual(link.provider_service_instance, vsg)
-            self.assertEqual(link.subscriber_service_instance, si)
+            link = Mock()
+            link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
+            link.provider_service.name = "FabricCrossconnect"
+            link.provider_service.validate_links = Mock(return_value=subscriber_si)
+            link.provider_service.acquire_service_instance = Mock()
+            link.provider_service.leaf_model = link.provider_service
+
+            si = Mock()
+            si.subscribed_links.all.return_value = []
+            si.owner.subscribed_dependencies.all.return_value = [link]
+
+            self.policy.create_eastbound_instance(si)
+
+            link.provider_service.validate_links.assert_called_with(si)
+            link.provider_service.acquire_service_instance.assert_not_called()
 
     def test_associate_onu(self):
         with patch.object(ServiceInstance.objects, "get") as get_si, \
