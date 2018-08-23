@@ -39,21 +39,21 @@ class VOLTServiceInstancePolicy(Policy):
         pass
 
     def create_eastbound_instance(self, si):
-
-        chain = si.subscribed_links.all()
-
-        # Already has a chain
-        if len(chain) > 0 and not si.is_new:
-            self.logger.debug("MODEL_POLICY: VOLTServiceInstance %s is already part of a chain" % si.id)
-            return
-
-        # if it does not have a chain,
-        # Find links to the next element in the service chain
-        # and create one
-
         links = si.owner.subscribed_dependencies.all()
-
         for link in links:
+            provider_service_base = link.provider_service
+            provider_service = provider_service_base.leaf_model
+
+            if hasattr(provider_service, "validate_links"):
+                valid_provider_service_instance = provider_service.validate_links(self)
+            else:
+                valid_provider_service_instance = provider_service_base.validate_links(self)
+
+            if not valid_provider_service_instance:
+                if hasattr(provider_service, "acquire_service_instance"):
+                    provider_service.acquire_service_instance(self)
+                else:
+                    provider_service_base.acquire_service_instance(self)
 
             si_class = link.provider_service.get_service_instance_class_name()
             self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating %s" % (si, si_class))
