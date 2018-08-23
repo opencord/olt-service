@@ -21,12 +21,12 @@ description: Create a test subscriber
 topology_template:
   node_templates:
     # A subscriber
-    my_house:
+    my_house2:
       type: tosca.nodes.RCORDSubscriber
       properties:
-        name: My House
-        c_tag: 111
+        name: My Second House
+        c_tag: 112
         s_tag: 222 
         onu_device: BRCM1234 
-        ip_address: "1.2.3.4"
-        mac_address: "11:22:33:44:55:66"
+        ip_address: "1.2.3.5"
+        mac_address: "11:22:33:44:55:77"

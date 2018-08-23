@@ -38,6 +38,8 @@ topology_template:
         switch_datapath_id: of:0000000000000001
         switch_port: "1"
         outer_tpid: "0x8100"
+        dp_id: of:0000000ce2314000
+        uplink: "129"
       requirements:
         - volt_service:
             node: service#volt
