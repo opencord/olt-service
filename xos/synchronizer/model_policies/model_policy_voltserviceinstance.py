@@ -39,34 +39,17 @@ class VOLTServiceInstancePolicy(Policy):
         pass
 
     def create_eastbound_instance(self, si):
-
-        chain = si.subscribed_links.all()
-
-        # Already has a chain
-        if len(chain) > 0 and not si.is_new:
-            self.logger.debug("MODEL_POLICY: VOLTServiceInstance %s is already part of a chain" % si.id)
-            return
-
-        # if it does not have a chain,
-        # Find links to the next element in the service chain
-        # and create one
-
         links = si.owner.subscribed_dependencies.all()
-
         for link in links:
             # SEBA-216 prevent any attempt to create an ONOSServiceInstance
             if "onos" in link.provider_service.name.lower():
                 continue
 
-            si_class = link.provider_service.get_service_instance_class_name()
-            self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating %s" % (si, si_class))
+            provider_service = link.provider_service.leaf_model
 
-            eastbound_si_class = model_accessor.get_model_class(si_class)
-            eastbound_si = eastbound_si_class()
-            eastbound_si.owner_id = link.provider_service_id
-            eastbound_si.save()
-            link = ServiceInstanceLink(provider_service_instance=eastbound_si, subscriber_service_instance=si)
-            link.save()
+            valid_provider_service_instance = provider_service.validate_links(si)
+            if not valid_provider_service_instance:
+                provider_service.acquire_service_instance(si)
 
     def associate_onu_device(self, si):
 
