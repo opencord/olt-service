@@ -54,6 +54,9 @@ class VOLTServiceInstancePolicy(Policy):
         links = si.owner.subscribed_dependencies.all()
 
         for link in links:
+            # SEBA-216 prevent any attempt to create an ONOSServiceInstance
+            if "onos" in link.provider_service.name.lower():
+                continue
 
             si_class = link.provider_service.get_service_instance_class_name()
             self.logger.info("MODEL_POLICY: VOLTServiceInstance %s creating %s" % (si, si_class))

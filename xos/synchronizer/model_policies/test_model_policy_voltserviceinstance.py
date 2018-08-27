@@ -90,6 +90,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
             link = Mock()
             link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
+            link.provider_service.name = "FabricCrossconnect"
 
             si = Mock()
             si.subscribed_links.all.return_value = []
