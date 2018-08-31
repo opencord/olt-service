@@ -39,6 +39,8 @@ message OLTDevice (XOSBase){
     optional string switch_datapath_id = 17 [help_text = "Fabric switch to which the OLT is connected", db_index = False];
     optional string switch_port = 18 [help_text = "Fabric port to which the OLT is connected", db_index = False];
     optional string outer_tpid = 19 [help_text = "Outer VLAN id field EtherType", db_index = False];
+
+    optional string nas_id = 20 [help_text = "Authentication ID (propagated to the free-radius server via sadis)", db_index = False];
 }
 
 message PortBase (XOSBase){
