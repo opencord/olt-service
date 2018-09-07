@@ -34,7 +34,7 @@ class ONUDevicePullStep(PullStep):
         super(ONUDevicePullStep, self).__init__(observed_model=ONUDevice)
 
     def pull_records(self):
-        log.info("pulling ONU devices from VOLTHA")
+        log.debug("pulling ONU devices from VOLTHA")
 
         try:
             self.volt_service = VOLTService.objects.all()[0]
@@ -49,7 +49,7 @@ class ONUDevicePullStep(PullStep):
             r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port))
 
             if r.status_code != 200:
-                log.info("It was not possible to fetch devices from VOLTHA")
+                log.debug("It was not possible to fetch devices from VOLTHA")
 
             # keeping only ONUs
             devices = [d for d in r.json()["items"] if "onu" in d["type"]]
@@ -60,7 +60,7 @@ class ONUDevicePullStep(PullStep):
             # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
 
             if r.status_code != 200:
-                log.info("It was not possible to fetch devices from VOLTHA")
+                log.debug("It was not possible to fetch devices from VOLTHA")
 
             onus_in_voltha = self.create_or_update_onus(devices)
 
@@ -82,7 +82,7 @@ class ONUDevicePullStep(PullStep):
                 log.debug("ONUDevice already exists, updating it", serial_number=onu["serial_number"])
 
                 if model.enacted < model.updated:
-                    log.info("Skipping pull on ONUDevice %s as enacted < updated" % model.serial_number, serial_number=model.serial_number, id=model.id, enacted=model.enacted, updated=model.updated)
+                    log.debug("Skipping pull on ONUDevice %s as enacted < updated" % model.serial_number, serial_number=model.serial_number, id=model.id, enacted=model.enacted, updated=model.updated)
                     # if we are not updating the device we still need to pull ports
                     self.fetch_onu_ports(model)
                     return
@@ -125,7 +125,7 @@ class ONUDevicePullStep(PullStep):
             r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, onu.device_id))
 
             if r.status_code != 200:
-                log.info("It was not possible to fetch ports from VOLTHA for ONUDevice %s" % onu.device_id)
+                log.debug("It was not possible to fetch ports from VOLTHA for ONUDevice %s" % onu.device_id)
 
             ports = r.json()['items']
 
@@ -159,13 +159,13 @@ class ONUDevicePullStep(PullStep):
             r = requests.get("%s:%s/api/v1/logical_devices/%s/ports" % (voltha_url, voltha_port, logical_device_id))
 
             if r.status_code != 200:
-                log.info("It was not possible to fetch ports from VOLTHA for logical_device %s" % logical_device_id)
+                log.debug("It was not possible to fetch ports from VOLTHA for logical_device %s" % logical_device_id)
 
             logical_ports = r.json()['items']
             log.debug("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
 
             ports = [p['ofp_port']['port_no'] for p in logical_ports if p['device_id'] == onu.device_id]
-            # log.info("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)
+            # log.debug("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)
             return int(ports[0])
 
         except ConnectionError, e:

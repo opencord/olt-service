@@ -54,7 +54,7 @@ class OLTDevicePullStep(PullStep):
         raise Exception("Can't find a logical device for device id: %s" % o.device_id)
 
     def pull_records(self):
-        log.info("[OLT pull step] pulling OLT devices from VOLTHA")
+        log.debug("[OLT pull step] pulling OLT devices from VOLTHA")
 
         try:
             self.volt_service = VOLTService.objects.all()[0]
@@ -69,7 +69,7 @@ class OLTDevicePullStep(PullStep):
             r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port))
 
             if r.status_code != 200:
-                log.info("[OLT pull step] It was not possible to fetch devices from VOLTHA")
+                log.debug("[OLT pull step] It was not possible to fetch devices from VOLTHA")
 
             # keeping only OLTs
             devices = [d for d in r.json()["items"] if "olt" in d["type"]]
@@ -104,7 +104,7 @@ class OLTDevicePullStep(PullStep):
                 log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
 
                 if model.enacted < model.updated:
-                    log.info("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
+                    log.debug("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
                     # if we are not updating the device we still need to pull ports
                     self.fetch_olt_ports(model)
                     updated_olts.append(model)
@@ -152,7 +152,7 @@ class OLTDevicePullStep(PullStep):
             r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt.device_id))
 
             if r.status_code != 200:
-                log.info("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
+                log.debug("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
 
             ports = r.json()['items']
 
@@ -230,9 +230,9 @@ class OLTDevicePullStep(PullStep):
 
             if model.enacted < model.updated:
                 # DO NOT delete a model that is being processed
-                log.info("[OLT pull step] device is not present in VOLTHA, skipping deletion as sync is in progress", device_id=o.device_id,
+                log.debug("[OLT pull step] device is not present in VOLTHA, skipping deletion as sync is in progress", device_id=o.device_id,
                          name=o.name)
                 continue
 
-            log.info("[OLT pull step] deleting device as it's not present in VOLTHA", device_id=o.device_id, name=o.name)
+            log.debug("[OLT pull step] deleting device as it's not present in VOLTHA", device_id=o.device_id, name=o.name)
             model.delete()
