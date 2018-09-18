@@ -74,7 +74,7 @@ class OLTDevicePullStep(PullStep):
             # keeping only OLTs
             devices = [d for d in r.json()["items"] if "olt" in d["type"]]
 
-            log.debug("[OLT pull step] received devices", olts=devices)
+            log.trace("[OLT pull step] received devices", olts=devices)
 
             olts_in_voltha = self.create_or_update_olts(devices)
 
@@ -101,7 +101,7 @@ class OLTDevicePullStep(PullStep):
 
                 model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
 
-                log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
+                log.trace("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
 
                 if model.enacted < model.updated:
                     log.debug("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
@@ -152,11 +152,11 @@ class OLTDevicePullStep(PullStep):
             r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt.device_id))
 
             if r.status_code != 200:
-                log.debug("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
+                log.warn("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
 
             ports = r.json()['items']
 
-            log.debug("[OLT pull step] received ports", ports=ports, olt=olt.device_id)
+            log.trace("[OLT pull step] received ports", ports=ports, olt=olt.device_id)
 
             self.create_or_update_ports(ports, olt)
 
@@ -182,7 +182,7 @@ class OLTDevicePullStep(PullStep):
         for port in pon_ports:
             try:
                 model = PONPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
-                log.debug("[OLT pull step] PONPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.trace("[OLT pull step] PONPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
             except IndexError:
                 model = PONPort()
                 model.port_no = port["port_no"]
@@ -203,7 +203,7 @@ class OLTDevicePullStep(PullStep):
             try:
                 model = NNIPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
                 model.xos_managed = False
-                log.debug("[OLT pull step] NNIPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.trace("[OLT pull step] NNIPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
             except IndexError:
                 model = NNIPort()
                 model.port_no = port["port_no"]
