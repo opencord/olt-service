@@ -46,7 +46,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         sys.path.append(xos_dir)
         sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
-        config = os.path.join(test_path, "test_config.yaml")
+        config = os.path.join(test_path, "../test_config.yaml")
         from xosconfig import Config
         Config.clear()
         Config.init(config, 'synchronizer-config-schema.yaml')

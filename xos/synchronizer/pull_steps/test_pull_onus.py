@@ -51,7 +51,7 @@ class TestPullONUDevice(unittest.TestCase):
 
         # Setting up the config module
         from xosconfig import Config
-        config = os.path.join(test_path, "../model_policies/test_config.yaml")
+        config = os.path.join(test_path, "../test_config.yaml")
         Config.clear()
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
