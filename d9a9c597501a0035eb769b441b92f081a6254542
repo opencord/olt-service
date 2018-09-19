@@ -22,6 +22,30 @@
       "revId": "d9a9c597501a0035eb769b441b92f081a6254542",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ee45c6b_f2744495",
+        "filename": "xos/synchronizer/steps/sync_olt_device.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-09-19T16:33:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "06378453_fced610e",
+      "range": {
+        "startLine": 157,
+        "startChar": 78,
+        "endLine": 157,
+        "endChar": 82
+      },
+      "revId": "d9a9c597501a0035eb769b441b92f081a6254542",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
     }
   ]
 }
