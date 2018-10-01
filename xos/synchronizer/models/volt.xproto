@@ -97,5 +97,5 @@ message VOLTServiceInstance (ServiceInstance){
     option verbose_name = "vOLT Service Instance";
 
     optional string description = 1 [max_length = 254, db_index = False];
-    optional manytoone onu_device->ONUDevice:volt_service_instances = 1 [db_index = True];
+    optional manytoone onu_device->ONUDevice:volt_service_instances = 2 [db_index = True];
 }
