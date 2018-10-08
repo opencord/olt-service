@@ -124,6 +124,39 @@ class SyncOLTDevice(SyncStep):
 
         return model
 
+    def configure_onos(self, model):
+
+        log.info("Adding OLT device in onos-voltha", object=str(model), **model.tologdict())
+
+        onos_voltha = Helpers.get_onos_voltha_info(model.volt_service)
+        onos_voltha_basic_auth = HTTPBasicAuth(onos_voltha['user'], onos_voltha['pass'])
+
+        # Add device info to onos-voltha
+        data = {
+            "devices": {
+                model.dp_id: {
+                    "basic": {
+                        "name": model.name
+                    }
+                }
+            }
+        }
+
+        log.info("Calling ONOS", data=data)
+
+        url = "%s:%d/onos/v1/network/configuration/" % (onos_voltha['url'], onos_voltha['port'])
+        request = requests.post(url, json=data, auth=onos_voltha_basic_auth)
+
+        if request.status_code != 200:
+            log.error(request.text)
+            raise Exception("Failed to add OLT device %s into ONOS" % model.name)
+        else:
+            try:
+                print request.json()
+            except Exception:
+                print request.text
+        return model
+
     def sync_record(self, model):
         log.info("Synching device", object=str(model), **model.tologdict())
 
@@ -136,6 +169,8 @@ class SyncOLTDevice(SyncStep):
             raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
         else:
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
+
+        self.configure_onos(model)
 
     def delete_record(self, model):
         log.info("Deleting OLT device", object=str(model), **model.tologdict())

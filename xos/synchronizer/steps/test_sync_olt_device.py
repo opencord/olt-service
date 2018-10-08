@@ -95,11 +95,17 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.volt_service.voltha_user = "voltha_user"
         o.volt_service.voltha_pass = "voltha_pass"
 
+        o.volt_service.onos_voltha_port = 4321
+        o.volt_service.onos_voltha_url = "onos"
+        o.volt_service.onos_voltha_user = "karaf"
+        o.volt_service.onos_voltha_pass = "karaf"
+
         o.device_type = "ponsim_olt"
         o.host = "172.17.0.1"
         o.port = "50060"
         o.uplink = "129"
         o.driver = "voltha"
+        o.name = "Test Device"
 
         # feedback state
         o.device_id = None
@@ -196,6 +202,18 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
+        onos_expected_conf = {
+            "devices": {
+                "of:0000000ce2314000": {
+                    "basic": {
+                        "name": self.o.name
+                    }
+                }
+            }
+        }
+        m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=onos_expected_conf,
+               additional_matcher=functools.partial(match_json, onos_expected_conf))
+
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.oper_status, "ACTIVE")
@@ -216,6 +234,18 @@ class TestSyncOLTDevice(unittest.TestCase):
             "type": self.o.device_type,
             "mac_address": self.o.mac_address
         }
+
+        onos_expected_conf = {
+            "devices": {
+                "of:0000000ce2314000": {
+                    "basic": {
+                        "name": self.o.name
+                    }
+                }
+            }
+        }
+        m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=onos_expected_conf,
+               additional_matcher=functools.partial(match_json, onos_expected_conf))
 
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"},
                additional_matcher=functools.partial(match_json, expected_conf))
@@ -278,6 +308,18 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.oper_status = "ACTIVE"
         self.o.dp_id = "of:0000000ce2314000"
         self.o.of_id = "0001000ce2314000"
+
+        expected_conf = {
+            "devices": {
+                self.o.dp_id: {
+                    "basic": {
+                        "name": self.o.name
+                    }
+                }
+            }
+        }
+        m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=expected_conf,
+               additional_matcher=functools.partial(match_json, expected_conf))
 
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()
