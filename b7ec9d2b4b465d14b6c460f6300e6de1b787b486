@@ -1,0 +1,7 @@
+Code-Review+2: Scott Baker <scottb@onlab.us>
+Verified+1: Matteo Scandolo <teo@opennetworking.org>
+Submitted-by: Matteo Scandolo <teo@opennetworking.org>
+Submitted-at: Fri, 12 Oct 2018 19:07:56 +0000
+Reviewed-on: https://gerrit.opencord.org/11426
+Project: olt-service
+Branch: refs/heads/master
