@@ -27,6 +27,7 @@ message OLTDevice (XOSBase){
     optional int32 port = 5 [help_text = "Device port", db_index = False];
     optional string mac_address = 6 [help_text = "Device mac address", db_index = False];
 
+    optional string serial_number = 9 [help_text = "Serial Number", db_index = False, feedback_state = True];
     optional string device_id = 10 [help_text = "Device ID", db_index = False, feedback_state = True];
     optional string admin_state = 11 [help_text = "admin_state", db_index = False, feedback_state = True];
     optional string oper_status = 12 [help_text = "oper_status", db_index = False, feedback_state = True];

@@ -89,7 +89,8 @@ class TestSyncOLTDevice(unittest.TestCase):
                     "type": "simulated_olt",
                     "host_and_port": "172.17.0.1:50060",
                     "admin_state": "ENABLED",
-                    "oper_status": "ACTIVE"
+                    "oper_status": "ACTIVE",
+                    "serial_number": "serial_number",
                 }
             ]
         }

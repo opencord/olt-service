@@ -129,6 +129,7 @@ class OLTDevicePullStep(PullStep):
             model.device_id = olt["id"]
             model.admin_state = olt["admin_state"]
             model.oper_status = olt["oper_status"]
+            model.serial_number = olt['serial_number']
 
             model.volt_service = self.volt_service
             model.volt_service_id = self.volt_service.id

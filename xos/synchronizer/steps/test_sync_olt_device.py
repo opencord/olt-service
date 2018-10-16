@@ -122,6 +122,8 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.o = o
 
+        self.voltha_devices_response = {"id": "123", "serial_number": "foobar"}
+
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save
@@ -172,7 +174,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         """
         Should print an error if device.enable fails
         """
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"})
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response)
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=500, text="EnableError")
 
         with self.assertRaises(Exception) as e:
@@ -191,7 +193,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             "host_and_port": "%s:%s" % (self.o.host, self.o.port)
         }
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"}, additional_matcher=functools.partial(match_json, expected_conf))
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
         m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED"})
         logical_devices = {
@@ -247,7 +249,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=onos_expected_conf,
                additional_matcher=functools.partial(match_json, onos_expected_conf))
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"},
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response,
                additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
         m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED"})
@@ -276,7 +278,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             "host_and_port": "%s:%s" % (self.o.host, self.o.port)
         }
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": "123"},
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response,
                additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
         m.get("http://voltha_url:1234/api/v1/devices/123", [

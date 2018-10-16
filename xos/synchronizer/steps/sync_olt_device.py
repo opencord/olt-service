@@ -84,7 +84,9 @@ class SyncOLTDevice(SyncStep):
             raise Exception(
                 'VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA')
         else:
-            model.device_id = res['id'];
+            model.device_id = res['id']
+            model.serial_number = res['serial_number']
+
 
         return model
 
