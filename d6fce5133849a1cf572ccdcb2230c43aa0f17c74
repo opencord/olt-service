@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a7ef8b86_adb6ca24",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1000068
+      },
+      "writtenOn": "2018-10-16T21:03:50Z",
+      "side": 1,
+      "message": "Not an issue for now but I don\u0027t think this is \"openflow id\" - it is the internal voltha id, and quite frankly don\u0027t know why XOS needs it",
+      "revId": "d6fce5133849a1cf572ccdcb2230c43aa0f17c74",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
