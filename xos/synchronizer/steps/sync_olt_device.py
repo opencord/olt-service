@@ -116,6 +116,7 @@ class SyncOLTDevice(SyncStep):
 
         model.admin_state = request['admin_state']
         model.oper_status = request['oper_status']
+        model.serial_number = request['serial_number']
 
         if model.oper_status != "ACTIVE":
             raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)

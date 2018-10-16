@@ -195,7 +195,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED"})
+        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED", "serial_number": "foobar"})
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
@@ -219,6 +219,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.sync_step().sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.oper_status, "ACTIVE")
+        self.assertEqual(self.o.serial_number, "foobar")
         self.assertEqual(self.o.of_id, "0001000ce2314000")
         self.assertEqual(self.o.save.call_count, 2) # we're updating the backend_status when activating and then adding logical device ids
 
@@ -252,7 +253,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response,
                additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED"})
+        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED", "serial_number": "foobar"})
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
@@ -282,8 +283,8 @@ class TestSyncOLTDevice(unittest.TestCase):
                additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
         m.get("http://voltha_url:1234/api/v1/devices/123", [
-                  {"json": {"oper_status": "ACTIVATING", "admin_state": "ENABLED"}, "status_code": 200},
-                  {"json": {"oper_status": "ERROR", "admin_state": "FAILED"}, "status_code": 200}
+                  {"json": {"oper_status": "ACTIVATING", "admin_state": "ENABLED", "serial_number": "foobar"}, "status_code": 200},
+                  {"json": {"oper_status": "ERROR", "admin_state": "FAILED", "serial_number": "foobar"}, "status_code": 200}
               ])
 
         logical_devices = {
