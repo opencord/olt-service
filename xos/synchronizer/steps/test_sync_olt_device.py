@@ -208,7 +208,8 @@ class TestSyncOLTDevice(unittest.TestCase):
             "devices": {
                 "of:0000000ce2314000": {
                     "basic": {
-                        "name": self.o.name
+                        "name": self.o.name,
+                        "driver": "voltha"
                     }
                 }
             }
@@ -242,7 +243,8 @@ class TestSyncOLTDevice(unittest.TestCase):
             "devices": {
                 "of:0000000ce2314000": {
                     "basic": {
-                        "name": self.o.name
+                        "name": self.o.name,
+                        "driver": "voltha"
                     }
                 }
             }
@@ -316,7 +318,8 @@ class TestSyncOLTDevice(unittest.TestCase):
             "devices": {
                 self.o.dp_id: {
                     "basic": {
-                        "name": self.o.name
+                        "name": self.o.name,
+                        "driver": "voltha"
                     }
                 }
             }
