@@ -163,6 +163,7 @@ class ONUDevicePullStep(PullStep):
 
             ports = [p['ofp_port']['port_no'] for p in logical_ports if p['device_id'] == onu.device_id]
             # log.debug("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)
+            # FIXME if this throws an error ONUs from other OTLs are not sync'ed
             return int(ports[0])
 
         except ConnectionError, e:
