@@ -46,7 +46,7 @@ class ONUDevicePullStep(PullStep):
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
-            r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port))
+            r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port), timeout=1)
 
             if r.status_code != 200:
                 log.warn("It was not possible to fetch devices from VOLTHA")
@@ -119,7 +119,7 @@ class ONUDevicePullStep(PullStep):
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
-            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, onu.device_id))
+            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, onu.device_id), timeout=1)
 
             if r.status_code != 200:
                 log.warn("It was not possible to fetch ports from VOLTHA for ONUDevice %s" % onu.device_id)
@@ -153,7 +153,7 @@ class ONUDevicePullStep(PullStep):
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
-            r = requests.get("%s:%s/api/v1/logical_devices/%s/ports" % (voltha_url, voltha_port, logical_device_id))
+            r = requests.get("%s:%s/api/v1/logical_devices/%s/ports" % (voltha_url, voltha_port, logical_device_id), timeout=1)
 
             if r.status_code != 200:
                 log.warn("It was not possible to fetch ports from VOLTHA for logical_device %s" % logical_device_id)

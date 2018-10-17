@@ -38,7 +38,7 @@ class OLTDevicePullStep(PullStep):
         voltha_url = Helpers.get_voltha_info(o.volt_service)['url']
         voltha_port = Helpers.get_voltha_info(o.volt_service)['port']
 
-        r = requests.get("%s:%s/api/v1/logical_devices" % (voltha_url, voltha_port))
+        r = requests.get("%s:%s/api/v1/logical_devices" % (voltha_url, voltha_port), timeout=1)
 
         if r.status_code != 200:
             raise Exception("Failed to retrieve logical devices from VOLTHA: %s" % r.text)
@@ -66,7 +66,7 @@ class OLTDevicePullStep(PullStep):
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
-            r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port))
+            r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port), timeout=1)
 
             if r.status_code != 200:
                 log.debug("[OLT pull step] It was not possible to fetch devices from VOLTHA")
@@ -150,7 +150,7 @@ class OLTDevicePullStep(PullStep):
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
-            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt.device_id))
+            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt.device_id), timeout=1)
 
             if r.status_code != 200:
                 log.warn("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
