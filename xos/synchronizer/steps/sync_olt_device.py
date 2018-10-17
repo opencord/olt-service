@@ -139,7 +139,8 @@ class SyncOLTDevice(SyncStep):
             "devices": {
                 model.dp_id: {
                     "basic": {
-                        "name": model.name
+                        "name": model.name,
+                        "driver": "voltha"
                     }
                 }
             }
