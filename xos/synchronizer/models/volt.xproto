@@ -20,7 +20,7 @@ message OLTDevice (XOSBase){
     option verbose_name = "OLT Device";
     option description="Represents a physical OLT device";
 
-    required manytoone volt_service->VOLTService:volt_devices = 1 [db_index = True];
+    required manytoone volt_service->VOLTService:volt_devices = 1:1001 [db_index = True];
     optional string name = 2 [help_text = "name of device", max_length = 254, db_index = False, unique = True];
     required string device_type = 3 [help_text = "Device Type", default = "openolt", max_length = 254, db_index = False];
     optional string host = 4 [help_text = "Device IP", max_length = 254, db_index = False];
@@ -58,19 +58,19 @@ message PONPort (PortBase){
     option verbose_name = "PON Port";
     option description="PON Port";
 
-    required manytoone olt_device->OLTDevice:pon_ports = 1 [db_index = True];
+    required manytoone olt_device->OLTDevice:pon_ports = 1:1001 [db_index = True];
 }
 
 message NNIPort (PortBase) {
     option verbose_name = "NNI Port";
-    required manytoone olt_device->OLTDevice:nni_ports = 1 [db_index = True];
+    required manytoone olt_device->OLTDevice:nni_ports = 1:1002 [db_index = True];
 }
 
 message ONUDevice (XOSBase){
     option verbose_name = "ONU Device";
     option description = "Represents a physical ONU device";
 
-    required manytoone pon_port->PONPort:onu_devices = 1 [db_index = True];
+    required manytoone pon_port->PONPort:onu_devices = 1:1001 [db_index = True];
     required string serial_number = 2 [max_length = 254, db_index = False, tosca_key=True, unique = True];
     required string vendor = 3 [max_length = 254, db_index = False];
     required string device_type = 4 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, db_index = False];
@@ -84,12 +84,12 @@ message ONUDevice (XOSBase){
 message PONONUPort (PortBase) {
     option verbose_name = "ANI Port";
     option description="ANI Port";
-    required manytoone onu_device->ONUDevice:pononu_ports = 1 [db_index = True];
+    required manytoone onu_device->ONUDevice:pononu_ports = 1:1001 [db_index = True];
 }
 
 message UNIPort (PortBase) {
     option verbose_name = "UNI Port";
-    required manytoone onu_device->ONUDevice:uni_ports = 1 [db_index = True];
+    required manytoone onu_device->ONUDevice:uni_ports = 1:1002 [db_index = True];
 }
 
 message VOLTServiceInstance (ServiceInstance){
@@ -98,5 +98,5 @@ message VOLTServiceInstance (ServiceInstance){
     option verbose_name = "vOLT Service Instance";
 
     optional string description = 1 [max_length = 254, db_index = False];
-    optional manytoone onu_device->ONUDevice:volt_service_instances = 2 [db_index = True];
+    optional manytoone onu_device->ONUDevice:volt_service_instances = 2:1003 [db_index = True];
 }

@@ -16,7 +16,7 @@
 
 # xosproject/volt-synchronizer
 
-FROM xosproject/xos-synchronizer-base:2.1.19
+FROM xosproject/xos-synchronizer-base:2.1.21
 
 COPY xos/synchronizer /opt/xos/synchronizers/volt
 COPY VERSION /opt/xos/synchronizers/volt/
