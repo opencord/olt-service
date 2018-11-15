@@ -185,22 +185,25 @@ class SyncOLTDevice(SyncStep):
             log.warning("OLTDevice %s has no device_id, it was never saved in VOLTHA" % model.name)
             return
         else:
-            # Disable the OLT device
-            request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))
+            try:
+                # Disable the OLT device
+                request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))
 
-            if request.status_code != 200:
-                log.error("Failed to disable OLT device in VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
-                raise Exception("Failed to disable OLT device in VOLTHA")
+                if request.status_code != 200:
+                    log.error("Failed to disable OLT device in VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
+                    raise Exception("Failed to disable OLT device in VOLTHA")
 
-            # NOTE [teo] wait some time after the disable to let VOLTHA doing its things
-            i = 0
-            for i in list(reversed(range(10))):
-                sleep(1)
-                log.info("Deleting the OLT in %s seconds" % i)
+                # NOTE [teo] wait some time after the disable to let VOLTHA doing its things
+                i = 0
+                for i in list(reversed(range(10))):
+                    sleep(1)
+                    log.info("Deleting the OLT in %s seconds" % i)
 
-            # Delete the OLT device
-            request = requests.delete("%s:%d/api/v1/devices/%s/delete" % (voltha['url'], voltha['port'], model.device_id))
+                # Delete the OLT device
+                request = requests.delete("%s:%d/api/v1/devices/%s/delete" % (voltha['url'], voltha['port'], model.device_id))
 
-            if request.status_code != 200:
-                log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
-                raise Exception("Failed to delete OLT device from VOLTHA")
+                if request.status_code != 200:
+                    log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
+                    raise Exception("Failed to delete OLT device from VOLTHA")
+            except requests.ConnectionError:
+                log.warning("ConnectionError when contacting Voltha in OLT delete step", name=model.name, device_id=model.device_id)

@@ -82,6 +82,8 @@ class ONUDevicePullStep(PullStep):
                     log.debug("Skipping pull on ONUDevice %s as enacted < updated" % model.serial_number, serial_number=model.serial_number, id=model.id, enacted=model.enacted, updated=model.updated)
                     # if we are not updating the device we still need to pull ports
                     self.fetch_onu_ports(model)
+                    # TODO: return without a value, whereas bottom of function does return with a value.
+                    # TODO: should this be a `continue` instead of a `return` ?
                     return
 
             except IndexError:
@@ -89,6 +91,18 @@ class ONUDevicePullStep(PullStep):
                 model.serial_number = onu["serial_number"]
 
                 log.debug("ONUDevice is new, creating it", serial_number=onu["serial_number"])
+
+            try:
+                olt = OLTDevice.objects.get(device_id=onu["parent_id"])
+            except IndexError:
+                log.warning("Unable to find olt for ONUDevice", serial_number=onu["serial_number"], olt_device_id=onu["parent_id"])
+                continue
+
+            try:
+                pon_port = PONPort.objects.get(port_no=onu["parent_port_no"], olt_device_id=olt.id)
+            except IndexError:
+                log.warning("Unable to find pon_port for ONUDevice", serial_number=onu["serial_number"], olt_device_id=onu["parent_id"], port_no=onu["parent_port_no"])
+                continue
 
             # Adding feedback state to the device
             model.vendor = onu["vendor"]
@@ -99,9 +113,6 @@ class ONUDevicePullStep(PullStep):
             model.oper_status = onu["oper_status"]
             model.connect_status = onu["connect_status"]
             model.xos_managed = False
-
-            olt = OLTDevice.objects.get(device_id=onu["parent_id"])
-            pon_port = PONPort.objects.get(port_no=onu["parent_port_no"], olt_device_id=olt.id)
 
             model.pon_port = pon_port
             model.pon_port_id = pon_port.id
