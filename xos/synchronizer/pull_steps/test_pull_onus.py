@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import unittest
 from mock import patch, call, Mock, PropertyMock
 import requests_mock
@@ -85,9 +86,17 @@ class TestPullONUDevice(unittest.TestCase):
         self.olt = Mock()
         self.olt.id = 1
 
+        # second mock OLTDevice
+        self.olt2 = Mock()
+        self.olt2.id = 2
+
         # mock pon port
         self.pon_port = Mock()
         self.pon_port.id = 1
+
+        # mock pon port
+        self.pon_port2 = Mock()
+        self.pon_port2.id = 2
 
         # mock voltha responses
         self.devices = {
@@ -107,6 +116,39 @@ class TestPullONUDevice(unittest.TestCase):
                     "parent_port_no": 1
                 }
             ]
+        }
+
+        self.two_devices = {
+            "items": [
+                {
+                    "id": "0001130158f01b2d",
+                    "type": "broadcom_onu",
+                    "vendor": "Broadcom",
+                    "serial_number": "BRCM22222222",
+                    "vendor_id": "BRCM",
+                    "adapter": "broadcom_onu",
+                    "vlan": 0,
+                    "admin_state": "ENABLED",
+                    "oper_status": "ACTIVE",
+                    "connect_status": "REACHABLE",
+                    "parent_id": "00010fc93996afea",
+                    "parent_port_no": 1
+                },
+                {
+                    "id": "0001130158f01b2e",
+                    "type": "broadcom_onu",
+                    "vendor": "Broadcom",
+                    "serial_number": "BRCM22222223",
+                    "vendor_id": "BRCM",
+                    "adapter": "broadcom_onu",
+                    "vlan": 0,
+                    "admin_state": "ENABLED",
+                    "oper_status": "ACTIVE",
+                    "connect_status": "REACHABLE",
+                    "parent_id": "00010fc93996afeb",
+                    "parent_port_no": 1
+                }
+            ],
         }
 
         # TODO add ports
@@ -145,6 +187,88 @@ class TestPullONUDevice(unittest.TestCase):
             self.assertEqual(saved_onu.device_type, "broadcom_onu")
             self.assertEqual(saved_onu.vendor, "Broadcom")
             self.assertEqual(saved_onu.device_id, "0001130158f01b2d")
+
+            self.assertEqual(mock_save.call_count, 1)
+
+    @requests_mock.Mocker()
+    def test_pull_bad_pon(self, m):
+
+        def olt_side_effect(device_id):
+            # fail the first onu device
+            if device_id=="00010fc93996afea":
+                return self.olt
+            else:
+                return self.olt2
+
+        def pon_port_side_effect(mock_pon_port, port_no, olt_device_id):
+            # fail the first onu device
+            if olt_device_id==1:
+                raise IndexError()
+            return self.pon_port2
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice.objects, "get") as mock_olt_device, \
+                patch.object(PONPort.objects, "get") as mock_pon_port, \
+                patch.object(ONUDevice, "save", autospec=True) as mock_save:
+            olt_service_mock.return_value = [self.volt_service]
+            mock_pon_port.side_effect = functools.partial(pon_port_side_effect, self.pon_port)
+            mock_olt_device.side_effect = olt_side_effect
+
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.two_devices)
+            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
+            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2e/ports", status_code=200, json=self.ports)
+
+            self.sync_step().pull_records()
+
+            self.assertEqual(mock_save.call_count, 1)
+            saved_onu = mock_save.call_args[0][0]
+
+            # we should get the second onu in self.two_onus
+
+            self.assertEqual(saved_onu.admin_state, "ENABLED")
+            self.assertEqual(saved_onu.oper_status, "ACTIVE")
+            self.assertEqual(saved_onu.connect_status, "REACHABLE")
+            self.assertEqual(saved_onu.device_type, "broadcom_onu")
+            self.assertEqual(saved_onu.vendor, "Broadcom")
+            self.assertEqual(saved_onu.device_id, "0001130158f01b2e")
+
+            self.assertEqual(mock_save.call_count, 1)
+
+    @requests_mock.Mocker()
+    def test_pull_bad_olt(self, m):
+
+        def olt_side_effect(device_id):
+            # fail the first onu device
+            if device_id=="00010fc93996afea":
+                raise IndexError()
+            else:
+                return self.olt2
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice.objects, "get") as mock_olt_device, \
+                patch.object(PONPort.objects, "get") as mock_pon_port, \
+                patch.object(ONUDevice, "save", autospec=True) as mock_save:
+            olt_service_mock.return_value = [self.volt_service]
+            mock_pon_port.return_value = self.pon_port2
+            mock_olt_device.side_effect = olt_side_effect
+
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.two_devices)
+            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
+            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2e/ports", status_code=200, json=self.ports)
+
+            self.sync_step().pull_records()
+
+            self.assertEqual(mock_save.call_count, 1)
+            saved_onu = mock_save.call_args[0][0]
+
+            # we should get the second onu in self.two_onus
+
+            self.assertEqual(saved_onu.admin_state, "ENABLED")
+            self.assertEqual(saved_onu.oper_status, "ACTIVE")
+            self.assertEqual(saved_onu.connect_status, "REACHABLE")
+            self.assertEqual(saved_onu.device_type, "broadcom_onu")
+            self.assertEqual(saved_onu.vendor, "Broadcom")
+            self.assertEqual(saved_onu.device_id, "0001130158f01b2e")
 
             self.assertEqual(mock_save.call_count, 1)
 
