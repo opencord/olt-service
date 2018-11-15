@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from requests import ConnectionError
 import unittest
 import functools
 from mock import patch, call, Mock, PropertyMock
@@ -338,6 +339,18 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.sync_step().delete_record(self.o)
 
         self.assertEqual(m.call_count, 2)
+
+    @patch('requests.post')
+    def test_delete_record_connectionerror(self, m):
+        self.o.of_id = "0001000ce2314000"
+        self.o.device_id = "123"
+
+        m.side_effect = ConnectionError()
+
+        self.sync_step().delete_record(self.o)
+
+        # No exception thrown, as ConnectionError will be caught
+
 
     @requests_mock.Mocker()
     def test_delete_unsynced_record(self, m):
