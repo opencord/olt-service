@@ -42,17 +42,6 @@ def get_models_fn(service_name, xproto_name):
     raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 # END generate model from xproto
 
-def match_onos_req(req):
-    request = req.json()['devices']
-    if not request['of:0000000ce2314000']:
-        return False
-    else:
-        if not request['of:0000000ce2314000']['basic']['driver'] == 'voltha':
-            return False
-        if not request['of:0000000ce2314000']['accessDevice']['vlan'] == 1 or not request['of:0000000ce2314000']['accessDevice']['uplink'] == "129":
-            return False
-    return True
-
 def match_json(desired, req):
     if desired!=req.json():
         raise Exception("Got request %s, but body is not matching" % req.url)
@@ -104,7 +93,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.device_type = "ponsim_olt"
         o.host = "172.17.0.1"
         o.port = "50060"
-        o.uplink = "129"
         o.driver = "voltha"
         o.name = "Test Device"
 

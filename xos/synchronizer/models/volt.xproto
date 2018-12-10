@@ -34,7 +34,6 @@ message OLTDevice (XOSBase){
     optional string of_id = 13 [help_text = "openflow id", db_index = False, feedback_state = True];
     optional string dp_id = 14 [help_text = "datapath id", db_index = False];
 
-    required string uplink = 15 [help_text = "uplink port", db_index = False];
     required string driver = 16 [default="voltha", help_text = "Olt driver", db_index = False];
 
     optional string switch_datapath_id = 17 [help_text = "Fabric switch to which the OLT is connected", db_index = False];
