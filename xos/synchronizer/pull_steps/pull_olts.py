@@ -93,12 +93,14 @@ class OLTDevicePullStep(PullStep):
         updated_olts = []
 
         for olt in olts:
-            try:
-                if olt["type"] == "simulated_olt":
-                    [host, port] = ["172.17.0.1", "50060"]
-                else:
-                    [host, port] = olt["host_and_port"].split(":")
+            if olt["type"] == "simulated_olt":
+                [host, port] = ["172.17.0.1", "50060"]
+            else:
+                [host, port] = olt["host_and_port"].split(":")
 
+            olt_ports = self.fetch_olt_ports(olt["id"])
+
+            try:
                 model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
 
                 log.trace("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
@@ -106,7 +108,8 @@ class OLTDevicePullStep(PullStep):
                 if model.enacted < model.updated:
                     log.debug("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
                     # if we are not updating the device we still need to pull ports
-                    self.fetch_olt_ports(model)
+                    if olt_ports:
+                        self.create_or_update_ports(olt_ports, model)
                     updated_olts.append(model)
                     continue
 
@@ -122,6 +125,18 @@ class OLTDevicePullStep(PullStep):
                     [host, port] = olt["host_and_port"].split(":")
                     model.host = host
                     model.port = int(port)
+
+                # there's no name in voltha, so make one up based on the id
+                model.name = "OLT-%s" % olt["id"]
+
+                nni_ports = [p for p in olt_ports if "ETHERNET_NNI" in p["type"]]
+                if not nni_ports:
+                    log.warning("[OLT pull step] No NNI ports, so no way to determine uplink. Skipping.", device_type=olt["type"], host=host, port=port)
+                    continue
+
+                # Exctract uplink from the first NNI port. This decision is arbitrary, we will worry about multiple
+                # NNI ports when that situation arises.
+                model.uplink = str(nni_ports[0]["port_no"])
 
                 log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
 
@@ -139,35 +154,44 @@ class OLTDevicePullStep(PullStep):
 
             model.save()
 
-            self.fetch_olt_ports(model)
+            if olt_ports:
+                self.create_or_update_ports(olt_ports, model)
 
             updated_olts.append(model)
 
         return updated_olts
 
-    def fetch_olt_ports(self, olt):
+    def fetch_olt_ports(self, olt_device_id):
+        """ Given an olt device_id, query voltha for the set of ports associated with that OLT.
+
+            Returns a list of port dictionaries, or None in case of error.
+        """
+
         voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
 
         try:
-            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt.device_id), timeout=1)
+            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt_device_id), timeout=1)
 
             if r.status_code != 200:
-                log.warn("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt.device_id)
+                log.warn("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt_device_id,
+                         status_code=r.status_code)
+                return None
 
             ports = r.json()['items']
 
-            log.trace("[OLT pull step] received ports", ports=ports, olt=olt.device_id)
+            log.trace("[OLT pull step] received ports", ports=ports, olt=olt_device_id)
 
-            self.create_or_update_ports(ports, olt)
+            return ports
 
         except ConnectionError, e:
             log.warn("[OLT pull step] It was not possible to connect to VOLTHA", reason=e)
-            return
+            return None
         except InvalidURL, e:
             log.warn("[OLT pull step] VOLTHA url is invalid, is it configured in the VOLTService?", reason=e)
-            return
-        return
+            return None
+
+        return None
 
     def create_or_update_ports(self, ports, olt):
         nni_ports = [p for p in ports if "ETHERNET_NNI" in p["type"]]
