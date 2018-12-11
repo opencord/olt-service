@@ -186,7 +186,12 @@ class ONUDevicePullStep(PullStep):
         update_ports = []
 
         for port in uni_ports:
-            port_no = self.get_onu_port_id(port, onu)
+            try:
+                port_no = self.get_onu_port_id(port, onu)
+            except IndexError:
+                # it means this ONU has not UNI Ports
+                continue
+
             try:
                 model = UNIPort.objects.filter(port_no=port_no, onu_device_id=onu.id)[0]
                 log.trace("UNIPort already exists, updating it", port_no=port_no, onu_device_id=onu.id)
