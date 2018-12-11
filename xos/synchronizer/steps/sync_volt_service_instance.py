@@ -87,7 +87,11 @@ class SyncVOLTServiceInstance(SyncStep):
 
         full_url = "%s:%d/onos/olt/oltapp/%s" % (onos_voltha['url'], onos_voltha['port'], o.backend_handle)
 
+        log.debug("ONOS Request", url=full_url, method="delete")
+
         request = requests.delete(full_url, auth=onos_voltha_basic_auth)
+
+        log.debug("ONOS response", status_code=request.status_code, res=request.text)
 
         if request.status_code != 204:
             raise Exception("Failed to remove subscriber from onos-voltha: %s" % request.text)
