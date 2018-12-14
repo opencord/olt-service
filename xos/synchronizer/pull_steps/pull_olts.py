@@ -101,6 +101,15 @@ class OLTDevicePullStep(PullStep):
             olt_ports = self.fetch_olt_ports(olt["id"])
 
             try:
+                model = OLTDevice.deleted_objects.filter(device_type=olt["type"], host=host, port=port)[0]
+                if model:
+                    # if there is a device that is being deleted, the don't pull it
+                    continue
+            except IndexError:
+                # if the device is not being deleted, then go ahead
+                pass
+
+            try:
                 model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
 
                 log.trace("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
