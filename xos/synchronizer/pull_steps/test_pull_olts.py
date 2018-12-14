@@ -217,6 +217,34 @@ class TestSyncOLTDevice(unittest.TestCase):
             mock_nni_save.assert_called()
 
     @requests_mock.Mocker()
+    def test_pull_existing_deleted_object(self, m):
+        """
+        Verify that if we pull an OLT that is pending deletion we don't duplicate the model
+        """
+        existing_olt = Mock()
+        existing_olt.deleted = True
+        existing_olt.device_id = "test_id"
+
+        m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+        m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
+        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice.deleted_objects, "filter") as mock_deleted_get, \
+                patch.object(OLTDevice.objects, "filter") as mock_get, \
+                patch.object(OLTDevice, "save") as mock_olt_save, \
+                patch.object(existing_olt, "save") as mock_ex_olt_save:
+
+            olt_service_mock.return_value = [self.volt_service]
+            mock_get.return_value = []
+            mock_deleted_get.return_value = [existing_olt]
+
+            self.sync_step().pull_records()
+
+            mock_olt_save.assert_not_called()
+            mock_ex_olt_save.assert_not_called()
+
+    @requests_mock.Mocker()
     def test_pull_deleted_object(self, m):
         existing_olt = Mock()
         existing_olt.enacted = 2
