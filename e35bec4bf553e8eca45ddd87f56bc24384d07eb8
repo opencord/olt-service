@@ -16,6 +16,24 @@
       "revId": "e35bec4bf553e8eca45ddd87f56bc24384d07eb8",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "4831f889_b83fa389",
+        "filename": "docs/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2018-12-19T21:24:59Z",
+      "side": 1,
+      "message": "I think the right thing to do in the future is to read the ONOS Url from the ONOS service so we don\u0027t have duplicated informations in the system.",
+      "parentUuid": "4b4157b7_ede6a0a1",
+      "revId": "e35bec4bf553e8eca45ddd87f56bc24384d07eb8",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
     }
   ]
 }
