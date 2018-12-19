@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4b4157b7_ede6a0a1",
+        "filename": "docs/README.md",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000068
+      },
+      "writtenOn": "2018-12-19T21:20:18Z",
+      "side": 1,
+      "message": "In principle, there is no longer an independent ONOS-VOLTHA. I realize the modes still use that - renaming to just ONOS is something to consider in the future",
+      "revId": "e35bec4bf553e8eca45ddd87f56bc24384d07eb8",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
