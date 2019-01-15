@@ -79,6 +79,7 @@ message ONUDevice (XOSBase){
     optional string admin_state = 6 [choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))", default="ENABLED", help_text = "admin_state", db_index = False];
     optional string oper_status = 7 [help_text = "oper_status", db_index = False, feedback_state = True];
     optional string connect_status = 8 [help_text = "connect_status", db_index = False, feedback_state = True];
+    optional string reason = 9 [help_text = "ONU device configuration state machine status message", db_index = False, feedback_state = True];
 }
 
 message PONONUPort (PortBase) {

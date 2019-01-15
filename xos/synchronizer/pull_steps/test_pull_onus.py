@@ -112,6 +112,7 @@ class TestPullONUDevice(unittest.TestCase):
                     "admin_state": "ENABLED",
                     "oper_status": "ACTIVE",
                     "connect_status": "REACHABLE",
+                    "reason": "starting-omci",
                     "parent_id": "00010fc93996afea",
                     "parent_port_no": 1
                 }
@@ -131,6 +132,7 @@ class TestPullONUDevice(unittest.TestCase):
                     "admin_state": "ENABLED",
                     "oper_status": "ACTIVE",
                     "connect_status": "REACHABLE",
+                    "reason": "starting-omci",
                     "parent_id": "00010fc93996afea",
                     "parent_port_no": 1
                 },
@@ -145,6 +147,7 @@ class TestPullONUDevice(unittest.TestCase):
                     "admin_state": "ENABLED",
                     "oper_status": "ACTIVE",
                     "connect_status": "REACHABLE",
+                    "reason": "omci-admin-lock",
                     "parent_id": "00010fc93996afeb",
                     "parent_port_no": 1
                 }
@@ -184,6 +187,7 @@ class TestPullONUDevice(unittest.TestCase):
             self.assertEqual(saved_onu.admin_state, "ENABLED")
             self.assertEqual(saved_onu.oper_status, "ACTIVE")
             self.assertEqual(saved_onu.connect_status, "REACHABLE")
+            self.assertEqual(saved_onu.reason, "starting-omci")
             self.assertEqual(saved_onu.device_type, "broadcom_onu")
             self.assertEqual(saved_onu.vendor, "Broadcom")
             self.assertEqual(saved_onu.device_id, "0001130158f01b2d")
@@ -228,6 +232,7 @@ class TestPullONUDevice(unittest.TestCase):
             self.assertEqual(saved_onu.admin_state, "ENABLED")
             self.assertEqual(saved_onu.oper_status, "ACTIVE")
             self.assertEqual(saved_onu.connect_status, "REACHABLE")
+            self.assertEqual(saved_onu.reason, "omci-admin-lock")
             self.assertEqual(saved_onu.device_type, "broadcom_onu")
             self.assertEqual(saved_onu.vendor, "Broadcom")
             self.assertEqual(saved_onu.device_id, "0001130158f01b2e")
@@ -266,6 +271,7 @@ class TestPullONUDevice(unittest.TestCase):
             self.assertEqual(saved_onu.admin_state, "ENABLED")
             self.assertEqual(saved_onu.oper_status, "ACTIVE")
             self.assertEqual(saved_onu.connect_status, "REACHABLE")
+            self.assertEqual(saved_onu.reason, "omci-admin-lock")
             self.assertEqual(saved_onu.device_type, "broadcom_onu")
             self.assertEqual(saved_onu.vendor, "Broadcom")
             self.assertEqual(saved_onu.device_id, "0001130158f01b2e")

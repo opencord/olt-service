@@ -110,6 +110,7 @@ class ONUDevicePullStep(PullStep):
             model.admin_state = onu["admin_state"]
             model.oper_status = onu["oper_status"]
             model.connect_status = onu["connect_status"]
+            model.reason = onu["reason"]
             model.xos_managed = False
 
             model.pon_port = pon_port
