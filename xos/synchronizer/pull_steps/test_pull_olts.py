@@ -162,6 +162,7 @@ class TestSyncOLTDevice(unittest.TestCase):
     def test_pull_existing(self, m):
 
         existing_olt = Mock()
+        existing_olt.admin_state = "ENABLED"
         existing_olt.enacted = 2
         existing_olt.updated = 1
 

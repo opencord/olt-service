@@ -30,7 +30,7 @@ message OLTDevice (XOSBase){
 
     optional string serial_number = 9 [help_text = "Serial Number", db_index = False];
     optional string device_id = 10 [help_text = "Voltha Device ID", db_index = False, feedback_state = True];
-    optional string admin_state = 11 [help_text = "admin state, whether OLT should be enabled", db_index = False, feedback_state = True];
+    optional string admin_state = 11 [help_text = "admin state, whether OLT should be enabled", choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))", default="ENABLED", db_index = False];
     optional string oper_status = 12 [help_text = "operational status, whether OLT is active", db_index = False, feedback_state = True];
     optional string of_id = 13 [help_text = "Logical device openflow id", db_index = False, feedback_state = True];
     optional string dp_id = 14 [help_text = "Logical device datapath id", db_index = False];
