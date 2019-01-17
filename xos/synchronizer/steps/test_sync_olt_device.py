@@ -96,10 +96,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.uplink = "129"
         o.driver = "voltha"
         o.name = "Test Device"
+        o.admin_state = "ENABLED"
 
         # feedback state
         o.device_id = None
-        o.admin_state = None
         o.oper_status = None
         o.of_id = None
         o.id = 1
@@ -211,7 +211,11 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.assertEqual(self.o.oper_status, "ACTIVE")
         self.assertEqual(self.o.serial_number, "foobar")
         self.assertEqual(self.o.of_id, "0001000ce2314000")
-        self.assertEqual(self.o.save.call_count, 2) # we're updating the backend_status when activating and then adding logical device ids
+
+        # One save during preprovision
+        # One save during activation to set backend_status to "Waiting for device to activate"
+        # One save after activation has succeeded
+        self.assertEqual(self.o.save.call_count, 3)
 
     @requests_mock.Mocker()
     def test_sync_record_success_mac_address(self, m):
@@ -256,12 +260,19 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.oper_status, "ACTIVE")
         self.assertEqual(self.o.of_id, "0001000ce2314000")
-        self.assertEqual(self.o.save.call_count, 2)
+
+        # One save during preprovision
+        # One save during activation to set backend_status to "Waiting for device to activate"
+        # One save after activation has succeeded
+        self.assertEqual(self.o.save.call_count, 3)
 
     @requests_mock.Mocker()
     def test_sync_record_enable_timeout(self, m):
         """
-        If device.enable fails we need to tell the suer
+        If device activation fails we need to tell the user.
+
+        OLT will be preprovisioned.
+        OLT will return "ERROR" for oper_status during activate and will eventually exceed retries.s
         """
 
         expected_conf = {
@@ -274,7 +285,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
         m.get("http://voltha_url:1234/api/v1/devices/123", [
                   {"json": {"oper_status": "ACTIVATING", "admin_state": "ENABLED", "serial_number": "foobar"}, "status_code": 200},
-                  {"json": {"oper_status": "ERROR", "admin_state": "FAILED", "serial_number": "foobar"}, "status_code": 200}
+                  {"json": {"oper_status": "ERROR", "admin_state": "ENABLED", "serial_number": "foobar"}, "status_code": 200}
               ])
 
         logical_devices = {
@@ -290,11 +301,20 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.assertEqual(e.exception.message, "It was not possible to activate OLTDevice with id 1")
         self.assertEqual(self.o.oper_status, "ERROR")
-        self.assertEqual(self.o.admin_state, "FAILED")
-        self.assertEqual(self.o.save.call_count, 1)
+        self.assertEqual(self.o.admin_state, "ENABLED")
+        self.assertEqual(self.o.device_id, "123")
+        self.assertEqual(self.o.serial_number, "foobar")
+
+        # One save from preprovision to set device_id, serial_number
+        # One save from activate to set backend_status to "Waiting for device to be activated"
+        self.assertEqual(self.o.save.call_count, 2)
 
     @requests_mock.Mocker()
     def test_sync_record_already_existing_in_voltha(self, m):
+        """
+        If device.admin_state == "ENABLED" and oper_status == "ACTIVE", then the OLT should not be reactivated.
+        """
+
         # mock device feedback state
         self.o.device_id = "123"
         self.o.admin_state = "ENABLED"
@@ -316,6 +336,62 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.sync_step().sync_record(self.o)
         self.o.save.assert_not_called()
+
+    @requests_mock.Mocker()
+    def test_sync_record_deactivate(self, m):
+        """
+        If device.admin_state == "DISABLED" and oper_status == "ACTIVE", then OLT should be deactivated.
+        """
+
+        expected_conf = {
+            "type": self.o.device_type,
+            "host_and_port": "%s:%s" % (self.o.host, self.o.port)
+        }
+
+        # Make it look like we have an active OLT that we are deactivating.
+        self.o.admin_state = "DISABLED"
+        self.o.oper_status = "ACTIVE"
+        self.o.serial_number = "foobar"
+        self.o.device_id = "123"
+        self.o.of_id = "0001000ce2314000"
+
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
+        m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
+
+        self.sync_step().sync_record(self.o)
+
+        # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
+        self.assertEqual(self.o.save.call_count, 0)
+
+        # Make sure disable was called
+        urls = [x.url for x in m.request_history]
+        self.assertIn("http://voltha_url:1234/api/v1/devices/123/disable", urls)
+
+    @requests_mock.Mocker()
+    def test_sync_record_deactivate_already_inactive(self, m):
+        """
+        If device.admin_state == "DISABLED" and device.oper_status == "UNKNOWN", then the device is already deactivated
+        and VOLTHA should not be called.
+        """
+
+        expected_conf = {
+            "type": self.o.device_type,
+            "host_and_port": "%s:%s" % (self.o.host, self.o.port)
+        }
+
+        # Make it look like we have an active OLT that we are deactivating.
+        self.o.admin_state = "DISABLED"
+        self.o.oper_status = "UNKNOWN"
+        self.o.serial_number = "foobar"
+        self.o.device_id = "123"
+        self.o.of_id = "0001000ce2314000"
+
+        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
+
+        self.sync_step().sync_record(self.o)
+
+        # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
+        self.assertEqual(self.o.save.call_count, 0)
 
     @requests_mock.Mocker()
     def test_delete_record(self, m):
