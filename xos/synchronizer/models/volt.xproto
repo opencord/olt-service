@@ -29,7 +29,7 @@ message OLTDevice (XOSBase){
 
     optional string serial_number = 9 [help_text = "Serial Number", db_index = False];
     optional string device_id = 10 [help_text = "Device ID", db_index = False, feedback_state = True];
-    optional string admin_state = 11 [help_text = "admin_state", db_index = False, feedback_state = True];
+    optional string admin_state = 11 [help_text = "admin_state", db_index = False];
     optional string oper_status = 12 [help_text = "oper_status", db_index = False, feedback_state = True];
     optional string of_id = 13 [help_text = "openflow id", db_index = False, feedback_state = True];
     optional string dp_id = 14 [help_text = "datapath id", db_index = False];
@@ -50,7 +50,7 @@ message PortBase (XOSBase){
     required string name = 1 [db_index = True];
     required int32 port_no = 3 [help_text = "Port ID", db_index = False];
 
-    optional string admin_state = 4 [help_text = "admin_state", db_index = False, feedback_state = True];
+    optional string admin_state = 4 [help_text = "admin_state", db_index = False];
     optional string oper_status = 5 [help_text = "oper_status", db_index = False, feedback_state = True];
 }
 

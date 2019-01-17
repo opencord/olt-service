@@ -138,11 +138,13 @@ class OLTDevicePullStep(PullStep):
                 # NNI ports when that situation arises.
                 model.uplink = str(nni_ports[0]["port_no"])
 
+                # Initial admin_state
+                model.admin_state = olt["admin_state"]
+
                 log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
 
             # Adding feedback state to the device
             model.device_id = olt["id"]
-            model.admin_state = olt["admin_state"]
             model.oper_status = olt["oper_status"]
             model.serial_number = olt['serial_number']
 

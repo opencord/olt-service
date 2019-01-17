@@ -113,8 +113,6 @@ class SyncOLTDevice(SyncStep):
             request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
             attempted = attempted + 1
 
-
-        model.admin_state = request['admin_state']
         model.oper_status = request['oper_status']
         model.serial_number = request['serial_number']
 
@@ -124,6 +122,17 @@ class SyncOLTDevice(SyncStep):
         # Find the of_id of the device
         model = self.get_ids_from_logical_device(model)
         model.save()
+
+        return model
+
+    def deactivate_olt(self, model):
+        voltha = Helpers.get_voltha_info(model.volt_service)
+
+        # Disable device
+        request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))
+
+        if request.status_code != 200:
+            raise Exception("Failed to disable OLT device: %s" % request.text)
 
         return model
 
@@ -164,16 +173,30 @@ class SyncOLTDevice(SyncStep):
         log.info("Synching device", object=str(model), **model.tologdict())
 
         # If the device has feedback_state is already present in voltha
-        if not model.device_id and not model.admin_state and not model.oper_status and not model.of_id:
+        if not model.device_id and not model.oper_status and not model.of_id:
             log.info("Pushing OLT device to VOLTHA", object=str(model), **model.tologdict())
             model = self.pre_provision_olt_device(model)
-            self.activate_olt(model)
-        elif model.oper_status != "ACTIVE":
-            raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
+            model.oper_status = "UNKNOWN" # fall-though to activate OLT
         else:
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
 
+        # Reconcile admin_state and oper_status, activating or deactivating the OLT as necessary.
+
+        if model.oper_status != "ACTIVE" and model.admin_state == "ENABLED":
+            self.activate_olt(model)
+        elif model.oper_status == "ACTIVE" and model.admin_state == "DISABLED":
+            self.deactivate_olt(model)
+
+        # If we reach the bottom of the sync step and the oper_status and admin_state are still not reconciled, then
+        # raise an exception and try to synchronize again later.
+
+        if model.oper_status != "ACTIVE" and model.admin_state == "ENABLED":
+            raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
+
+        # At this point OLT is enabled and active. Configure ONOS.
+
         self.configure_onos(model)
+
 
     def delete_record(self, model):
         log.info("Deleting OLT device", object=str(model), **model.tologdict())
