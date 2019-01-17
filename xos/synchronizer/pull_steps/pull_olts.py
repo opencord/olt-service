@@ -49,9 +49,12 @@ class OLTDevicePullStep(PullStep):
             if ld["root_device_id"] == o.device_id:
                 o.of_id = ld["id"]
                 o.dp_id = "of:" + Helpers.datapath_id_to_hex(ld["datapath_id"])  # convert to hex
-                return o
 
-        raise Exception("Can't find a logical device for device id: %s" % o.device_id)
+        # Note: If the device is administratively disabled, then it's likely we won't find a logical device for
+        # it. Only throw the exception for OLTs that are enabled.
+
+        if not o.of_id and not o.dp_id and o.admin_state == "ENABLED":
+            raise Exception("Can't find a logical device for device id: %s" % o.device_id)
 
     def pull_records(self):
         log.debug("[OLT pull step] pulling OLT devices from VOLTHA")
@@ -138,11 +141,13 @@ class OLTDevicePullStep(PullStep):
                 # NNI ports when that situation arises.
                 model.uplink = str(nni_ports[0]["port_no"])
 
+                # Initial admin_state
+                model.admin_state = olt["admin_state"]
+
                 log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
 
             # Adding feedback state to the device
             model.device_id = olt["id"]
-            model.admin_state = olt["admin_state"]
             model.oper_status = olt["oper_status"]
             model.serial_number = olt['serial_number']
 
