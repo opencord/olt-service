@@ -7,92 +7,222 @@ message VOLTService (Service){
     option kind = "vOLT";
     option description = "OLT Access Service";
 
-    required string voltha_url = 1 [help_text = "The Voltha API address. By default voltha.voltha.svc.cluster.local", default = "voltha.voltha.svc.cluster.local", max_length = 254, db_index = False];
-    required int32 voltha_port = 2 [help_text = "The Voltha API port. By default 8882", default=8882, db_index = False];
-    required string voltha_user = 3 [help_text = "The Voltha username. By default voltha", default="voltha", max_length = 254, db_index = False];
-    required string voltha_pass = 4 [help_text = "The Voltha password. By default admin", default="admin", max_length = 254, db_index = False];
-    required string onos_voltha_url = 5 [help_text = "The ONOS Voltha address. By default onos-voltha-ui.voltha.svc.cluster.local", default="onos-voltha-ui.voltha.svc.cluster.local", max_length = 254, db_index = False];
-    required int32 onos_voltha_port = 6 [help_text = "The Voltha API port. By default 8181", default=8181, db_index = False];
-    required string onos_voltha_user = 7 [help_text = "The ONOS Voltha username. By default sdn", max_length = 254, default="onos", db_index = False];
-    required string onos_voltha_pass = 8 [help_text = "The ONOS Voltha password. By default rocks", max_length = 254, default="rocks", db_index = False];
+    required string voltha_url = 1 [
+        help_text = "The Voltha API address. By default voltha.voltha.svc.cluster.local",
+        db_index = False,
+        default = "voltha.voltha.svc.cluster.local",
+        max_length = 254];
+    required int32 voltha_port = 2 [
+        help_text = "The Voltha API port. By default 8882",
+        db_index = False,
+        default = 8882];
+    required string voltha_user = 3 [
+        help_text = "The Voltha username. By default voltha",
+        db_index = False,
+        default = "voltha",
+        max_length = 254];
+    required string voltha_pass = 4 [
+        help_text = "The Voltha password. By default admin",
+        db_index = False,
+        default = "admin",
+        max_length = 254];
+    required string onos_voltha_url = 5 [
+        help_text = "The ONOS Voltha address. By default onos-voltha-ui.voltha.svc.cluster.local",
+        db_index = False,
+        default = "onos-voltha-ui.voltha.svc.cluster.local",
+        max_length = 254];
+    required int32 onos_voltha_port = 6 [
+        help_text = "The Voltha API port. By default 8181",
+        db_index = False,
+        default = 8181];
+    required string onos_voltha_user = 7 [
+        help_text = "The ONOS Voltha username. By default sdn",
+        max_length = 254,
+        db_index = False,
+        default = "onos"];
+    required string onos_voltha_pass = 8 [
+        help_text = "The ONOS Voltha password. By default rocks",
+        max_length = 254,
+        db_index = False,
+        default = "rocks"];
 }
 
 message OLTDevice (XOSBase){
     option verbose_name = "OLT Device";
     option description="Represents a physical OLT device";
 
-    required manytoone volt_service->VOLTService:volt_devices = 1:1001 [help_text = "VOLTService that owns this OLT", db_index = True];
-    optional string name = 2 [help_text = "Human-readable name of device", max_length = 254, db_index = False, unique = True];
-    required string device_type = 3 [help_text = "Phyiscal Device Type", default = "openolt", max_length = 254, db_index = False];
-    optional string host = 4 [help_text = "IP Address of physical OLT Device", max_length = 254, db_index = False];
-    optional int32 port = 5 [help_text = "Port Number of physical OLT Device", db_index = False, unique_with = "host"];
-    optional string mac_address = 6 [help_text = "Mac address of physical OLT Device", db_index = False];
+    required manytoone volt_service->VOLTService:volt_devices = 1:1001 [
+        help_text = "VOLTService that owns this OLT",
+        db_index = True];
+    optional string name = 2 [
+        help_text = "Human-readable name of device",
+        db_index = False,
+        max_length = 254,
+        unique = True];
+    required string device_type = 3 [
+        help_text = "Phyiscal Device Type",
+        db_index = False,
+        default = "openolt",
+        max_length = 254];
+    optional string host = 4 [
+        help_text = "IP Address of physical OLT Device",
+        db_index = False,
+        max_length = 254];
+    optional int32 port = 5 [
+        help_text = "Port Number of physical OLT Device",
+        db_index = False,
+        unique_with = "host"];
+    optional string mac_address = 6 [
+        help_text = "Mac address of physical OLT Device",
+        db_index = False];
 
-    optional string serial_number = 9 [help_text = "Serial Number", db_index = False];
-    optional string device_id = 10 [help_text = "Voltha Device ID", db_index = False, feedback_state = True];
-    optional string admin_state = 11 [help_text = "admin state, whether OLT should be enabled", choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))", default="ENABLED", db_index = False];
-    optional string oper_status = 12 [help_text = "operational status, whether OLT is active", db_index = False, feedback_state = True];
-    optional string of_id = 13 [help_text = "Logical device openflow id", db_index = False, feedback_state = True];
-    optional string dp_id = 14 [help_text = "Logical device datapath id", db_index = False];
+    optional string serial_number = 9 [
+        help_text = "Serial Number",
+        db_index = False];
+    optional string device_id = 10 [
+        help_text = "Voltha Device ID",
+        db_index = False,
+        feedback_state = True];
+    optional string admin_state = 11 [
+        help_text = "admin state, whether OLT should be enabled",
+        choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))",
+        db_index = False,
+        default = "ENABLED"];
+    optional string oper_status = 12 [
+        help_text = "operational status, whether OLT is active",
+        db_index = False,
+        feedback_state = True];
+    optional string of_id = 13 [
+        help_text = "Logical device openflow id",
+        db_index = False,
+        feedback_state = True];
+    optional string dp_id = 14 [
+        help_text = "Logical device datapath id",
+        db_index = False];
 
-    required string uplink = 15 [help_text = "uplink port, exposed via sadis", db_index = False];
-    required string driver = 16 [help_text = "DEPRECATED", default="voltha", db_index = False];  // Used to be sent to ONOS, now unused.
+    required string uplink = 15 [
+        help_text = "uplink port, exposed via sadis",
+        db_index = False];
+    required string driver = 16 [
+        help_text = "DEPRECATED",
+        db_index = False,
+        default = "voltha"];  // Used to be sent to ONOS, now unused.
 
-    optional string switch_datapath_id = 17 [help_text = "Fabric switch to which the OLT is connected", db_index = False];
-    optional string switch_port = 18 [help_text = "Fabric port to which the OLT is connected", db_index = False];
-    optional string outer_tpid = 19 [help_text = "Outer VLAN id field EtherType", db_index = False];
+    optional string switch_datapath_id = 17 [
+        help_text = "Fabric switch to which the OLT is connected",
+        db_index = False];
+    optional string switch_port = 18 [
+        help_text = "Fabric port to which the OLT is connected",
+        db_index = False];
+    optional string outer_tpid = 19 [
+        help_text = "Outer VLAN id field EtherType",
+        db_index = False];
 
-    optional string nas_id = 20 [help_text = "Authentication ID (propagated to the free-radius server via sadis)", db_index = False];
+    optional string nas_id = 20 [
+        help_text = "Authentication ID (propagated to the free-radius server via sadis)",
+        db_index = False];
 }
 
 message PortBase (XOSBase){
     option gui_hidden = True;
+    option description = "Base class for Port objects";
 
-    required string name = 1 [help_text = "Human-readable name of port", db_index = True];
-    required int32 port_no = 3 [help_text = "Port Number", db_index = False];
+    required string name = 1 [
+        help_text = "Human-readable name of port",
+        db_index = True];
+    required int32 port_no = 3 [
+        help_text = "Port Number",
+        db_index = False];
 
-    optional string admin_state = 4 [help_text = "admin state, whether port should be enabled", db_index = False, feedback_state = True];
-    optional string oper_status = 5 [help_text = "operational status, whether port is active", db_index = False, feedback_state = True];
+    optional string admin_state = 4 [
+        help_text = "admin state, whether port should be enabled",
+        db_index = False,
+        feedback_state = True];
+    optional string oper_status = 5 [
+        help_text = "operational status, whether port is active",
+        db_index = False,
+        feedback_state = True];
 }
 
 message PONPort (PortBase){
     option verbose_name = "PON Port";
-    option description="PON Port";
+    option description = "PON Port";
 
-    required manytoone olt_device->OLTDevice:pon_ports = 1:1001 [help_text = "OLTDevice that owns this PONPort", db_index = True];
+    required manytoone olt_device->OLTDevice:pon_ports = 1:1001 [
+        help_text = "OLTDevice that owns this PONPort",
+        db_index = True];
 }
 
 message NNIPort (PortBase) {
     option verbose_name = "NNI Port";
-    required manytoone olt_device->OLTDevice:nni_ports = 1:1002 [help_text = "OLTDevice that owns this NNIPort", db_index = True];
+    option description = "NNI Port";
+
+    required manytoone olt_device->OLTDevice:nni_ports = 1:1002 [
+        help_text = "OLTDevice that owns this NNIPort",
+        db_index = True];
 }
 
 message ONUDevice (XOSBase){
     option verbose_name = "ONU Device";
     option description = "Represents a physical ONU device";
 
-    required manytoone pon_port->PONPort:onu_devices = 1:1001 [help_text = "PONPort that connects this ONUDevice to an OLTDevice", db_index = True];
-    required string serial_number = 2 [help_text = "Serial number of ONU Device", max_length = 254, db_index = False, tosca_key=True, unique = True];
-    required string vendor = 3 [help_text = "Vendor of ONU Device", max_length = 254, db_index = False];
-    required string device_type = 4 [help_text = "Device Type", default = "asfvolt16_olt", max_length = 254, db_index = False];
+    required manytoone pon_port->PONPort:onu_devices = 1:1001 [
+        help_text = "PONPort that connects this ONUDevice to an OLTDevice",
+        db_index = True];
+    required string serial_number = 2 [
+        help_text = "Serial number of ONU Device",
+        db_index = False,
+        max_length = 254,
+        tosca_key=True,
+        unique = True];
+    required string vendor = 3 [
+        help_text = "Vendor of ONU Device",
+        db_index = False,
+        max_length = 254];
+    required string device_type = 4 [
+        help_text = "Device Type",
+        db_index = False,
+        default = "asfvolt16_olt",
+        max_length = 254];
 
-    optional string device_id = 5 [help_text = "Voltha Device ID", max_length = 254, db_index = False, feedback_state = True];
-    optional string admin_state = 6 [help_text = "admin state, whether port should be enabled", choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))", default="ENABLED", db_index = False];
-    optional string oper_status = 7 [help_text = "oper_status", db_index = False, feedback_state = True];
-    optional string connect_status = 8 [help_text = "operational status, whether port is active", db_index = False, feedback_state = True];
-    optional string reason = 9 [help_text = "ONU device configuration state machine status message", db_index = False, feedback_state = True];
+    optional string device_id = 5 [
+        help_text = "Voltha Device ID",
+        db_index = False,
+        feedback_state = True,
+        max_length = 254];
+    optional string admin_state = 6 [
+        help_text = "admin state, whether port should be enabled",
+        choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))",
+        db_index = False,
+        default = "ENABLED"];
+    optional string oper_status = 7 [
+        help_text = "oper_status",
+        db_index = False,
+        feedback_state = True];
+    optional string connect_status = 8 [
+        help_text = "operational status, whether port is active",
+        db_index = False,
+        feedback_state = True];
+    optional string reason = 9 [
+        help_text = "ONU device configuration state machine status message",
+        db_index = False,
+        feedback_state = True];
 }
 
 message PONONUPort (PortBase) {
     option verbose_name = "ANI Port";
     option description="Access Node Interface Port";
-    required manytoone onu_device->ONUDevice:pononu_ports = 1:1001 [help_text = "ONUDevice that owns this PONONUPort", db_index = True];
+    required manytoone onu_device->ONUDevice:pononu_ports = 1:1001 [
+        help_text = "ONUDevice that owns this PONONUPort",
+        db_index = True];
 }
 
 message UNIPort (PortBase) {
     option verbose_name = "UNI Port";
     option description = "User Network Interface Port";
-    required manytoone onu_device->ONUDevice:uni_ports = 1:1002 [help_text = "ONUDevice that owns this UNIPort", db_index = True];
+    required manytoone onu_device->ONUDevice:uni_ports = 1:1002 [
+        help_text = "ONUDevice that owns this UNIPort",
+        db_index = True];
 }
 
 message VOLTServiceInstance (ServiceInstance){
@@ -101,6 +231,11 @@ message VOLTServiceInstance (ServiceInstance){
     option verbose_name = "vOLT Service Instance";
     option description = "Represents subscriber tenancy in the VOLT Service";
 
-    optional string description = 1 [help_text = "Human-readable description", max_length = 254, db_index = False];
-    optional manytoone onu_device->ONUDevice:volt_service_instances = 2:1003 [help_text = "ONUDevice that belongs to this Subscriber chain", db_index = True];
+    optional string description = 1 [
+        help_text = "Human-readable description",
+        db_index = False,
+        max_length = 254];
+    optional manytoone onu_device->ONUDevice:volt_service_instances = 2:1003 [
+        help_text = "ONUDevice that belongs to this Subscriber chain",
+        db_index = True];
 }
