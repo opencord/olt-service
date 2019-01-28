@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "213f899d_68b505c9",
+        "filename": "xos/synchronizer/pull_steps/pull_onus.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2019-01-28T21:24:08Z",
+      "side": 0,
+      "message": "just wondering, why did we remove this?",
+      "range": {
+        "startLine": 81,
+        "startChar": 16,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "3b76ab0c5bc309aefddebd364cde8e21e3351da1",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
