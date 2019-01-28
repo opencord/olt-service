@@ -22,6 +22,30 @@
       "revId": "3b76ab0c5bc309aefddebd364cde8e21e3351da1",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "1b1e72e1_7d4bf782",
+        "filename": "xos/synchronizer/pull_steps/pull_onus.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1000010
+      },
+      "writtenOn": "2019-01-28T21:26:52Z",
+      "side": 0,
+      "message": "I didn\u0027t think it was needed any more.  I assumed it was there because admin_state was being written as both declarative and feedback state.",
+      "parentUuid": "213f899d_68b505c9",
+      "range": {
+        "startLine": 81,
+        "startChar": 16,
+        "endLine": 85,
+        "endChar": 28
+      },
+      "revId": "3b76ab0c5bc309aefddebd364cde8e21e3351da1",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
     }
   ]
 }
