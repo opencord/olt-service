@@ -78,17 +78,12 @@ class ONUDevicePullStep(PullStep):
                 model = ONUDevice.objects.filter(serial_number=onu["serial_number"])[0]
                 log.trace("ONUDevice already exists, updating it", serial_number=onu["serial_number"])
 
-                if model.enacted < model.updated:
-                    log.debug("Skipping pull on ONUDevice %s as enacted < updated" % model.serial_number, serial_number=model.serial_number, id=model.id, enacted=model.enacted, updated=model.updated)
-                    # if we are not updating the device we still need to pull ports
-                    self.fetch_onu_ports(model)
-                    continue
-
             except IndexError:
                 model = ONUDevice()
                 model.serial_number = onu["serial_number"]
+                model.admin_state = onu["admin_state"]
 
-                log.debug("ONUDevice is new, creating it", serial_number=onu["serial_number"])
+                log.debug("ONUDevice is new, creating it", serial_number=onu["serial_number"], admin_state=onu["admin_state"])
 
             try:
                 olt = OLTDevice.objects.get(device_id=onu["parent_id"])
@@ -107,7 +102,6 @@ class ONUDevicePullStep(PullStep):
             model.device_type = onu["type"]
             model.device_id = onu["id"]
 
-            model.admin_state = onu["admin_state"]
             model.oper_status = onu["oper_status"]
             model.connect_status = onu["connect_status"]
             model.reason = onu["reason"]
@@ -116,7 +110,7 @@ class ONUDevicePullStep(PullStep):
             model.pon_port = pon_port
             model.pon_port_id = pon_port.id
 
-            model.save()
+            model.save_changed_fields()
 
             self.fetch_onu_ports(model)
 
@@ -200,7 +194,7 @@ class ONUDevicePullStep(PullStep):
 
             model.admin_state = port["admin_state"]
             model.oper_status = port["oper_status"]
-            model.save()
+            model.save_changed_fields()
             update_ports.append(model)
         return update_ports
 
@@ -222,6 +216,6 @@ class ONUDevicePullStep(PullStep):
 
             model.admin_state = port["admin_state"]
             model.oper_status = port["oper_status"]
-            model.save()
+            model.save_changed_fields()
             update_ports.append(model)
         return update_ports
