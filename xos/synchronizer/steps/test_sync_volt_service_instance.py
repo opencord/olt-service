@@ -19,35 +19,13 @@ import requests_mock
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir = os.path.join(xos_dir, "../../xos_services")
-sys.path.append(xos_dir)
-sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
-# END Hack to load synchronizer framework
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestSyncVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
         global DeferredException
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -56,16 +34,18 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+                                              ("vsg", "vsg.xproto"),
+                                              ("../profiles/rcord", "rcord.xproto"), ])
 
-        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
-        # and apparently it is not overriding the generated model accessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
-                                                         get_models_fn("vsg", "vsg.xproto"),
-                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
-        import synchronizers.new_base.modelaccessor
-        from synchronizers.new_base.syncstep import DeferredException
+        import xossynchronizer.modelaccessor
+        reload(xossynchronizer.modelaccessor)  # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
+
+        from xossynchronizer.steps.syncstep import DeferredException
         from sync_volt_service_instance import SyncVOLTServiceInstance, model_accessor
 
         # import all class names to globals
@@ -113,7 +93,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(DeferredException) as e:
-                self.sync_step().sync_record(self.o)
+                self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
             self.assertFalse(m.called)
             self.assertEqual(e.exception.message, "Waiting for OLTDevice Test OLT Device to be synchronized")
@@ -128,7 +108,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         with patch.object(VOLTService.objects, "get") as olt_service_mock:
             olt_service_mock.return_value = self.volt_service
 
-            self.sync_step().sync_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
             self.assertTrue(m.called)
             self.assertEqual(self.o.backend_handle, "of:dp_id/uni_port_id")
 
@@ -143,7 +123,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
             olt_service_mock.return_value = self.volt_service
 
             with self.assertRaises(Exception) as e:
-                self.sync_step().sync_record(self.o)
+                self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
                 self.assertTrue(m.called)
                 self.assertEqual(e.exception.message, "Failed to add subscriber in onos voltha: Mock Error")
 
@@ -157,7 +137,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         with patch.object(VOLTService.objects, "get") as olt_service_mock:
             olt_service_mock.return_value = self.volt_service
 
-            self.sync_step().delete_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
             self.assertTrue(m.called)
             self.assertEqual(m.call_count, 1)
 
