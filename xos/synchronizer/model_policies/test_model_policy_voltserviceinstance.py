@@ -20,47 +20,33 @@ from mock import patch, call, Mock, PropertyMock
 import os, sys
 
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-service_dir=os.path.join(test_path, "../../../..")
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir=os.path.join(xos_dir, "../../xos_services")
-
-# While transitioning from static to dynamic load, the path to find neighboring xproto files has changed. So check
-# both possible locations...
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
 
 class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
         global VOLTServiceInstancePolicy, MockObjectList
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         config = os.path.join(test_path, "../test_config.yaml")
         from xosconfig import Config
         Config.clear()
         Config.init(config, 'synchronizer-config-schema.yaml')
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
-                                                         get_models_fn("vsg", "vsg.xproto"),
-                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+                                                ("vsg", "vsg.xproto"),
+                                                ("../profiles/rcord", "rcord.xproto"),])
 
-        import synchronizers.new_base.modelaccessor
-        import model_policy_voltserviceinstance
-        from model_policy_voltserviceinstance import VOLTServiceInstancePolicy, model_accessor
+        import xossynchronizer.modelaccessor
+        import mock_modelaccessor
+        reload(mock_modelaccessor) # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
 
         from mock_modelaccessor import MockObjectList
+        from model_policy_voltserviceinstance import VOLTServiceInstancePolicy
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
@@ -70,7 +56,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         model_accessor.reset_all_object_stores()
 
-        self.policy = VOLTServiceInstancePolicy()
+        self.policy = VOLTServiceInstancePolicy(model_accessor=self.model_accessor)
         self.si = Mock()
 
     def tearDown(self):

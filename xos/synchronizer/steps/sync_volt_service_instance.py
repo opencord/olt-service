@@ -20,8 +20,8 @@ from helpers import Helpers
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
-from synchronizers.new_base.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, model_accessor
-from synchronizers.new_base.syncstep import SyncStep, DeferredException
+from xossynchronizer.modelaccessor import VOLTService, VOLTServiceInstance, ServiceInstance, model_accessor
+from xossynchronizer.steps.syncstep import SyncStep, DeferredException
 from xosconfig import Config
 
 log = create_logger(Config().get("logging"))

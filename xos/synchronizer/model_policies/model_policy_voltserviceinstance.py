@@ -14,8 +14,8 @@
 # limitations under the License.
 
 
-from synchronizers.new_base.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, ONUDevice, ServiceInstance, model_accessor
-from synchronizers.new_base.policy import Policy
+from xossynchronizer.modelaccessor import VOLTServiceInstance, ServiceInstanceLink, ONUDevice, ServiceInstance, model_accessor
+from xossynchronizer.model_policies.policy import Policy
 
 class VOLTServiceInstancePolicy(Policy):
     model_name = "VOLTServiceInstance"

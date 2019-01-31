@@ -18,34 +18,12 @@ import requests_mock
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir = os.path.join(xos_dir, "../../xos_services")
-sys.path.append(xos_dir)
-sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
-# END Hack to load synchronizer framework
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestSyncVOLTServiceInstance(unittest.TestCase):
     def setUp(self):
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -54,16 +32,18 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+                                                ("vsg", "vsg.xproto"),
+                                                ("../profiles/rcord", "rcord.xproto"),])
 
-        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
-        # and apparently it is not overriding the generated model accessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
-                                                         get_models_fn("vsg", "vsg.xproto"),
-                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
-        import synchronizers.new_base.modelaccessor
-        from synchronizers.new_base.syncstep import DeferredException
+        import xossynchronizer.modelaccessor
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
+
+        from xossynchronizer.steps.syncstep import DeferredException
         from sync_onu_device import SyncONUDevice, model_accessor
 
         # import all class names to globals
@@ -91,7 +71,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices/test_id/enable")
 
         self.o.admin_state = "ENABLED"
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.assertTrue(m.called)
 
     @requests_mock.Mocker()
@@ -99,7 +79,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices/test_id/disable")
 
         self.o.admin_state = "DISABLED"
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.assertTrue(m.called)
 
     @requests_mock.Mocker()
@@ -109,7 +89,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         self.o.admin_state = "DISABLED"
 
         with self.assertRaises(Exception) as e:
-            self.sync_step().sync_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
             self.assertTrue(m.called)
             self.assertEqual(e.exception.message, "Failed to disable ONU device: Mock Error")
 

@@ -18,27 +18,7 @@ import requests_mock
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir = os.path.join(xos_dir, "../../xos_services")
-sys.path.append(xos_dir)
-sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
-# END Hack to load synchronizer framework
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestSyncOLTDevice(unittest.TestCase):
 
@@ -46,8 +26,6 @@ class TestSyncOLTDevice(unittest.TestCase):
         global DeferredException
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -56,16 +34,18 @@ class TestSyncOLTDevice(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+                                                ("vsg", "vsg.xproto"),
+                                                ("../profiles/rcord", "rcord.xproto"),])
 
-        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
-        # and apparently it is not overriding the generated model accessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
-                                                         get_models_fn("vsg", "vsg.xproto"),
-                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
-        import synchronizers.new_base.modelaccessor
-        from pull_olts import OLTDevicePullStep, model_accessor
+        import xossynchronizer.modelaccessor
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
+
+        from pull_olts import OLTDevicePullStep
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
@@ -144,7 +124,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             # TODO how to asster this?
             # self.assertEqual(existing_olt.admin_state, "ENABLED")
@@ -178,7 +158,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             self.assertEqual(existing_olt.admin_state, "ENABLED")
             self.assertEqual(existing_olt.oper_status, "ACTIVE")
@@ -211,7 +191,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             mock_olt_save.assert_not_called()
             mock_pon_save.assert_called()
@@ -233,7 +213,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             olt_service_mock.return_value = [self.volt_service]
             mock_get.return_value = [existing_olt]
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             mock_olt_delete.assert_called()
 

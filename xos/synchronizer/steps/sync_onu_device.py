@@ -20,8 +20,8 @@ from helpers import Helpers
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
-from synchronizers.new_base.modelaccessor import ONUDevice, model_accessor
-from synchronizers.new_base.syncstep import SyncStep
+from xossynchronizer.modelaccessor import ONUDevice, model_accessor
+from xossynchronizer.steps.syncstep import SyncStep
 from xosconfig import Config
 
 log = create_logger(Config().get("logging"))

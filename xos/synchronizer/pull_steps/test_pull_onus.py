@@ -19,27 +19,7 @@ import requests_mock
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir = os.path.join(xos_dir, "../../xos_services")
-sys.path.append(xos_dir)
-sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
-# END Hack to load synchronizer framework
-
-# generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 class TestPullONUDevice(unittest.TestCase):
 
@@ -47,8 +27,6 @@ class TestPullONUDevice(unittest.TestCase):
         global DeferredException
 
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -57,16 +35,18 @@ class TestPullONUDevice(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END Setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+                                                ("vsg", "vsg.xproto"),
+                                                ("../profiles/rcord", "rcord.xproto"),])
 
-        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
-        # and apparently it is not overriding the generated model accessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
-                                                         get_models_fn("vsg", "vsg.xproto"),
-                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
-        import synchronizers.new_base.modelaccessor
-        from pull_onus import ONUDevicePullStep, model_accessor
+        import xossynchronizer.modelaccessor
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
+
+        from pull_onus import ONUDevicePullStep
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
@@ -180,7 +160,7 @@ class TestPullONUDevice(unittest.TestCase):
             m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
             m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             saved_onu = mock_save.call_args[0][0]
 
@@ -222,7 +202,7 @@ class TestPullONUDevice(unittest.TestCase):
             m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2e/ports", status_code=200, json=self.ports)
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             self.assertEqual(mock_save.call_count, 1)
             saved_onu = mock_save.call_args[0][0]
@@ -261,7 +241,7 @@ class TestPullONUDevice(unittest.TestCase):
             m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
             m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2e/ports", status_code=200, json=self.ports)
 
-            self.sync_step().pull_records()
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             self.assertEqual(mock_save.call_count, 1)
             saved_onu = mock_save.call_args[0][0]
