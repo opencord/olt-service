@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from synchronizers.new_base.pullstep import PullStep
-from synchronizers.new_base.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort, PONONUPort, UNIPort
+from xossynchronizer.pull_steps.pullstep import PullStep
+from xossynchronizer.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort, PONONUPort, UNIPort
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -30,8 +30,8 @@ from helpers import Helpers
 log = create_logger(Config().get('logging'))
 
 class ONUDevicePullStep(PullStep):
-    def __init__(self):
-        super(ONUDevicePullStep, self).__init__(observed_model=ONUDevice)
+    def __init__(self, model_accessor):
+        super(ONUDevicePullStep, self).__init__(model_accessor=model_accessor, observed_model=ONUDevice)
 
     def pull_records(self):
         log.debug("pulling ONU devices from VOLTHA")
