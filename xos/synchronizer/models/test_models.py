@@ -31,6 +31,7 @@ class TestOLTDeviceModel(unittest.TestCase):
         self.models_decl.OLTDevice_decl.delete = Mock()
 
         modules = {
+            'xos': MagicMock(),
             'xos.exceptions': self.xos.exceptions,
             'models_decl': self.models_decl,
         }
@@ -97,6 +98,7 @@ class TestONUDeviceModel(unittest.TestCase):
         self.models_decl.ONUDevice_decl.delete = Mock()
 
         modules = {
+            'xos': MagicMock(),
             'xos.exceptions': self.xos.exceptions,
             'models_decl': self.models_decl,
         }

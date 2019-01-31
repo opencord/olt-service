@@ -20,27 +20,7 @@ import requests_mock
 
 import os, sys
 
-# Hack to load synchronizer framework
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
-xos_dir=os.path.join(test_path, "../../..")
-if not os.path.exists(os.path.join(test_path, "new_base")):
-    xos_dir=os.path.join(test_path, "../../../../../../orchestration/xos/xos")
-    services_dir = os.path.join(xos_dir, "../../xos_services")
-sys.path.append(xos_dir)
-sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
-# END of hack to load synchronizer framework
-
-# Generate model from xproto
-def get_models_fn(service_name, xproto_name):
-    name = os.path.join(service_name, "xos", xproto_name)
-    if os.path.exists(os.path.join(services_dir, name)):
-        return name
-    else:
-        name = os.path.join(service_name, "xos", "synchronizer", "models", xproto_name)
-        if os.path.exists(os.path.join(services_dir, name)):
-            return name
-    raise Exception("Unable to find service=%s xproto=%s" % (service_name, xproto_name))
-# END generate model from xproto
 
 def match_json(desired, req):
     if desired!=req.json():
@@ -52,8 +32,6 @@ class TestSyncOLTDevice(unittest.TestCase):
     def setUp(self):
         global DeferredException
         self.sys_path_save = sys.path
-        sys.path.append(xos_dir)
-        sys.path.append(os.path.join(xos_dir, 'synchronizers', 'new_base'))
 
         # Setting up the config module
         from xosconfig import Config
@@ -62,16 +40,17 @@ class TestSyncOLTDevice(unittest.TestCase):
         Config.init(config, "synchronizer-config-schema.yaml")
         # END setting up the config module
 
-        from synchronizers.new_base.mock_modelaccessor_build import build_mock_modelaccessor
-        # build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto")])
+        from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
+        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+                                                ("vsg", "vsg.xproto"),
+                                                ("../profiles/rcord", "rcord.xproto"),])
 
-        # FIXME this is to get jenkins to pass the tests, somehow it is running tests in a different order
-        # and apparently it is not overriding the generated model accessor
-        build_mock_modelaccessor(xos_dir, services_dir, [get_models_fn("olt-service", "volt.xproto"),
-                                                         get_models_fn("vsg", "vsg.xproto"),
-                                                         get_models_fn("../profiles/rcord", "rcord.xproto")])
+        import xossynchronizer.modelaccessor
+        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
 
-        import synchronizers.new_base.modelaccessor
+        from xossynchronizer.modelaccessor import model_accessor
+        self.model_accessor = model_accessor
+
         from sync_olt_device import SyncOLTDevice, DeferredException
         self.sync_step = SyncOLTDevice
 
@@ -145,7 +124,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=500, text="MockError")
 
         with self.assertRaises(Exception) as e:
-            self.sync_step().sync_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.assertEqual(e.exception.message, "Failed to add OLT device: MockError")
 
     @requests_mock.Mocker()
@@ -156,7 +135,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": ""})
 
         with self.assertRaises(Exception) as e:
-            self.sync_step().sync_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.assertEqual(e.exception.message, "VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA")
 
     @requests_mock.Mocker()
@@ -168,7 +147,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=500, text="EnableError")
 
         with self.assertRaises(Exception) as e:
-            self.sync_step().sync_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         self.assertEqual(e.exception.message, "Failed to enable OLT device: EnableError")
 
@@ -206,7 +185,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=onos_expected_conf,
                additional_matcher=functools.partial(match_json, onos_expected_conf))
 
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.oper_status, "ACTIVE")
         self.assertEqual(self.o.serial_number, "foobar")
@@ -256,7 +235,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.oper_status, "ACTIVE")
         self.assertEqual(self.o.of_id, "0001000ce2314000")
@@ -297,7 +276,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
         with self.assertRaises(Exception) as e:
-            self.sync_step().sync_record(self.o)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         self.assertEqual(e.exception.message, "It was not possible to activate OLTDevice with id 1")
         self.assertEqual(self.o.oper_status, "ERROR")
@@ -334,7 +313,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=expected_conf,
                additional_matcher=functools.partial(match_json, expected_conf))
 
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.o.save.assert_not_called()
 
     @requests_mock.Mocker()
@@ -358,7 +337,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
 
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
         self.assertEqual(self.o.save.call_count, 0)
@@ -388,7 +367,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
 
-        self.sync_step().sync_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
         self.assertEqual(self.o.save.call_count, 0)
@@ -401,7 +380,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
         m.delete("http://voltha_url:1234/api/v1/devices/123/delete", status_code=200)
 
-        self.sync_step().delete_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
 
         self.assertEqual(m.call_count, 2)
 
@@ -412,7 +391,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.side_effect = ConnectionError()
 
-        self.sync_step().delete_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
 
         # No exception thrown, as ConnectionError will be caught
 
@@ -420,7 +399,7 @@ class TestSyncOLTDevice(unittest.TestCase):
     @requests_mock.Mocker()
     def test_delete_unsynced_record(self, m):
         
-        self.sync_step().delete_record(self.o)
+        self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
 
         self.assertEqual(m.call_count, 0)
 
