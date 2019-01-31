@@ -17,8 +17,8 @@ from time import sleep
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
-from synchronizers.new_base.syncstep import SyncStep, DeferredException
-from synchronizers.new_base.modelaccessor import OLTDevice, model_accessor
+from xossynchronizer.steps.syncstep import SyncStep, DeferredException
+from xossynchronizer.modelaccessor import OLTDevice, model_accessor
 from xosconfig import Config
 
 import os, sys
