@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from synchronizers.new_base.pullstep import PullStep
-from synchronizers.new_base.modelaccessor import model_accessor, OLTDevice, VOLTService, PONPort, NNIPort
+from xossynchronizer.pull_steps.pullstep import PullStep
+from xossynchronizer.modelaccessor import model_accessor, OLTDevice, VOLTService, PONPort, NNIPort
 
 from xosconfig import Config
 from multistructlog import create_logger
