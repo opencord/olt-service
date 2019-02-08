@@ -90,7 +90,7 @@ class SyncOLTDevice(SyncStep):
         else:
             model.device_id = res['id']
             model.serial_number = res['serial_number']
-            model.save()
+            model.save_changed_fields()
 
     def activate_olt(self, model):
 
@@ -105,7 +105,7 @@ class SyncOLTDevice(SyncStep):
             raise Exception("Failed to enable OLT device: %s" % request.text)
 
         model.backend_status = "Waiting for device to be activated"
-        model.save(always_update_timestamp=False) # we don't want to kickoff a new loop
+        model.save_changed_fields(always_update_timestamp=False) # we don't want to kickoff a new loop
 
         # Read state
         request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
@@ -123,7 +123,7 @@ class SyncOLTDevice(SyncStep):
 
         # Find the of_id of the device
         self.get_ids_from_logical_device(model)
-        model.save()
+        model.save_changed_fields()
 
     def deactivate_olt(self, model):
         voltha = Helpers.get_voltha_info(model.volt_service)

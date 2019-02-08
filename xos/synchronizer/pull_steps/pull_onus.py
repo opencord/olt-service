@@ -54,7 +54,7 @@ class ONUDevicePullStep(PullStep):
             # keeping only ONUs
             devices = [d for d in r.json()["items"] if "onu" in d["type"]]
 
-            log.trace("received devices", onus=devices)
+            log.debug("received devices", onus=devices)
 
             # TODO
             # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
@@ -76,7 +76,7 @@ class ONUDevicePullStep(PullStep):
             try:
 
                 model = ONUDevice.objects.filter(serial_number=onu["serial_number"])[0]
-                log.trace("ONUDevice already exists, updating it", serial_number=onu["serial_number"])
+                log.debug("ONUDevice already exists, updating it", serial_number=onu["serial_number"])
 
             except IndexError:
                 model = ONUDevice()
@@ -130,7 +130,7 @@ class ONUDevicePullStep(PullStep):
 
             ports = r.json()['items']
 
-            log.trace("received ports", ports=ports, onu=onu.device_id)
+            log.debug("received ports", ports=ports, onu=onu.device_id)
 
             self.create_or_update_ports(ports, onu)
 
@@ -163,7 +163,7 @@ class ONUDevicePullStep(PullStep):
                 log.warn("It was not possible to fetch ports from VOLTHA for logical_device %s" % logical_device_id)
 
             logical_ports = r.json()['items']
-            log.trace("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
+            log.debug("logical device ports for ONUDevice %s" % onu.device_id, logical_ports=logical_ports)
 
             ports = [p['ofp_port']['port_no'] for p in logical_ports if p['device_id'] == onu.device_id]
             # log.debug("Port_id for port %s on ONUDevice %s: %s" % (port['label'], onu.device_id, ports), logical_ports=logical_ports)
@@ -184,7 +184,7 @@ class ONUDevicePullStep(PullStep):
             port_no = self.get_onu_port_id(port, onu)
             try:
                 model = UNIPort.objects.filter(port_no=port_no, onu_device_id=onu.id)[0]
-                log.trace("UNIPort already exists, updating it", port_no=port_no, onu_device_id=onu.id)
+                log.debug("UNIPort already exists, updating it", port_no=port_no, onu_device_id=onu.id)
             except IndexError:
                 model = UNIPort()
                 model.port_no = port_no
@@ -205,7 +205,7 @@ class ONUDevicePullStep(PullStep):
             try:
                 model = PONONUPort.objects.filter(port_no=port["port_no"], onu_device_id=onu.id)[0]
                 model.xos_managed = False
-                log.trace("PONONUPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
+                log.debug("PONONUPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
             except IndexError:
                 model = PONONUPort()
                 model.port_no = port["port_no"]
