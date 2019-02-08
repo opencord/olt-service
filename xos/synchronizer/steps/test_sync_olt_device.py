@@ -85,7 +85,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         o.tologdict.return_value = {'name': "Mock VOLTServiceInstance"}
 
-        o.save.return_value = "Saved"
+        o.save_changed_fields.return_value = "Saved"
 
         o.pon_ports.all.return_value = [pon_port]
 
@@ -194,7 +194,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         # One save during preprovision
         # One save during activation to set backend_status to "Waiting for device to activate"
         # One save after activation has succeeded
-        self.assertEqual(self.o.save.call_count, 3)
+        self.assertEqual(self.o.save_changed_fields.call_count, 3)
 
     @requests_mock.Mocker()
     def test_sync_record_success_mac_address(self, m):
@@ -243,7 +243,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         # One save during preprovision
         # One save during activation to set backend_status to "Waiting for device to activate"
         # One save after activation has succeeded
-        self.assertEqual(self.o.save.call_count, 3)
+        self.assertEqual(self.o.save_changed_fields.call_count, 3)
 
     @requests_mock.Mocker()
     def test_sync_record_enable_timeout(self, m):
@@ -286,7 +286,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         # One save from preprovision to set device_id, serial_number
         # One save from activate to set backend_status to "Waiting for device to be activated"
-        self.assertEqual(self.o.save.call_count, 2)
+        self.assertEqual(self.o.save_changed_fields.call_count, 2)
 
     @requests_mock.Mocker()
     def test_sync_record_already_existing_in_voltha(self, m):
@@ -315,6 +315,8 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
         self.o.save.assert_not_called()
+        self.o.save_changed_fields.assert_not_called()
+
 
     @requests_mock.Mocker()
     def test_sync_record_deactivate(self, m):
@@ -341,6 +343,8 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
         self.assertEqual(self.o.save.call_count, 0)
+        self.assertEqual(self.o.save_changed_fields.call_count, 0)
+
 
         # Make sure disable was called
         urls = [x.url for x in m.request_history]
@@ -371,6 +375,7 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
         self.assertEqual(self.o.save.call_count, 0)
+        self.assertEqual(self.o.save_changed_fields.call_count, 0)
 
     @requests_mock.Mocker()
     def test_delete_record(self, m):

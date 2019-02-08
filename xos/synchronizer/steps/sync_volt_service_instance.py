@@ -73,10 +73,10 @@ class SyncVOLTServiceInstance(SyncStep):
             raise Exception("Failed to add subscriber in onos-voltha: %s" % request.text)
 
         o.backend_handle = handle
-        o.save(update_fields=["backend_handle"])
+        o.save_changed_fields()
 
         log.info("Added Subscriber in onos voltha", response=request.text)
-    
+
     def delete_record(self, o):
 
         log.info("Removing OLTServiceInstance", object=str(o), **o.tologdict())

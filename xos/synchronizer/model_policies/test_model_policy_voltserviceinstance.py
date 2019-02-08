@@ -129,7 +129,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
             self.policy.associate_onu_device(self.si)
 
             self.assertEqual(self.si.onu_device_id, mock_onu.id)
-            self.si.save.assert_called()
+            self.si.save_changed_fields.assert_called()
 
     def test_handle_delete(self):
         self.policy.handle_delete(self.si)
