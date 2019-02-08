@@ -68,4 +68,4 @@ class VOLTServiceInstancePolicy(Policy):
             raise Exception("ONUDevice with serial number %s can't be found" % onu_device_serial_number)
 
         si.onu_device_id = onu.id
-        si.save()
+        si.save_changed_fields()

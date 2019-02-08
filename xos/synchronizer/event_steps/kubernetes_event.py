@@ -65,4 +65,4 @@ class KubernetesPodDetailsEventStep(EventStep):
                 log.info("Dirtying VOLTServiceInstance", service_instance=service_instance)
                 service_instance.backend_code=0
                 service_instance.backend_status="resynchronize due to kubernetes event"
-                service_instance.save(update_fields=["updated", "backend_code", "backend_status"], always_update_timestamp=True)
+                service_instance.save_changed_fields(always_update_timestamp=True)

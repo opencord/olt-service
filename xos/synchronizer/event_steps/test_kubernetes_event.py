@@ -110,9 +110,9 @@ class TestKubernetesEvent(unittest.TestCase):
             self.assertEqual(self.fcsi2.backend_code, 0)
             self.assertEqual(self.fcsi2.backend_status, "resynchronize due to kubernetes event")
 
-            fcsi_save.assert_has_calls([call(self.fcsi1, update_fields=["updated", "backend_code", "backend_status"],
+            fcsi_save.assert_has_calls([call(self.fcsi1, update_fields=["backend_code", "backend_status", "name", "owner", "updated"],
                                             always_update_timestamp=True),
-                                       call(self.fcsi2, update_fields=["updated", "backend_code", "backend_status"],
+                                       call(self.fcsi2, update_fields=["backend_code", "backend_status", "name", "owner", "updated"],
                                             always_update_timestamp=True)])
 
     def test_process_event_unknownstatus(self):
