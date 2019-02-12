@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b084efe4_0abbfba1",
+        "filename": "xos/synchronizer/pull_steps/pull_onus.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2019-02-12T16:42:11Z",
+      "side": 1,
+      "message": "these lines where pretty noisy, is there any reason to move them back to debug? it will log a huge blob of JSON every 5 seconds clogging the other logs.",
+      "range": {
+        "startLine": 57,
+        "startChar": 12,
+        "endLine": 57,
+        "endChar": 21
+      },
+      "revId": "f2ad07844eee31c3663aa6089f5fccf90bb7fa51",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
