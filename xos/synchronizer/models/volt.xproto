@@ -75,6 +75,10 @@ message OLTDevice (XOSBase){
     optional string oper_status = 12 [
         help_text = "operational status, whether OLT is active",
         feedback_state = True];
+    optional string link_status = 21 [
+        help_text = "connectivity status, whether OLT has connectivity to agg switch",
+        choices = "(('up', 'up'), ('down', 'down'))",
+        feedback_state = True];
     optional string of_id = 13 [
         help_text = "Logical device openflow id",
         feedback_state = True];
