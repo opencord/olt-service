@@ -217,6 +217,42 @@ class TestSyncOLTDevice(unittest.TestCase):
 
             mock_olt_delete.assert_called()
 
+    @requests_mock.Mocker()
+    def test_pull_no_data(self, m):
+
+        m.get("http://voltha_url:1234/api/v1/devices", status_code=200, text="")
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+        patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save, \
+                patch.object(OLTDevice.objects, "get_items") as mock_get:
+
+            olt_service_mock.return_value = [self.volt_service]
+
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
+
+            olt_service_mock.assert_called()
+            mock_pon_save.assert_not_called()
+            mock_nni_save.assert_not_called()
+            mock_get.assert_not_called()
+
+    @requests_mock.Mocker()
+    def test_pull_invalid_json(self, m):
+
+        m.get("http://voltha_url:1234/api/v1/devices", status_code=200, text="{'items' : []}")
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+        patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save, \
+                patch.object(OLTDevice.objects, "get_items") as mock_get:
+
+            olt_service_mock.return_value =  [self.volt_service]
+
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
+
+            olt_service_mock.assert_called()
+            mock_pon_save.assert_not_called()
+            mock_nni_save.assert_not_called()
+            mock_get.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()
+
