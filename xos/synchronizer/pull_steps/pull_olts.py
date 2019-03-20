@@ -74,16 +74,22 @@ class OLTDevicePullStep(PullStep):
             if r.status_code != 200:
                 log.debug("[OLT pull step] It was not possible to fetch devices from VOLTHA")
 
-            # keeping only OLTs
-            devices = [d for d in r.json()["items"] if "olt" in d["type"]]
+            # [SEBA-367] Handling blank response received from Voltha, Scenario occurs when voltha api is called while vcore service is re-starting
+            elif r.text:
+                # keeping only OLTs
+                devices = [d for d in r.json()["items"] if "olt" in d["type"]]
 
-            log.debug("[OLT pull step] received devices", olts=devices)
+                log.debug("[OLT pull step] received devices", olts=devices)
 
-            olts_in_voltha = self.create_or_update_olts(devices)
+                olts_in_voltha = self.create_or_update_olts(devices)
 
-            self.delete_olts(olts_in_voltha)
+                self.delete_olts(olts_in_voltha)
+            else:
+                log.debug("[OLT pull step] Blank response received")
 
-
+        except (ValueError, TypeError), e:
+            log.warn("[OLT pull step] Invalid Json received in response from VOLTHA", reason=e)
+            return
         except ConnectionError, e:
             log.warn("[OLT pull step] It was not possible to connect to VOLTHA", reason=e)
             return

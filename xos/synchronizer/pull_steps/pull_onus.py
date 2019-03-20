@@ -51,16 +51,24 @@ class ONUDevicePullStep(PullStep):
             if r.status_code != 200:
                 log.warn("It was not possible to fetch devices from VOLTHA")
 
-            # keeping only ONUs
-            devices = [d for d in r.json()["items"] if "onu" in d["type"]]
+            # [SEBA-367] Handling blank response received from Voltha, Scenario occurs when voltha api is called while vcore service is re-starting
 
-            log.debug("received devices", onus=devices)
+            elif r.text:
+                # keeping only ONUs
+                devices = [d for d in r.json()["items"] if "onu" in d["type"]]
 
-            # TODO
-            # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
+                log.debug("received devices", onus=devices)
 
-            onus_in_voltha = self.create_or_update_onus(devices)
+                # TODO
+                # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
 
+                onus_in_voltha = self.create_or_update_onus(devices)
+            else:
+                log.debug("[ONU pull step] Blank response received")
+
+        except (ValueError, TypeError), e:
+            log.warn("[ONU pull step] Invalid Json received in response from VOLTHA", reason=e)
+            return
         except ConnectionError, e:
             log.warn("It was not possible to connect to VOLTHA", reason=e)
             return
