@@ -51,16 +51,23 @@ class ONUDevicePullStep(PullStep):
             if r.status_code != 200:
                 log.warn("It was not possible to fetch devices from VOLTHA")
 
-            # keeping only ONUs
-            devices = [d for d in r.json()["items"] if "onu" in d["type"]]
+            # [SEBA-367] Voltha sends Blank Response without any json when No devices are present
+            elif r.text:
+                # keeping only ONUs
+                devices = [d for d in r.json()["items"] if "onu" in d["type"]]
 
-            log.debug("received devices", onus=devices)
+                log.debug("received devices", onus=devices)
 
-            # TODO
-            # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
+                # TODO
+                # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
 
-            onus_in_voltha = self.create_or_update_onus(devices)
+                onus_in_voltha = self.create_or_update_onus(devices)
+            else:
+                log.debug("[ONU pull step] No devices found")
 
+        except (ValueError, TypeError), e:
+            log.warn("[ONU pull step] Invalid Json received in response from VOLTHA", reason=e)
+            return
         except ConnectionError, e:
             log.warn("It was not possible to connect to VOLTHA", reason=e)
             return
