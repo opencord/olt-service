@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e6208f01_33b6f3a4",
+        "filename": "xos/synchronizer/event_steps/onos_event.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2019-03-21T23:19:31Z",
+      "side": 1,
+      "message": "I think for now we\u0027re saying 64 subscriber per PON Port (the theoretical limit is 256 according to Shad) that means 1024 subscribers per OLT",
+      "range": {
+        "startLine": 49,
+        "startChar": 8,
+        "endLine": 50,
+        "endChar": 56
+      },
+      "revId": "6953b46d329cd25273955e73267621135f666e91",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
