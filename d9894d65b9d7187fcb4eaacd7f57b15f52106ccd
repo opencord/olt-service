@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4e5d2914_d8e910a0",
+        "filename": "xos/synchronizer/pull_steps/pull_olts.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2019-03-26T15:11:34Z",
+      "side": 1,
+      "message": "Are we sure about this?\nIf I try to call a VOLTHA instance that has no devices this is the output I get:\n\ncurl localhost:30125/api/v1/devices | jq .\n{\n  \"items\": []\n}",
+      "range": {
+        "startLine": 77,
+        "startChar": 12,
+        "endLine": 77,
+        "endChar": 97
+      },
+      "revId": "d9894d65b9d7187fcb4eaacd7f57b15f52106ccd",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
