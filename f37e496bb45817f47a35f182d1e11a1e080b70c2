@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3bbb203f_1c7dcf88",
+        "filename": "Dockerfile.synchronizer",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-03-28T14:52:50Z",
+      "side": 1,
+      "message": "change to name of service",
+      "range": {
+        "startLine": 24,
+        "startChar": 37,
+        "endLine": 24,
+        "endChar": 55
+      },
+      "revId": "f37e496bb45817f47a35f182d1e11a1e080b70c2",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "27069b68_3843e61c",
+        "filename": "requirements.txt",
+        "patchSetId": 1
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-03-28T14:52:50Z",
+      "side": 1,
+      "message": "I think this is installed in the alpine-grpc-base: https://gerrit.opencord.org/gitweb?p\u003dalpine-grpc-base.git;a\u003dblob;f\u003drequirements.txt",
+      "range": {
+        "startLine": 4,
+        "startChar": 0,
+        "endLine": 4,
+        "endChar": 22
+      },
+      "revId": "f37e496bb45817f47a35f182d1e11a1e080b70c2",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "52e1910e_13dc03ce",
+        "filename": "xos/unittest.cfg",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-03-28T14:52:50Z",
+      "side": 1,
+      "message": "All testing config should be in moved to tox.ini, then delete this file.",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 5
+      },
+      "revId": "f37e496bb45817f47a35f182d1e11a1e080b70c2",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}
