@@ -1,9 +1,7 @@
-.idea/
-*.pyc
-.DS_Store
-
+.idea
+.tox
 .coverage
-htmlcov
 coverage.xml
-nose2-junit.xml
-
+nose2-results.xml
+venv-service
+*.pyc
