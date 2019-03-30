@@ -20,9 +20,9 @@ from kafka import KafkaProducer
 
 event = json.dumps({
     'status': 'activated',
-    'serial_number': 'BRCM1234',
-    'uni_port_id': 16,
-    'of_dpid': 'of:109299321'
+    'serialNumber': 'BRCM1234',
+    'portNumber': '16',
+    'deviceId': 'of:109299321'
 })
 producer = KafkaProducer(bootstrap_servers="cord-kafka")
 producer.send("onu.events", event)
