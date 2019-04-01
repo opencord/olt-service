@@ -22,6 +22,30 @@
       "revId": "d9894d65b9d7187fcb4eaacd7f57b15f52106ccd",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "36ed1f98_05d85d5c",
+        "filename": "xos/synchronizer/pull_steps/pull_olts.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1000550
+      },
+      "writtenOn": "2019-04-01T12:08:30Z",
+      "side": 1,
+      "message": "Missed to indicate the correct comment. Blank Response is received from Voltha API call when vcore container is re-starting (for a short duration of around 10 seconds during restart) and the existing logic without any check of r.text was causing an exception in such case (as mentioned in JIRA 367 description). Fixed this throwing of exception.\n\nWhen no devices are present:\ncurl -H \"Accept: application/json\" -H \"Content-Type: application/json\" http://voltha.voltha.svc.cluster.local:8882/api/v1/devices/\n{\"items\":[]}\n\n\nWhen vcore is re-starting:\n# curl -H \"Accept: application/json\" -H \"Content-Type: application/json\" http://voltha.voltha.svc.cluster.local:8882/api/v1/devices/\ncurl: (52) Empty reply from server\n\n\nCorrected the comment and log statement in updated patch 4",
+      "parentUuid": "4e5d2914_d8e910a0",
+      "range": {
+        "startLine": 77,
+        "startChar": 12,
+        "endLine": 77,
+        "endChar": 97
+      },
+      "revId": "d9894d65b9d7187fcb4eaacd7f57b15f52106ccd",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
     }
   ]
 }
