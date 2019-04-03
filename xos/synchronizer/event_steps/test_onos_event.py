@@ -80,7 +80,7 @@ class TestOnosPortEvent(unittest.TestCase):
 
         self.oltdevice = OLTDevice(name="myolt",
                                    device_id="of:0000000000000001",
-                                   switch_dsatapath_id="of:0000000000000001",
+                                   switch_datapath_id="of:0000000000000001",
                                    switch_port="1")
 
         self.ponport = PONPort(olt_device = self.oltdevice)
@@ -179,14 +179,17 @@ class TestOnosPortEvent(unittest.TestCase):
                  u"reported_ts": ANY,
                  u"raised_ts": raised_ts,
                  u"state": u"RAISED",
-                 u"alarm_type_name": u"OLT.LOSS_OF_AGGSWITCH",
+                 u"alarm_type_name": u"OLT.PORT_LOS",
                  u"severity": u"MAJOR",
                  u"resource_id": unicode(self.oltdevice.device_id),
                  u"logical_device_id": self.oltdevice.dp_id,
-                 u"context": {u'affected_subscribers': [u'somesubscriber']},
+                 u"context": {u'affected_subscribers': [u'somesubscriber'],
+                              u"switch_datapath_id": "of:0000000000000001",
+                              u"switch_port": "1",
+                              u"oltdevice.name": "myolt"},
                  u"type": u"COMMUNICATION",
-                 u"id": u"xos.voltservice.%s.OLT_LOSS_OF_AGGWSWITCH" % self.oltdevice.device_id,
-                 u"description": u"xos.voltservice.%s - OLT LOSS OF AGGSWITCH Alarm - OLT_LOSS_OF_AGGSWITCH - RAISED" % self.oltdevice.device_id}
+                 u"id": u"xos.voltservice.%s.OLT_PORT_LOS" % self.oltdevice.device_id,
+                 u"description": u"xos.voltservice.%s - OLT PORT LOS Alarm - OLT_PORT_LOS - RAISED" % self.oltdevice.device_id}
 
         self.assertDictEqual(expected_alarm, event)
 
@@ -219,14 +222,17 @@ class TestOnosPortEvent(unittest.TestCase):
                  u"reported_ts": ANY,
                  u"raised_ts": raised_ts,
                  u"state": u"CLEARED",
-                 u"alarm_type_name": u"OLT.LOSS_OF_AGGSWITCH",
+                 u"alarm_type_name": u"OLT.PORT_LOS",
                  u"severity": u"MAJOR",
                  u"resource_id": unicode(self.oltdevice.device_id),
                  u"logical_device_id": self.oltdevice.dp_id,
-                 u"context": {u'affected_subscribers': [u'somesubscriber']},
+                 u"context": {u'affected_subscribers': [u'somesubscriber'],
+                              u"switch_datapath_id": "of:0000000000000001",
+                              u"switch_port": "1",
+                              u"oltdevice.name": "myolt"},
                  u"type": u"COMMUNICATION",
-                 u"id": u"xos.voltservice.%s.OLT_LOSS_OF_AGGWSWITCH" % self.oltdevice.device_id,
-                 u"description": u"xos.voltservice.%s - OLT LOSS OF AGGSWITCH Alarm - OLT_LOSS_OF_AGGSWITCH - CLEARED" % self.oltdevice.device_id}
+                 u"id": u"xos.voltservice.%s.OLT_PORT_LOS" % self.oltdevice.device_id,
+                 u"description": u"xos.voltservice.%s - OLT PORT LOS Alarm - OLT_PORT_LOS - CLEARED" % self.oltdevice.device_id}
 
         self.assertDictEqual(expected_alarm, event)
 

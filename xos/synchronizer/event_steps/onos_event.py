@@ -41,7 +41,6 @@ class OnosPortEventStep(EventStep):
                         subscribers.append(subscriber)
         return subscribers
 
-
     def send_alarm(self, olt, value):
         timestamp = time.mktime(datetime.datetime.strptime(value["timestamp"], "%Y-%m-%dT%H:%M:%S.%fZ").timetuple())
         state = "RAISED" if olt.link_status == "down" else "CLEARED"
@@ -55,14 +54,18 @@ class OnosPortEventStep(EventStep):
                  "reported_ts": time.time(),
                  "raised_ts": timestamp,
                  "state": state,
-                 "alarm_type_name": "OLT.LOSS_OF_AGGSWITCH",
+                 "alarm_type_name": "OLT.PORT_LOS",
                  "severity": "MAJOR",
                  "resource_id": olt.device_id,
                  "logical_device_id": olt.dp_id,
-                 "context": {"affected_subscribers": subscribers},
+                 "context": {"affected_subscribers": subscribers,
+                             "switch_datapath_id": olt.switch_datapath_id,
+                             "switch_port": olt.switch_port,
+                             "oltdevice.name": olt.name},
                  "type": "COMMUNICATION",
-                 "id": "xos.voltservice.%s.OLT_LOSS_OF_AGGWSWITCH" % olt.device_id,
-                 "description": "xos.voltservice.%s - OLT LOSS OF AGGSWITCH Alarm - OLT_LOSS_OF_AGGSWITCH - %s" % (olt.device_id, state)}
+                 "id": "xos.voltservice.%s.OLT_PORT_LOS" % olt.device_id,
+                 "description": "xos.voltservice.%s - OLT PORT LOS Alarm -"
+                                " OLT_PORT_LOS - %s" % (olt.device_id, state)}
 
         topic = "xos.alarms.olt-service"
         key = olt.device_id
