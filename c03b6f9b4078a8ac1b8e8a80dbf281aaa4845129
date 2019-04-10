@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b8ab6e21_c038e8cb",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-04-10T00:56:44Z",
+      "side": 1,
+      "message": "MAC should be in caps (it\u0027s an acronym)",
+      "range": {
+        "startLine": 64,
+        "startChar": 8,
+        "endLine": 65,
+        "endChar": 25
+      },
+      "revId": "c03b6f9b4078a8ac1b8e8a80dbf281aaa4845129",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}
