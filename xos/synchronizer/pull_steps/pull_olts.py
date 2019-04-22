@@ -104,15 +104,21 @@ class OLTDevicePullStep(PullStep):
         for olt in olts:
             if olt["type"] == "simulated_olt":
                 [host, port] = ["172.17.0.1", "50060"]
-            else:
+            elif "host_and_port" in olt:
                 [host, port] = olt["host_and_port"].split(":")
+            elif "mac_address" in olt:
+                mac_address = olt["mac_address"]
 
             olt_ports = self.fetch_olt_ports(olt["id"])
 
             try:
-                model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
+                if "host_and_port" in olt:
+                    model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
+                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
+                elif "mac_address" in olt:
+                    model = OLTDevice.objects.filter(device_type=olt["type"], mac_address=mac_address)[0]
+                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], mac_address=mac_address)
 
-                log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
 
                 if model.enacted < model.updated:
                     log.debug("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
@@ -130,10 +136,14 @@ class OLTDevicePullStep(PullStep):
                 if olt["type"] == "simulated_olt":
                     model.host = "172.17.0.1"
                     model.port = 50060
-                else:
+                elif "host_and_port" in olt:
                     [host, port] = olt["host_and_port"].split(":")
                     model.host = host
                     model.port = int(port)
+                    log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
+                elif "mac_address" in olt:
+                    model.mac_address = olt["mac_address"]
+                    log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], mac_address=mac_address)
 
                 # there's no name in voltha, so make one up based on the id
                 model.name = "OLT-%s" % olt["id"]
@@ -149,8 +159,6 @@ class OLTDevicePullStep(PullStep):
 
                 # Initial admin_state
                 model.admin_state = olt["admin_state"]
-
-                log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
 
             # Adding feedback state to the device
             model.device_id = olt["id"]

@@ -112,10 +112,10 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertFalse(m.called)
 
     @requests_mock.Mocker()
-    def test_pull(self, m):
+    def test_pull_host_and_port(self, m):
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-                patch.object(OLTDevice, "save") as mock_olt_save, \
+                patch.object(OLTDevice, "save", autospec=True) as mock_olt_save, \
                 patch.object(PONPort, "save") as mock_pon_save, \
                 patch.object(NNIPort, "save") as mock_nni_save:
             olt_service_mock.return_value = [self.volt_service]
@@ -126,17 +126,75 @@ class TestSyncOLTDevice(unittest.TestCase):
 
             self.sync_step(model_accessor=self.model_accessor).pull_records()
 
-            # TODO how to asster this?
-            # self.assertEqual(existing_olt.admin_state, "ENABLED")
-            # self.assertEqual(existing_olt.oper_status, "ACTIVE")
-            # self.assertEqual(existing_olt.volt_service_id, "volt_service_id")
-            # self.assertEqual(existing_olt.device_id, "test_id")
-            # self.assertEqual(existing_olt.of_id, "of_id")
-            # self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
 
-            mock_olt_save.assert_called()
+            saved_olts = mock_olt_save.call_args_list
+            simulated_olt = saved_olts[0][0][0]
+            self.assertEqual(len(saved_olts), 1)
+
+            self.assertEqual(simulated_olt.admin_state, "ENABLED")
+            self.assertEqual(simulated_olt.oper_status, "ACTIVE")
+            self.assertEqual(simulated_olt.volt_service_id, "volt_service_id")
+            self.assertEqual(simulated_olt.device_id, "test_id")
+            self.assertEqual(simulated_olt.of_id, "of_id")
+            self.assertEqual(simulated_olt.dp_id, "of:0000000ce2314000")
+
+
             mock_pon_save.assert_called()
             mock_nni_save.assert_called()
+
+    @requests_mock.Mocker()
+    def test_pull_mac_address(self, m):
+        devices = {
+            "items": [
+                {
+                    'id': 'tibit_id',
+                    'type': 'tibit_olt',
+                    'mac_address': '70:b3:d5:52:30:6f',
+                    'admin_state': 'ENABLED',
+                    'oper_status': 'ACTIVE',
+                    'serial_number': 'OLT-70b3d552306f',
+                }
+            ]
+        }
+
+        logical_devices = {
+            "items": [
+                {
+                    "root_device_id": "tibit_id",
+                    "id": "of_id",
+                    "datapath_id": "55334486017"
+                }
+            ]
+        }
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice, "save", autospec=True) as mock_olt_save, \
+                patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save:
+            olt_service_mock.return_value = [self.volt_service]
+
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=devices)
+            m.get("http://voltha_url:1234/api/v1/devices/tibit_id/ports", status_code=200, json=self.ports)
+            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
+
+
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
+
+
+            saved_olts = mock_olt_save.call_args_list
+            tibit_olt = saved_olts[0][0][0]
+            self.assertEqual(len(saved_olts), 1)
+
+            self.assertEqual(tibit_olt.admin_state, "ENABLED")
+            self.assertEqual(tibit_olt.oper_status, "ACTIVE")
+            self.assertEqual(tibit_olt.volt_service_id, "volt_service_id")
+            self.assertEqual(tibit_olt.device_id, "tibit_id")
+            self.assertEqual(tibit_olt.of_id, "of_id")
+            self.assertEqual(tibit_olt.dp_id, "of:0000000ce2314001")
+
+            mock_pon_save.assert_called()
+            mock_nni_save.assert_called()
+
 
     @requests_mock.Mocker()
     def test_pull_existing(self, m):
