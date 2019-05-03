@@ -25,6 +25,14 @@ from models_decl import NNIPort_decl
 from models_decl import ONUDevice_decl
 from models_decl import PONONUPort_decl
 from models_decl import UNIPort_decl
+from models_decl import TechnologyProfile_decl
+
+#from pyvoltha.adapters.common.kvstore.etcd_client import EtcdClient
+#from twisted.internet import reactor
+#from twisted.internet.defer import inlineCallbacks, returnValue, Deferred
+#from twisted.internet.error import ConnectionRefusedError
+#import txaio
+#from txaioetcd import Client, CompVersion, Failed, KeySet, OpGet, OpSet, Transaction
 
 class VOLTService(VOLTService_decl):
     class Meta:
@@ -113,6 +121,10 @@ class PONONUPort(PONONUPort_decl):
         proxy = True
 
 class UNIPort(UNIPort_decl):
+    class Meta:
+        proxy = True
+
+class TechnologyProfile(TechnologyProfile_decl):
     class Meta:
         proxy = True
 
