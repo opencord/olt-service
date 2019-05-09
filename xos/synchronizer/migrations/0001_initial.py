@@ -197,7 +197,7 @@ class Migration(migrations.Migration):
             bases=('volt.portbase_decl',),
         ),
         migrations.CreateModel(
-            name='PONONUPort_decl',
+            name='ANIPort_decl',
             fields=[
                 ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='volt.PortBase_decl')),
             ],
@@ -292,9 +292,9 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(help_text=b'OLTDevice that owns this PONPort', on_delete=django.db.models.deletion.CASCADE, related_name='pon_ports', to='volt.OLTDevice_decl'),
         ),
         migrations.AddField(
-            model_name='pononuport_decl',
+            model_name='ANIPort_decl',
             name='onu_device',
-            field=models.ForeignKey(help_text=b'ONUDevice that owns this PONONUPort', on_delete=django.db.models.deletion.CASCADE, related_name='pononu_ports', to='volt.ONUDevice_decl'),
+            field=models.ForeignKey(help_text=b'ONUDevice that owns this ANIPort', on_delete=django.db.models.deletion.CASCADE, related_name='pononu_ports', to='volt.ONUDevice_decl'),
         ),
         migrations.AddField(
             model_name='onudevice_decl',
@@ -321,14 +321,14 @@ class Migration(migrations.Migration):
             bases=('volt.nniport_decl',),
         ),
         migrations.CreateModel(
-            name='PONONUPort',
+            name='ANIPort',
             fields=[
             ],
             options={
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.pononuport_decl',),
+            bases=('volt.ANIPort_decl',),
         ),
         migrations.CreateModel(
             name='PONPort',
