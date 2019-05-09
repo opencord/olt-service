@@ -115,7 +115,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
     def test_associate_onu(self):
         with patch.object(ServiceInstance.objects, "get") as get_si, \
-            patch.object(ONUDevice.objects, "get") as get_onu:
+             patch.object(ONUDevice.objects, "get") as get_onu:
 
             mock_si = Mock()
             mock_si.get_westbound_service_instance_properties.return_value = "BRCM1234"
@@ -134,6 +134,6 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         self.policy.handle_delete(self.si)
         # handle delete does nothing, and should trivially succeed
 
+
 if __name__ == '__main__':
     unittest.main()
-

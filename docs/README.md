@@ -46,7 +46,7 @@ representation.
     - `admin_state`.
     - `oper_status`.
     - `connect_status`.
-- `NNIPort`, `PONPort`, `PONONUPort`, `UNIPort`. These represent various ports attached to OLTs and ONUs.
+- `NNIPort`, `PONPort`, `ANIPort`, `UNIPort`. These represent various ports attached to OLTs and ONUs.
 
 ## Example Tosca
 

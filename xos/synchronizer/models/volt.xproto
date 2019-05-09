@@ -201,11 +201,11 @@ message ONUDevice (XOSBase){
         text = True];
 }
 
-message PONONUPort (PortBase) {
+message ANIPort (PortBase) {
     option verbose_name = "ANI Port";
     option description="Access Node Interface Port";
-    required manytoone onu_device->ONUDevice:pononu_ports = 1:1001 [
-        help_text = "ONUDevice that owns this PONONUPort",
+    required manytoone onu_device->ONUDevice:ani_ports = 1:1001 [
+        help_text = "ONUDevice that owns this ANIPort",
         db_index = True];
 }
 
