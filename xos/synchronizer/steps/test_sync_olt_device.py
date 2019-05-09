@@ -42,7 +42,6 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
         mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
-                                                ("vsg", "vsg.xproto"),
                                                 ("rcord", "rcord.xproto"),])
 
         import xossynchronizer.modelaccessor
