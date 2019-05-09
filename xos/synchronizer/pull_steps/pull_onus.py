@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from xossynchronizer.pull_steps.pullstep import PullStep
-from xossynchronizer.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort, PONONUPort, UNIPort
+from xossynchronizer.modelaccessor import model_accessor, ONUDevice, VOLTService, OLTDevice, PONPort, ANIPort, UNIPort
 
 from xosconfig import Config
 from multistructlog import create_logger
@@ -155,7 +155,7 @@ class ONUDevicePullStep(PullStep):
         pon_onu_ports = [p for p in ports if "PON_ONU" in p["type"]]
 
         self.create_or_update_uni_port(uni_ports, onu)
-        self.create_or_update_pon_onu_port(pon_onu_ports, onu)
+        self.create_or_update_ani_port(pon_onu_ports, onu)
 
     def get_onu_port_id(self, port, onu):
         # find the correct port id as represented in the logical_device
@@ -206,21 +206,21 @@ class ONUDevicePullStep(PullStep):
             update_ports.append(model)
         return update_ports
 
-    def create_or_update_pon_onu_port(self, pon_onu_ports, onu):
+    def create_or_update_ani_port(self, pon_onu_ports, onu):
         update_ports = []
 
         for port in pon_onu_ports:
             try:
-                model = PONONUPort.objects.filter(port_no=port["port_no"], onu_device_id=onu.id)[0]
+                model = ANIPort.objects.filter(port_no=port["port_no"], onu_device_id=onu.id)[0]
                 model.xos_managed = False
-                log.debug("PONONUPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
+                log.debug("ANIPort already exists, updating it", port_no=port["port_no"], onu_device_id=onu.id)
             except IndexError:
-                model = PONONUPort()
+                model = ANIPort()
                 model.port_no = port["port_no"]
                 model.onu_device_id = onu.id
                 model.name = port["label"]
                 model.xos_managed = False
-                log.debug("PONONUPort is new, creating it", port_no=port["port_no"], onu_device_id=onu.id)
+                log.debug("ANIPort is new, creating it", port_no=port["port_no"], onu_device_id=onu.id)
 
             model.admin_state = port["admin_state"]
             model.oper_status = port["oper_status"]

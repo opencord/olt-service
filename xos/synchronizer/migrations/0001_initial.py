@@ -292,7 +292,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(help_text=b'OLTDevice that owns this PONPort', on_delete=django.db.models.deletion.CASCADE, related_name='pon_ports', to='volt.OLTDevice_decl'),
         ),
         migrations.AddField(
-            model_name='pononuport_decl',
+            model_name='PONONUPort_decl',
             name='onu_device',
             field=models.ForeignKey(help_text=b'ONUDevice that owns this PONONUPort', on_delete=django.db.models.deletion.CASCADE, related_name='pononu_ports', to='volt.ONUDevice_decl'),
         ),
@@ -328,7 +328,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.pononuport_decl',),
+            bases=('volt.PONONUPort_decl',),
         ),
         migrations.CreateModel(
             name='PONPort',
