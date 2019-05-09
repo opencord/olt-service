@@ -25,6 +25,7 @@ from models_decl import NNIPort_decl
 from models_decl import ONUDevice_decl
 from models_decl import PONONUPort_decl
 from models_decl import UNIPort_decl
+from models_decl import TechnologyProfile_decl
 
 class VOLTService(VOLTService_decl):
     class Meta:
@@ -115,4 +116,16 @@ class PONONUPort(PONONUPort_decl):
 class UNIPort(UNIPort_decl):
     class Meta:
         proxy = True
+
+class TechnologyProfile(TechnologyProfile_decl):
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+        
+        if not self.is_new:
+            existing = TechnologyProfile.objects.filter(id=self.id)
+            raise XOSValidationError('Modification operation is not allowed on Technology Profile [/%s/%s]. Delete it and add again' % (existing[0].technology, existing[0].profile_id))
+
+        super(TechnologyProfile, self).save(*args, **kwargs)
 

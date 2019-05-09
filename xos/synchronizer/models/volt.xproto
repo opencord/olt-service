@@ -230,3 +230,21 @@ message VOLTServiceInstance (ServiceInstance){
         help_text = "ONUDevice that belongs to this Subscriber chain",
         db_index = True];
 }
+
+message TechnologyProfile (XOSBase) {
+    option verbose_name = "Technology Profile";
+    option description = "The Technology Profile that is utilized by VOLTHA";
+
+    required string technology = 1 [
+        help_text = "The technology being utilized by the adaptor",
+        db_index = True,
+        max_length = 16];
+    required int32 profile_id = 2 [
+        help_text = "The numeric id of the profile",
+        db_index = True,
+        min_value = 64,
+        max_value = 255];
+    required string profile_value = 3 [
+        help_text = "The technology profile value in JSON format",
+        max_length = 4096];
+}
