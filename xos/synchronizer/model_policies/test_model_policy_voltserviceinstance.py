@@ -34,8 +34,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
         mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
-                                                ("vsg", "vsg.xproto"),
-                                                ("rcord", "rcord.xproto"),])
+                                                ("rcord", "rcord.xproto")])
 
         import xossynchronizer.modelaccessor
         import mock_modelaccessor
@@ -52,7 +51,7 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
-        # Some of the functions we call have side-effects. For example, creating a VSGServiceInstance may lead to creation of
+        # Some of the functions we call have side-effects. For example, creating a ServiceInstance may lead to creation of
         # tags. Ideally, this wouldn't happen, but it does. So make sure we reset the world.
         model_accessor.reset_all_object_stores()
 
@@ -72,12 +71,12 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
     def test_create_vsg(self):
         with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
-            patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
+            patch.object(ServiceInstance, "save", autospec=True) as save_vsg:
 
             subscriber_si = Mock()
 
             link = Mock()
-            link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
+            link.provider_service.get_service_instance_class_name.return_value = "ServiceInstance"
             link.provider_service.name = "FabricCrossconnect"
             link.provider_service.validate_links = Mock(return_value=[])
             link.provider_service.acquire_service_instance = Mock(return_value=subscriber_si)
@@ -94,12 +93,12 @@ class TestModelPolicyVOLTServiceInstance(unittest.TestCase):
 
     def test_create_vsg_already_exists(self):
         with patch.object(ServiceInstanceLink, "save", autospec=True) as save_link, \
-            patch.object(VSGServiceInstance, "save", autospec=True) as save_vsg:
+            patch.object(ServiceInstance, "save", autospec=True) as save_vsg:
 
             subscriber_si = Mock()
 
             link = Mock()
-            link.provider_service.get_service_instance_class_name.return_value = "VSGServiceInstance"
+            link.provider_service.get_service_instance_class_name.return_value = "ServiceInstance"
             link.provider_service.name = "FabricCrossconnect"
             link.provider_service.validate_links = Mock(return_value=subscriber_si)
             link.provider_service.acquire_service_instance = Mock()
