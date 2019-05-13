@@ -113,6 +113,9 @@ class TestONUDeviceModel(unittest.TestCase):
         self.onu_device.is_new = True
         self.onu_device.serial_number = 1234
 
+    def tearDown(self):
+        self.module_patcher.stop()
+
     def test_delete(self):
         self.onu_device.delete()
         self.models_decl.ONUDevice_decl.delete.assert_called()
@@ -128,6 +131,68 @@ class TestONUDeviceModel(unittest.TestCase):
         self.assertEqual(e.exception.message,
                          'ONU "1234" can\'t be deleted as it has subscribers associated with it')
         self.models_decl.OLTDevice_decl.delete.assert_not_called()
+
+class TestTechnologyProfileModel(unittest.TestCase):
+
+    def setUp(self):
+        self.xos = XOS
+
+        self.models_decl = Mock()
+        self.models_decl.TechnologyProfile_decl = MagicMock
+        self.models_decl.TechnologyProfile_decl.save = Mock()
+        self.models_decl.TechnologyProfile_decl.objects = Mock()
+        self.models_decl.TechnologyProfile_decl.objects.filter.return_value = []
+
+        modules = {
+            'xos': MagicMock(),
+            'xos.exceptions': self.xos.exceptions,
+            'models_decl': self.models_decl
+        }
+
+        self.module_patcher = patch.dict('sys.modules', modules)
+        self.module_patcher.start()
+
+        from models import TechnologyProfile
+
+        self.technology_profile = TechnologyProfile()
+        self.technology_profile.deleted = False
+        self.technology_profile.id = None  # this is a new model
+        self.technology_profile.is_new = True
+        self.technology_profile.technology = 'xgspon'
+        self.technology_profile.profile_id = 64
+        self.technology_profile.profile_value = '{ "name": "4QueueHybridProfileMap1", "profile_type": "XPON", "version": 1, "num_gem_ports": 4, "instance_control": { "onu": "multi-instance", "uni": "single-instance", "max_gem_payload_size": "auto" }, "us_scheduler": { "additional_bw": "auto", "direction": "UPSTREAM", "priority": 0, "weight": 0, "q_sched_policy": "hybrid" }, "ds_scheduler": { "additional_bw": "auto", "direction": "DOWNSTREAM", "priority": 0, "weight": 0, "q_sched_policy": "hybrid" }, "upstream_gem_port_attribute_list": [ { "pbit_map": "0b00000101", "aes_encryption": "True", "scheduling_policy": "WRR", "priority_q": 4, "weight": 25, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "max_threshold": 0, "min_threshold": 0, "max_probability": 0 } }, { "pbit_map": "0b00011010", "aes_encryption": "True", "scheduling_policy": "WRR", "priority_q": 3, "weight": 75, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } }, { "pbit_map": "0b00100000", "aes_encryption": "True", "scheduling_policy": "StrictPriority", "priority_q": 2, "weight": 0, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } }, { "pbit_map": "0b11000000", "aes_encryption": "True", "scheduling_policy": "StrictPriority", "priority_q": 1, "weight": 25, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } } ], "downstream_gem_port_attribute_list": [ { "pbit_map": "0b00000101", "aes_encryption": "True", "scheduling_policy": "WRR", "priority_q": 4, "weight": 10, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } }, { "pbit_map": "0b00011010", "aes_encryption": "True", "scheduling_policy": "WRR", "priority_q": 3, "weight": 90, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } }, { "pbit_map": "0b00100000", "aes_encryption": "True", "scheduling_policy": "StrictPriority", "priority_q": 2, "weight": 0, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } }, { "pbit_map": "0b11000000", "aes_encryption": "True", "scheduling_policy": "StrictPriority", "priority_q": 1, "weight": 25, "discard_policy": "TailDrop", "max_q_size": "auto", "discard_config": { "min_threshold": 0, "max_threshold": 0, "max_probability": 0 } } ]}'
+
+    def tearDown(self):
+        self.module_patcher.stop()
+
+    def test_save(self):
+        self.technology_profile.save()
+        self.models_decl.TechnologyProfile_decl.save.assert_called()
+
+    def test_prevent_modify(self):
+        self.technology_profile.is_new = False
+        self.technology_profile.id = 1
+        self.technology_profile.profile_value = '{"name": "someValue", "profile_type": "someValue"}'
+
+        self.models_decl.TechnologyProfile_decl.objects.filter.return_value = [self.technology_profile]
+
+        with self.assertRaises(Exception) as e:
+            self.technology_profile.save()
+
+        self.assertEqual(e.exception.message,
+                         'Modification operation is not allowed on Technology Profile [/xgspon/64]. Delete it and add again')
+        self.models_decl.TechnologyProfile_decl.save.assert_not_called()
+
+    def test_invalid_tech_profile_value_format(self):
+        self.technology_profile.profile_value = 'someTechProfileValue'
+
+        with self.assertRaises(Exception) as e:
+            self.technology_profile.save()
+
+        self.assertEqual(e.exception.message,
+                         'Technology Profile value not in valid JSON format')
+        self.models_decl.TechnologyProfile_decl.save.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

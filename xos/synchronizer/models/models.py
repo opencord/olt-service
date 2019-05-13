@@ -25,6 +25,9 @@ from models_decl import NNIPort_decl
 from models_decl import ONUDevice_decl
 from models_decl import PONONUPort_decl
 from models_decl import UNIPort_decl
+from models_decl import TechnologyProfile_decl
+
+import json
 
 class VOLTService(VOLTService_decl):
     class Meta:
@@ -115,4 +118,29 @@ class PONONUPort(PONONUPort_decl):
 class UNIPort(UNIPort_decl):
     class Meta:
         proxy = True
+
+class TechnologyProfile(TechnologyProfile_decl):
+    class Meta:
+        proxy = True
+
+    def save(self, *args, **kwargs):
+
+        caller_kind = None
+        if "caller_kind" in kwargs:
+            caller_kind = kwargs.get("caller_kind")
+
+        # only synchronizer is allowed to update the model
+        if not self.is_new and caller_kind != "synchronizer":
+            if not self.deleted:
+                existing = TechnologyProfile.objects.filter(id=self.id)
+                raise XOSValidationError('Modification operation is not allowed on Technology Profile [/%s/%s]. Delete it and add again' % (existing[0].technology, existing[0].profile_id))
+
+        # validate if technology profile value is valid JSON format string
+        if self.profile_value != None:
+            try:
+                tp_json_val = json.loads(self.profile_value)
+            except ValueError as e:
+                raise XOSValidationError('Technology Profile value not in valid JSON format')
+
+        super(TechnologyProfile, self).save(*args, **kwargs)
 
