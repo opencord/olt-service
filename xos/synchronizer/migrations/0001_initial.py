@@ -179,7 +179,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('serviceinstance_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='core.ServiceInstance_decl')),
                 ('description', models.CharField(blank=True, help_text=b'Human-readable description', max_length=254, null=True)),
-                ('onu_device', models.ForeignKey(blank=True, help_text=b'ONUDevice that belongs to this Subscriber chain', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='volt_service_instances', to='volt.ONUDevice_decl')),
+                ('onu_device', models.ForeignKey(blank=True, help_text=b'ONUDevice that belongs to this Subscriber chain', null=True, on_delete=django.db.models.deletion.CASCADE, related_name='volt_service_instances', to='olt-service.ONUDevice_decl')),
             ],
             options={
                 'verbose_name': 'vOLT Service Instance',
@@ -189,47 +189,47 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='NNIPort_decl',
             fields=[
-                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='volt.PortBase_decl')),
+                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='olt-service.PortBase_decl')),
             ],
             options={
                 'verbose_name': 'NNI Port',
             },
-            bases=('volt.portbase_decl',),
+            bases=('olt-service.portbase_decl',),
         ),
         migrations.CreateModel(
             name='PONONUPort_decl',
             fields=[
-                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='volt.PortBase_decl')),
+                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='olt-service.PortBase_decl')),
             ],
             options={
                 'verbose_name': 'ANI Port',
             },
-            bases=('volt.portbase_decl',),
+            bases=('olt-service.portbase_decl',),
         ),
         migrations.CreateModel(
             name='PONPort_decl',
             fields=[
-                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='volt.PortBase_decl')),
+                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='olt-service.PortBase_decl')),
             ],
             options={
                 'verbose_name': 'PON Port',
             },
-            bases=('volt.portbase_decl',),
+            bases=('olt-service.portbase_decl',),
         ),
         migrations.CreateModel(
             name='UNIPort_decl',
             fields=[
-                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='volt.PortBase_decl')),
+                ('portbase_decl_ptr', models.OneToOneField(auto_created=True, on_delete=django.db.models.deletion.CASCADE, parent_link=True, primary_key=True, serialize=False, to='olt-service.PortBase_decl')),
             ],
             options={
                 'verbose_name': 'UNI Port',
             },
-            bases=('volt.portbase_decl',),
+            bases=('olt-service.portbase_decl',),
         ),
         migrations.AddField(
             model_name='oltdevice_decl',
             name='volt_service',
-            field=models.ForeignKey(help_text=b'VOLTService that owns this OLT', on_delete=django.db.models.deletion.CASCADE, related_name='volt_devices', to='volt.VOLTService_decl'),
+            field=models.ForeignKey(help_text=b'VOLTService that owns this OLT', on_delete=django.db.models.deletion.CASCADE, related_name='volt_devices', to='olt-service.VOLTService_decl'),
         ),
         migrations.CreateModel(
             name='OLTDevice',
@@ -239,7 +239,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.oltdevice_decl',),
+            bases=('olt-service.oltdevice_decl',),
         ),
         migrations.CreateModel(
             name='ONUDevice',
@@ -249,7 +249,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.onudevice_decl',),
+            bases=('olt-service.onudevice_decl',),
         ),
         migrations.CreateModel(
             name='PortBase',
@@ -259,7 +259,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.portbase_decl',),
+            bases=('olt-service.portbase_decl',),
         ),
         migrations.CreateModel(
             name='VOLTService',
@@ -269,7 +269,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.voltservice_decl',),
+            bases=('olt-service.voltservice_decl',),
         ),
         migrations.CreateModel(
             name='VOLTServiceInstance',
@@ -279,27 +279,27 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.voltserviceinstance_decl',),
+            bases=('olt-service.voltserviceinstance_decl',),
         ),
         migrations.AddField(
             model_name='uniport_decl',
             name='onu_device',
-            field=models.ForeignKey(help_text=b'ONUDevice that owns this UNIPort', on_delete=django.db.models.deletion.CASCADE, related_name='uni_ports', to='volt.ONUDevice_decl'),
+            field=models.ForeignKey(help_text=b'ONUDevice that owns this UNIPort', on_delete=django.db.models.deletion.CASCADE, related_name='uni_ports', to='olt-service.ONUDevice_decl'),
         ),
         migrations.AddField(
             model_name='ponport_decl',
             name='olt_device',
-            field=models.ForeignKey(help_text=b'OLTDevice that owns this PONPort', on_delete=django.db.models.deletion.CASCADE, related_name='pon_ports', to='volt.OLTDevice_decl'),
+            field=models.ForeignKey(help_text=b'OLTDevice that owns this PONPort', on_delete=django.db.models.deletion.CASCADE, related_name='pon_ports', to='olt-service.OLTDevice_decl'),
         ),
         migrations.AddField(
             model_name='pononuport_decl',
             name='onu_device',
-            field=models.ForeignKey(help_text=b'ONUDevice that owns this PONONUPort', on_delete=django.db.models.deletion.CASCADE, related_name='pononu_ports', to='volt.ONUDevice_decl'),
+            field=models.ForeignKey(help_text=b'ONUDevice that owns this PONONUPort', on_delete=django.db.models.deletion.CASCADE, related_name='pononu_ports', to='olt-service.ONUDevice_decl'),
         ),
         migrations.AddField(
             model_name='onudevice_decl',
             name='pon_port',
-            field=models.ForeignKey(help_text=b'PONPort that connects this ONUDevice to an OLTDevice', on_delete=django.db.models.deletion.CASCADE, related_name='onu_devices', to='volt.PONPort_decl'),
+            field=models.ForeignKey(help_text=b'PONPort that connects this ONUDevice to an OLTDevice', on_delete=django.db.models.deletion.CASCADE, related_name='onu_devices', to='olt-service.PONPort_decl'),
         ),
         migrations.AlterUniqueTogether(
             name='oltdevice_decl',
@@ -308,7 +308,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='nniport_decl',
             name='olt_device',
-            field=models.ForeignKey(help_text=b'OLTDevice that owns this NNIPort', on_delete=django.db.models.deletion.CASCADE, related_name='nni_ports', to='volt.OLTDevice_decl'),
+            field=models.ForeignKey(help_text=b'OLTDevice that owns this NNIPort', on_delete=django.db.models.deletion.CASCADE, related_name='nni_ports', to='olt-service.OLTDevice_decl'),
         ),
         migrations.CreateModel(
             name='NNIPort',
@@ -318,7 +318,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.nniport_decl',),
+            bases=('olt-service.nniport_decl',),
         ),
         migrations.CreateModel(
             name='PONONUPort',
@@ -328,7 +328,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.pononuport_decl',),
+            bases=('olt-service.pononuport_decl',),
         ),
         migrations.CreateModel(
             name='PONPort',
@@ -338,7 +338,7 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.ponport_decl',),
+            bases=('olt-service.ponport_decl',),
         ),
         migrations.CreateModel(
             name='UNIPort',
@@ -348,6 +348,6 @@ class Migration(migrations.Migration):
                 'proxy': True,
                 'indexes': [],
             },
-            bases=('volt.uniport_decl',),
+            bases=('olt-service.uniport_decl',),
         ),
     ]

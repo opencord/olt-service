@@ -22,7 +22,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('volt', '0003_auto_20190312_1830'),
+        ('olt-service', '0003_auto_20190312_1830'),
     ]
 
     operations = [

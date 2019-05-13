@@ -35,7 +35,7 @@ class TestKubernetesEvent(unittest.TestCase):
         Config.init(config, 'synchronizer-config-schema.yaml')
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
-        mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
+        mock_modelaccessor_config(test_path, [("olt-service", "olt-service.xproto"),
                                                 ("rcord", "rcord.xproto"),
                                                 ("onos-service", "onos.xproto")])
 

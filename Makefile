@@ -72,7 +72,7 @@ test-migration: venv-service
 
 test-xproto: venv-service
 	source ./venv-service/bin/activate; set -u;\
-    xosgenx --lint --strict xos/synchronizer/models/volt.xproto
+    xosgenx --lint --strict xos/synchronizer/models/olt-service.xproto
 
 clean:
 	find . -name '*.pyc' | xargs rm -f
