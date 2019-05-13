@@ -22,7 +22,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('volt', '0004_oltdevice_decl_link_status'),
+        ('olt-service', '0004_oltdevice_decl_link_status'),
     ]
 
     operations = [

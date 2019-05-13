@@ -1,11 +1,11 @@
-option name = "volt";
-option app_label = "volt";
-option legacy="True";
+option name = "olt-service";
+option app_label = "olt-service";
 
 message VOLTService (Service){
     option verbose_name = "vOLT Service";
     option kind = "vOLT";
     option description = "OLT Access Service";
+    option custom_python=True;
 
     required string voltha_url = 1 [
         help_text = "The Voltha API address. By default voltha.voltha.svc.cluster.local",
@@ -42,6 +42,7 @@ message VOLTService (Service){
 message OLTDevice (XOSBase){
     option verbose_name = "OLT Device";
     option description="Represents a physical OLT device";
+    option custom_python=True;
 
     required manytoone volt_service->VOLTService:volt_devices = 1:1001 [
         help_text = "VOLTService that owns this OLT",
@@ -119,6 +120,7 @@ message OLTDevice (XOSBase){
 message PortBase (XOSBase){
     option gui_hidden = True;
     option description = "Base class for Port objects";
+    option custom_python=True;
 
     required string name = 1 [
         help_text = "Human-readable name of port",
@@ -142,6 +144,7 @@ message PortBase (XOSBase){
 message PONPort (PortBase){
     option verbose_name = "PON Port";
     option description = "PON Port";
+    option custom_python=True;
 
     required manytoone olt_device->OLTDevice:pon_ports = 1:1001 [
         help_text = "OLTDevice that owns this PONPort",
@@ -151,6 +154,7 @@ message PONPort (PortBase){
 message NNIPort (PortBase) {
     option verbose_name = "NNI Port";
     option description = "NNI Port";
+    option custom_python=True;
 
     required manytoone olt_device->OLTDevice:nni_ports = 1:1002 [
         help_text = "OLTDevice that owns this NNIPort",
@@ -160,6 +164,7 @@ message NNIPort (PortBase) {
 message ONUDevice (XOSBase){
     option verbose_name = "ONU Device";
     option description = "Represents a physical ONU device";
+    option custom_python=True;
 
     required manytoone pon_port->PONPort:onu_devices = 1:1001 [
         help_text = "PONPort that connects this ONUDevice to an OLTDevice",
@@ -204,6 +209,7 @@ message ONUDevice (XOSBase){
 message PONONUPort (PortBase) {
     option verbose_name = "ANI Port";
     option description="Access Node Interface Port";
+    option custom_python=True;
     required manytoone onu_device->ONUDevice:pononu_ports = 1:1001 [
         help_text = "ONUDevice that owns this PONONUPort",
         db_index = True];
@@ -212,6 +218,7 @@ message PONONUPort (PortBase) {
 message UNIPort (PortBase) {
     option verbose_name = "UNI Port";
     option description = "User Network Interface Port";
+    option custom_python=True;
     required manytoone onu_device->ONUDevice:uni_ports = 1:1002 [
         help_text = "ONUDevice that owns this UNIPort",
         db_index = True];
@@ -222,6 +229,7 @@ message VOLTServiceInstance (ServiceInstance){
     option owner_class_name = "VOLTService";
     option verbose_name = "vOLT Service Instance";
     option description = "Represents subscriber tenancy in the VOLT Service";
+    option custom_python=True;
 
     optional string description = 1 [
         help_text = "Human-readable description",

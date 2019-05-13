@@ -23,7 +23,7 @@ import django.utils.timezone
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('volt', '0002_auto_20190305_1242'),
+        ('olt-service', '0002_auto_20190305_1242'),
     ]
 
     operations = [
