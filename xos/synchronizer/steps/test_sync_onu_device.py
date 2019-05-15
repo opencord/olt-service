@@ -82,6 +82,14 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
         self.assertTrue(m.called)
 
     @requests_mock.Mocker()
+    def test_admin_disabled(self, m):
+        m.post("http://voltha_url:1234/api/v1/devices/test_id/disable")
+
+        self.o.admin_state = "ADMIN_DISABLED"
+        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+        self.assertTrue(m.called)
+
+    @requests_mock.Mocker()
     def test_disable_fail(self, m):
         m.post("http://voltha_url:1234/api/v1/devices/test_id/disable", status_code=500, text="Mock Error")
 

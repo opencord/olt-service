@@ -183,7 +183,7 @@ message ONUDevice (XOSBase){
         max_length = 256];
     optional string admin_state = 6 [
         help_text = "admin state, whether port should be enabled",
-        choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'))",
+        choices = "(('DISABLED', 'DISABLED'), ('ENABLED', 'ENABLED'), ('ADMIN_DISABLED', 'ADMIN_DISABLED'))",
         default = "ENABLED",
         max_length = 32];
     optional string oper_status = 7 [
