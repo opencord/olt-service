@@ -53,7 +53,7 @@ class SyncONUDevice(SyncStep):
 
     def sync_record(self, o):
 
-        if o.admin_state == "DISABLED":
+        if o.admin_state in ["DISABLED", "ADMIN_DISABLED"]:
             self.disable_onu(o)
         if o.admin_state == "ENABLED":
             self.enable_onu(o)
