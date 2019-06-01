@@ -41,10 +41,6 @@ class VOLTService(VOLTService_decl):
         except IndexError, e:
             return False
 
-class VOLTServiceInstance(VOLTServiceInstance_decl):
-    class Meta:
-        proxy = True
-
 class OLTDevice(OLTDevice_decl):
     class Meta:
         proxy = True
@@ -87,19 +83,6 @@ class OLTDevice(OLTDevice_decl):
 
         super(OLTDevice, self).delete(*args, **kwargs)
 
-class PortBase(PortBase_decl):
-    class Meta:
-        proxy = True
-
-class PONPort(PONPort_decl):
-    class Meta:
-        proxy = True
-
-class NNIPort(NNIPort_decl):
-    class Meta:
-        proxy = True
-
-
 class ONUDevice(ONUDevice_decl):
     class Meta:
         proxy = True
@@ -110,14 +93,6 @@ class ONUDevice(ONUDevice_decl):
             raise XOSValidationError('ONU "%s" can\'t be deleted as it has subscribers associated with it' % self.serial_number)
 
         super(ONUDevice, self).delete(*args, **kwargs)
-
-class ANIPort(ANIPort_decl):
-    class Meta:
-        proxy = True
-
-class UNIPort(UNIPort_decl):
-    class Meta:
-        proxy = True
 
 class TechnologyProfile(TechnologyProfile_decl):
     class Meta:

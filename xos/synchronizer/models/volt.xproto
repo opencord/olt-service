@@ -1,11 +1,11 @@
 option name = "volt";
 option app_label = "volt";
-option legacy="True";
 
 message VOLTService (Service){
     option verbose_name = "vOLT Service";
     option kind = "vOLT";
     option description = "OLT Access Service";
+    option custom_python = "True";
 
     required string voltha_url = 1 [
         help_text = "The Voltha API address. By default voltha.voltha.svc.cluster.local",
@@ -42,6 +42,7 @@ message VOLTService (Service){
 message OLTDevice (XOSBase){
     option verbose_name = "OLT Device";
     option description="Represents a physical OLT device";
+    option custom_python = "True";
 
     required manytoone volt_service->VOLTService:volt_devices = 1:1001 [
         help_text = "VOLTService that owns this OLT",
@@ -160,6 +161,7 @@ message NNIPort (PortBase) {
 message ONUDevice (XOSBase){
     option verbose_name = "ONU Device";
     option description = "Represents a physical ONU device";
+    option custom_python = "True";
 
     required manytoone pon_port->PONPort:onu_devices = 1:1001 [
         help_text = "PONPort that connects this ONUDevice to an OLTDevice",
@@ -234,6 +236,7 @@ message VOLTServiceInstance (ServiceInstance){
 message TechnologyProfile (XOSBase) {
     option verbose_name = "Technology Profile";
     option description = "The Technology Profile that is utilized by VOLTHA";
+    option custom_python = "True";
 
     required string technology = 1 [
         help_text = "The technology being utilized by the adaptor",
