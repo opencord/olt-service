@@ -23,6 +23,13 @@ COPY requirements.txt /tmp/requirements.txt
 RUN pip install -r /tmp/requirements.txt \
  && pip freeze > /var/xos/pip_freeze_olt_service_`date -u +%Y%m%dT%H%M%S`
 
+# This is used to install the dev libraries
+ARG DEV_LIBS=false
+COPY tmp /tmp
+RUN sh -c 'if [ "$DEV_LIBS" = true ]; then pip install -e /tmp/lib/xos-api; fi'
+RUN sh -c 'if [ "$DEV_LIBS" = true ]; then pip install -e /tmp/lib/xos-kafka; fi'
+RUN sh -c 'if [ "$DEV_LIBS" = true ]; then pip install -e /tmp/lib/xos-synchronizer; fi'
+
 # Copy Code
 COPY xos/synchronizer /opt/xos/synchronizers/volt
 COPY VERSION /opt/xos/synchronizers/volt/

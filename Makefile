@@ -37,9 +37,9 @@ DOCKER_LABEL_BUILD_DATE  ?= $(shell date -u "+%Y-%m-%dT%H:%M:%SZ")
 XOS_DIR                  ?= "../../../xos"
 SERVICES_DIR             ?= "../.."
 
-all: test
+all: help
 
-docker-build:
+docker-build: # @HELP build a docker image
 	docker build $(DOCKER_BUILD_ARGS) \
     -t ${DOCKER_IMAGENAME} \
     --build-arg org_label_schema_version="${VERSION}" \
@@ -49,36 +49,59 @@ docker-build:
     --build-arg org_opencord_vcs_commit_date="${DOCKER_LABEL_COMMIT_DATE}" \
     -f Dockerfile.synchronizer .
 
-docker-push:
+docker-dev-build: # @HELP build a docker image using development library from xos (assumes the code is cloned with repo)
+	mkdir -p tmp/
+	cp -r ../../xos/* tmp/
+	docker build $(DOCKER_BUILD_ARGS) \
+	--build-arg DEV_LIBS=true \
+	-t ${DOCKER_IMAGENAME} \
+	--build-arg org_label_schema_version="${VERSION}" \
+	--build-arg org_label_schema_vcs_url="${DOCKER_LABEL_VCS_URL}" \
+	--build-arg org_label_schema_vcs_ref="${DOCKER_LABEL_VCS_REF}" \
+	--build-arg org_label_schema_build_date="${DOCKER_LABEL_BUILD_DATE}" \
+	--build-arg org_opencord_vcs_commit_date="${DOCKER_LABEL_COMMIT_DATE}" \
+	-f Dockerfile.synchronizer .
+	rm -r tmp/
+
+docker-push: # @HELP push the docker image upstream
 	docker push ${DOCKER_IMAGENAME}
 
 test: test-unit test-migration test-xproto
 
-test-unit:
+test-unit: # @HELP runs unit tests
 	tox
 
-venv-service:
+venv-service: # @HELP create a python virtual-environment with all the required dependencies
 	virtualenv $@;\
     source ./$@/bin/activate ; set -u ;\
     pip install -r requirements.txt xosmigrate~=3.2.6
 
-create-migration: venv-service
+create-migration: venv-service # @HELP generate migrations
 	source ./venv-service/bin/activate; set -u;\
     cd xos; xos-migrate --xos-dir ${XOS_DIR} --services-dir ${SERVICES_DIR} -s ${SERVICE_NAME}
 
-test-migration: venv-service
+test-migration: venv-service # @HELP check that migrations are up to date
 	source ./venv-service/bin/activate; set -u;\
     cd xos; xos-migrate --xos-dir ${XOS_DIR} --services-dir ${SERVICES_DIR} -s ${SERVICE_NAME} --check
 
-test-xproto: venv-service
+test-xproto: venv-service # @HELP validate xProto syntax
 	source ./venv-service/bin/activate; set -u;\
     xosgenx --lint --strict xos/synchronizer/models/volt.xproto
 
-clean:
+clean: # @HELP remove all the build artifacts
 	find . -name '*.pyc' | xargs rm -f
 	rm -rf \
     .tox \
     venv-service \
     xos/.coverage \
     xos/coverage.xml \
-    xos/nose2-results.xml
+    xos/nose2-results.xml \
+    lib/xos-*
+
+help:
+	@grep -E '^.*: *# *@HELP' $(MAKEFILE_LIST) \
+    | sort \
+    | awk ' \
+        BEGIN {FS = ": *# *@HELP"}; \
+        {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}; \
+    '
