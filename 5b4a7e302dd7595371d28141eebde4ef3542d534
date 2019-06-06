@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a12952bf_a5ff26b4",
+        "filename": "xos/synchronizer/models/volt.xproto",
+        "patchSetId": 1
+      },
+      "lineNbr": 222,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2019-06-06T23:00:51Z",
+      "side": 1,
+      "message": "This model has a ModelPolicy",
+      "range": {
+        "startLine": 222,
+        "startChar": 8,
+        "endLine": 222,
+        "endChar": 27
+      },
+      "revId": "5b4a7e302dd7595371d28141eebde4ef3542d534",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
