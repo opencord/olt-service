@@ -22,16 +22,23 @@ from helpers import Helpers
 class TestHelpers(unittest.TestCase):
 
     def setUp(self):
+
+        # create a mock ONOS Service
+        onos = Mock()
+        onos.name = "ONOS"
+        onos.leaf_model.rest_hostname = "onos_voltha_url"
+        onos.leaf_model.rest_port = 4321
+        onos.leaf_model.rest_username = "onos_voltha_user"
+        onos.leaf_model.rest_password = "onos_voltha_pass"
+
         # Create a mock service instance
         o = Mock()
         o.voltha_url = "voltha_url"
         o.voltha_port = 1234
         o.voltha_user = "voltha_user"
         o.voltha_pass = "voltha_pass"
-        o.onos_voltha_url = "onos_voltha_url"
-        o.onos_voltha_port = 4321
-        o.onos_voltha_user = "onos_voltha_user"
-        o.onos_voltha_pass = "onos_voltha_pass"
+
+        o.provider_services = [onos]
 
         self.o = o
 

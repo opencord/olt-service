@@ -22,21 +22,6 @@ message VOLTService (Service){
         help_text = "The Voltha password. By default admin",
         default = "admin",
         max_length = 256];
-    required string onos_voltha_url = 5 [
-        help_text = "The ONOS Voltha address. By default onos-voltha-ui.voltha.svc.cluster.local",
-        default = "onos-voltha-ui.voltha.svc.cluster.local",
-        max_length = 256];
-    required int32 onos_voltha_port = 6 [
-        help_text = "The Voltha API port. By default 8181",
-        default = 8181];
-    required string onos_voltha_user = 7 [
-        help_text = "The ONOS Voltha username. By default sdn",
-        max_length = 256,
-        default = "onos"];
-    required string onos_voltha_pass = 8 [
-        help_text = "The ONOS Voltha password. By default rocks",
-        max_length = 256,
-        default = "rocks"];
 }
 
 message OLTDevice (XOSBase){

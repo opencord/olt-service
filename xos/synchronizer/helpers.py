@@ -31,11 +31,20 @@ class Helpers():
 
     @staticmethod
     def get_onos_voltha_info(olt_service):
+
+        # get the onos_fabric service
+        onos = [s.leaf_model for s in olt_service.provider_services if "onos" in s.name.lower()]
+
+        if len(onos) == 0:
+            raise Exception('Cannot find ONOS service in provider_services of vOLTService')
+
+        onos = onos[0]
+
         return {
-            'url': Helpers.format_url(olt_service.onos_voltha_url),
-            'port': olt_service.onos_voltha_port,
-            'user': olt_service.onos_voltha_user,
-            'pass': olt_service.onos_voltha_pass
+            'url': Helpers.format_url(onos.rest_hostname),
+            'port': onos.rest_port,
+            'user': onos.rest_username,
+            'pass': onos.rest_password
         }
 
     @staticmethod
