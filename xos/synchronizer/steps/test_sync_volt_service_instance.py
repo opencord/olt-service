@@ -53,11 +53,16 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
 
         self.sync_step = SyncVOLTServiceInstance
 
+        # create a mock ONOS Service
+        onos = Mock()
+        onos.name = "ONOS"
+        onos.leaf_model.rest_hostname = "onos_voltha_url"
+        onos.leaf_model.rest_port = 4321
+        onos.leaf_model.rest_username = "onos_voltha_user"
+        onos.leaf_model.rest_password = "onos_voltha_pass"
+
         volt_service = Mock()
-        volt_service.onos_voltha_url = "onos_voltha_url"
-        volt_service.onos_voltha_port = 4321
-        volt_service.onos_voltha_user = "onos_voltha_user"
-        volt_service.onos_voltha_pass = "onos_voltha_pass"
+        volt_service.provider_services = [onos]
 
         uni_port = Mock()
         uni_port.port_no = "uni_port_id"
