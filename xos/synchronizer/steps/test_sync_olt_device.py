@@ -56,6 +56,14 @@ class TestSyncOLTDevice(unittest.TestCase):
         pon_port = Mock()
         pon_port.port_id = "00ff00"
 
+        # create a mock ONOS Service
+        onos = Mock()
+        onos.name = "ONOS"
+        onos.leaf_model.rest_hostname = "onos"
+        onos.leaf_model.rest_port = 4321
+        onos.leaf_model.rest_username = "karaf"
+        onos.leaf_model.rest_password = "karaf"
+
         # Create a mock OLTDevice
         o = Mock()
         o.volt_service.voltha_url = "voltha_url"
@@ -63,10 +71,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         o.volt_service.voltha_user = "voltha_user"
         o.volt_service.voltha_pass = "voltha_pass"
 
-        o.volt_service.onos_voltha_port = 4321
-        o.volt_service.onos_voltha_url = "onos"
-        o.volt_service.onos_voltha_user = "karaf"
-        o.volt_service.onos_voltha_pass = "karaf"
+        o.volt_service.provider_services = [onos]
 
         o.device_type = "ponsim_olt"
         o.host = "172.17.0.1"
