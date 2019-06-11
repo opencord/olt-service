@@ -17,14 +17,14 @@ import random
 from xos.exceptions import XOSValidationError
 
 from models_decl import VOLTService_decl
-from models_decl import VOLTServiceInstance_decl
+from models_decl import VOLTServiceInstance_decl, VOLTServiceInstance
 from models_decl import OLTDevice_decl
-from models_decl import PortBase_decl
-from models_decl import PONPort_decl
-from models_decl import NNIPort_decl
+from models_decl import PortBase_decl, PortBase
+from models_decl import PONPort_decl, PONPort
+from models_decl import NNIPort_decl, NNIPort
 from models_decl import ONUDevice_decl
-from models_decl import ANIPort_decl
-from models_decl import UNIPort_decl
+from models_decl import ANIPort_decl, ANIPort
+from models_decl import UNIPort_decl, UNIPort
 from models_decl import TechnologyProfile_decl
 
 import json
