@@ -244,10 +244,12 @@ message TechnologyProfile (XOSBase) {
     required string technology = 1 [
         help_text = "The technology being utilized by the adaptor",
         db_index = True,
+        tosca_key = True,
         max_length = 16];
     required int32 profile_id = 2 [
         help_text = "The numeric id of the profile",
         db_index = True,
+        tosca_key = True,
         min_value = 64,
         max_value = 255];
     required string profile_value = 3 [
