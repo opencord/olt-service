@@ -16,7 +16,8 @@
 
 # xosproject/volt-synchronizer
 
-FROM xosproject/alpine-grpc-base:0.9.0
+ARG BASE_IMAGE=xosproject/alpine-grpc-base:0.9.0
+FROM $BASE_IMAGE
 
 # Install pip packages
 COPY requirements.txt /tmp/requirements.txt
