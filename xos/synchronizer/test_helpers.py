@@ -26,6 +26,7 @@ class TestHelpers(unittest.TestCase):
         # create a mock ONOS Service
         onos = Mock()
         onos.name = "ONOS"
+        onos.leaf_model.name = "ONOS"
         onos.leaf_model.rest_hostname = "onos_voltha_url"
         onos.leaf_model.rest_port = 4321
         onos.leaf_model.rest_username = "onos_voltha_user"
@@ -47,6 +48,10 @@ class TestHelpers(unittest.TestCase):
         self.assertEqual(url, "http://onf.com")
         url = Helpers.format_url("http://onf.com")
         self.assertEqual(url, "http://onf.com")
+
+    def test_get_onos_service_name(self):
+        name = Helpers.get_onos_service_name(self.o)
+        self.assertEqual(name, "ONOS")
 
     def test_get_voltha_info(self):
         voltha_dict = Helpers.get_voltha_info(self.o)

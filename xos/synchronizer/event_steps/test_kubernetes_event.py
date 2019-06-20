@@ -69,7 +69,7 @@ class TestKubernetesEvent(unittest.TestCase):
                                                    id=1112,
                                                    backend_code=1,
                                                    backend_status="succeeded",
-                                                   subscriber_services=[self.onos])
+                                                    provider_services=[self.onos])
 
         self.fcsi1 = VOLTServiceInstance(name="myfcsi1",
                                                        owner=self.fcservice,

@@ -17,10 +17,12 @@
 import json
 import os
 import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from xossynchronizer.event_steps.eventstep import EventStep
 from xossynchronizer.modelaccessor import VOLTService, VOLTServiceInstance, Service
 from xosconfig import Config
 from multistructlog import create_logger
+from helpers import Helpers
 
 log = create_logger(Config().get('logging'))
 
@@ -30,18 +32,6 @@ class KubernetesPodDetailsEventStep(EventStep):
 
     def __init__(self, *args, **kwargs):
         super(KubernetesPodDetailsEventStep, self).__init__(*args, **kwargs)
-
-    @staticmethod
-    def get_onos(service):
-        service = Service.objects.get(id=service.id)
-
-        # get the onos_fabric service
-        onos = [s.leaf_model for s in service.subscriber_services if "onos" in s.name.lower()]
-
-        if len(onos) == 0:
-            raise Exception('Cannot find ONOS service in provider_services of Fabric-Crossconnect')
-
-        return onos[0]
 
     def process_event(self, event):
         value = json.loads(event.value)
@@ -57,8 +47,9 @@ class KubernetesPodDetailsEventStep(EventStep):
             return
 
         for service in VOLTService.objects.all():
-            onos = KubernetesPodDetailsEventStep.get_onos(service)
-            if (onos.name.lower() != xos_service.lower()):
+            onos = Helpers.get_onos_service_name(service)
+            # NOTE do we really need to dynamically fetch the ONOS name?
+            if (onos.lower() != xos_service.lower()):
                 continue
 
             for service_instance in service.service_instances.all():

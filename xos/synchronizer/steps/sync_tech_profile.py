@@ -26,8 +26,10 @@ from xosconfig import Config
 
 import etcd3
 
+# TODO store ETCD_HOST_URL and ETCD_PORT in the vOLT Service model
 ETCD_HOST_URL = 'etcd-cluster.default.svc.cluster.local'
 ETCD_PORT = 2379
+PREFIX = "service/voltha/technology_profiles"
 
 log = create_logger(Config().get("logging"))
 
@@ -41,10 +43,10 @@ class SyncTechnologyProfile(SyncStep):
 
         etcd = etcd3.client(host=ETCD_HOST_URL, port=ETCD_PORT)
         if operation == 'PUT':
-           etcd.put(key, value)
-           log.info('Technology Profile [%s] saved successfully to Etcd store' % key)
+           etcd.put(PREFIX + key, value)
+           log.info('Technology Profile [%s] saved successfully to Etcd store' % (PREFIX + key))
         elif operation == 'DELETE':
-           if False == etcd.delete(key):
+           if False == etcd.delete(PREFIX + key):
                log.error('Error while deleting Technology Profile [%s] from Etcd store' % key)
                raise Exception('Failed to delete Technology Profile')
            else:

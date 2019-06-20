@@ -212,6 +212,7 @@ message VOLTServiceInstance (ServiceInstance){
     option verbose_name = "vOLT Service Instance";
     option description = "Represents subscriber tenancy in the VOLT Service";
     option policy_implemented = "True";
+    option sync_implemented = "True";
 
     optional string description = 1 [
         help_text = "Human-readable description",
