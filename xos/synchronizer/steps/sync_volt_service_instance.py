@@ -72,8 +72,10 @@ class SyncVOLTServiceInstance(SyncStep):
         if request.status_code != 200:
             raise Exception("Failed to add subscriber in onos-voltha: %s" % request.text)
 
+        # SEBA-744 Turn off sync'ing until an important change happens
         o.backend_handle = handle
-        o.save(update_fields=["backend_handle"])
+        o.no_sync = True
+        o.save(update_fields=["backend_handle", "no_sync"])
 
         log.info("Added Subscriber in onos voltha", response=request.text)
     

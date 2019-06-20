@@ -115,6 +115,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
             self.assertTrue(m.called)
             self.assertEqual(self.o.backend_handle, "of:dp_id/uni_port_id")
+            self.assertTrue(self.o.no_sync)
 
     @requests_mock.Mocker()
     def test_do_sync_fail(self, m):
@@ -130,6 +131,7 @@ class TestSyncVOLTServiceInstance(unittest.TestCase):
                 self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
                 self.assertTrue(m.called)
                 self.assertEqual(e.exception.message, "Failed to add subscriber in onos voltha: Mock Error")
+                self.assertFalse(self.o.no_sync)
 
     @requests_mock.Mocker()
     def test_delete(self, m):
