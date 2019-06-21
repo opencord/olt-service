@@ -14,7 +14,7 @@
 
 import random
 
-from xos.exceptions import XOSValidationError
+from xos.exceptions import XOSValidationError, XOSNotFound
 
 from models_decl import VOLTService_decl
 from models_decl import VOLTServiceInstance_decl, VOLTServiceInstance
@@ -61,7 +61,7 @@ class VOLTService(VOLTService_decl):
             olt = onu.pon_port.olt_device
             return olt.technology
         except ObjectDoesNotExist:
-            raise XOSNotFound("Can't find OLT for %s" % onu_sn, serial_number=onu_sn)
+            raise XOSNotFound("Can't find OLT for %s" % onu_sn)
 
     def get_tech_profile(self, technology, profile_id):
         """

@@ -18,6 +18,7 @@ from mock import patch, Mock, MagicMock
 # mocking XOS exception, as they're based in Django
 class Exceptions:
     XOSValidationError = Exception
+    XOSNotFound = Exception
 
 class XOS:
     exceptions = Exceptions

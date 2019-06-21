@@ -105,7 +105,6 @@ message OLTDevice (XOSBase){
     required string technology = 22 [
         help_text = "The technology being utilized by the adapter",
         db_index = True,
-        tosca_key = True,
         max_length = 16,
         choices = "(('gpon', 'gpon'), ('xgspon', 'xgspon'))",
         default = "xgspon"];
