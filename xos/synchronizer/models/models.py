@@ -26,6 +26,7 @@ from models_decl import ONUDevice_decl
 from models_decl import ANIPort_decl, ANIPort
 from models_decl import UNIPort_decl, UNIPort
 from models_decl import TechnologyProfile_decl
+from django.core.exceptions import ObjectDoesNotExist
 
 import json
 
@@ -40,6 +41,36 @@ class VOLTService(VOLTService_decl):
             return True
         except IndexError, e:
             return False
+
+    def get_olt_technology_from_unu_sn(self, onu_sn):
+        """
+        Return the technology assigned to an OLT Device given and ONU Serial Number
+        example usage:
+            volt = VOLTService.objects.first()
+            sn = volt.get_olt_technology_from_unu_sn("BRCM12345678")
+            # "XGSPON"
+
+        Arguments:
+            onu_sn {string} -- The ONU Serial Number
+
+        Returns:
+            string -- Technology
+        """
+        try:
+            onu = ONUDevice.objects.get(serial_number=onu_sn)
+            olt = onu.pon_port.olt_device
+            return olt.technology
+        except ObjectDoesNotExist:
+            raise XOSNotFound("Can't find OLT for %s" % onu_sn, serial_number=onu_sn)
+
+    def get_tech_profile(self, technology, profile_id):
+        """
+        Returns a Technology profiles or raise an Exception (DoesNotExist)
+        :param technology: string
+        :param profile_id: int
+        :return: TechnologyProfile
+        """
+        return TechnologyProfile.objects.get(technology=technology, profile_id=profile_id)
 
 class OLTDevice(OLTDevice_decl):
     class Meta:

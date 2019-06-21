@@ -101,6 +101,14 @@ message OLTDevice (XOSBase){
     optional string nas_id = 20 [
         help_text = "Authentication ID (propagated to the free-radius server via sadis)",
         max_length = 256];
+
+    required string technology = 22 [
+        help_text = "The technology being utilized by the adapter",
+        db_index = True,
+        tosca_key = True,
+        max_length = 16,
+        choices = "(('gpon', 'gpon'), ('xgspon', 'xgspon'))",
+        default = "xgspon"];
 }
 
 message PortBase (XOSBase){
@@ -116,12 +124,10 @@ message PortBase (XOSBase){
 
     optional string admin_state = 4 [
         help_text = "admin state, whether port should be enabled",
-        // TODO: Should specify "choices"
         feedback_state = True,
         max_length = 32];
     optional string oper_status = 5 [
         help_text = "operational status, whether port is active",
-        // TODO: Should specify "choices"
         feedback_state = True,
         max_length = 32];
 }
@@ -237,7 +243,9 @@ message TechnologyProfile (XOSBase) {
         db_index = True,
         tosca_key = True,
         min_value = 64,
-        max_value = 255];
+        max_value = 255,
+        unique_with = "technology"];
+
     required string profile_value = 3 [
         help_text = "The technology profile value in JSON format",
         max_length = 4096];
