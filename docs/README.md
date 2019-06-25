@@ -47,6 +47,7 @@ representation.
     - `oper_status`.
     - `connect_status`.
 - `NNIPort`, `PONPort`, `ANIPort`, `UNIPort`. These represent various ports attached to OLTs and ONUs.
+- `TechnologyProfile`. Contains PON related information, see [Technology Profile Management](https://github.com/opencord/voltha/tree/master/common/tech_profile) in the VOLTHA repo.
 
 ## Example Tosca
 
@@ -139,6 +140,167 @@ topology_template:
             relationship: tosca.relationships.BelongsToOne
 ```
 
+## Create a Technology Profile
+
+This example uses 4 Gem ports:
+
+```yaml
+tosca_definitions_version: tosca_simple_yaml_1_0
+imports:
+  - custom_types/technologyprofile.yaml
+description: Create a TechnologyProfile to configure the PON in VOLTHA
+topology_template:
+  node_templates:
+
+    technologyProfile:
+      type: tosca.nodes.TechnologyProfile
+      properties:
+        profile_id: 64
+        technology: xgspon
+        profile_value: >
+          {
+            "name": "4QueueHybridProfileMap1",
+            "profile_type": "XPON",
+            "version": 1,
+            "num_gem_ports": 4,
+            "instance_control": {
+              "onu": "multi-instance",
+              "uni": "single-instance",
+              "max_gem_payload_size": "auto"
+            },
+            "us_scheduler": {
+              "additional_bw": "auto",
+              "direction": "UPSTREAM",
+              "priority": 0,
+              "weight": 0,
+              "q_sched_policy": "hybrid"
+            },
+            "ds_scheduler": {
+              "additional_bw": "auto",
+              "direction": "DOWNSTREAM",
+              "priority": 0,
+              "weight": 0,
+              "q_sched_policy": "hybrid"
+            },
+            "upstream_gem_port_attribute_list": [
+              {
+                "pbit_map": "0b00000101",
+                "aes_encryption": "True",
+                "scheduling_policy": "WRR",
+                "priority_q": 4,
+                "weight": 25,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "max_threshold": 0,
+                  "min_threshold": 0,
+                  "max_probability": 0
+                }
+              },
+              {
+                "pbit_map": "0b00011010",
+                "aes_encryption": "True",
+                "scheduling_policy": "WRR",
+                "priority_q": 3,
+                "weight": 75,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              },
+              {
+                "pbit_map": "0b00100000",
+                "aes_encryption": "True",
+                "scheduling_policy": "StrictPriority",
+                "priority_q": 2,
+                "weight": 0,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              },
+              {
+                "pbit_map": "0b11000000",
+                "aes_encryption": "True",
+                "scheduling_policy": "StrictPriority",
+                "priority_q": 1,
+                "weight": 25,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              }
+            ],
+            "downstream_gem_port_attribute_list": [
+              {
+                "pbit_map": "0b00000101",
+                "aes_encryption": "True",
+                "scheduling_policy": "WRR",
+                "priority_q": 4,
+                "weight": 10,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              },
+              {
+                "pbit_map": "0b00011010",
+                "aes_encryption": "True",
+                "scheduling_policy": "WRR",
+                "priority_q": 3,
+                "weight": 90,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              },
+              {
+                "pbit_map": "0b00100000",
+                "aes_encryption": "True",
+                "scheduling_policy": "StrictPriority",
+                "priority_q": 2,
+                "weight": 0,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              },
+              {
+                "pbit_map": "0b11000000",
+                "aes_encryption": "True",
+                "scheduling_policy": "StrictPriority",
+                "priority_q": 1,
+                "weight": 25,
+                "discard_policy": "TailDrop",
+                "max_q_size": "auto",
+                "discard_config": {
+                  "min_threshold": 0,
+                  "max_threshold": 0,
+                  "max_probability": 0
+                }
+              }
+            ]
+          }
+```
+
 ## Integration with other Services
 
 The western neighbor of the vOLT Service is typically the R-CORD Service, which handles subscriber-related state. The vOLT Service may pull subscriber related information, such as VLAN tags, ONU serial numbers, etc., from that service.
@@ -149,10 +311,12 @@ The eastern neighbor of the vOLT Service is typically the Fabric Crossconnect Se
 
 ### Push steps
 
-There are two top-down steps in this service:
+There are four top-down steps in this service:
 
 - `SyncOLTDevice` to pre-provision and enable OLT devices. Also handles disabling and deleting the OLT from `VOLTHA` when the model is deleted in XOS.
+- `SyncONUDevice` to admin enable/disable an ONU Device (or to configure one if they're not discovered by the OLT software)
 - `SyncVOLTServiceInstance` to add the subscriber in `ONOS-VOLTHA`
+- `SyncTechnologyProfile` to push the Technology Profile into ETCD
 
 ### Pull steps
 
