@@ -202,6 +202,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         existing_olt.admin_state = "ENABLED"
         existing_olt.enacted = 2
         existing_olt.updated = 1
+        existing_olt.serial_number = ""
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
                 patch.object(OLTDevice.objects, "filter") as mock_get, \
@@ -223,10 +224,77 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(existing_olt.device_id, "test_id")
             self.assertEqual(existing_olt.of_id, "of_id")
             self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
+            self.assertEqual(existing_olt.serial_number, "serial_number")
 
             # mock_olt_save.assert_called()
             mock_pon_save.assert_called()
             mock_nni_save.assert_called()
+
+    @requests_mock.Mocker()
+    def test_pull_existing_empty_voltha_serial(self, m):
+
+        existing_olt = Mock()
+        existing_olt.admin_state = "ENABLED"
+        existing_olt.enacted = 2
+        existing_olt.updated = 1
+        existing_olt.serial_number = "orig_serial"
+
+        self.devices["items"][0]["serial_number"] = ""
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice.objects, "filter") as mock_get, \
+                patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save, \
+                patch.object(existing_olt, "save") as  mock_olt_save:
+            olt_service_mock.return_value = [self.volt_service]
+            mock_get.return_value = [existing_olt]
+
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
+            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
+
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
+
+            self.assertEqual(existing_olt.admin_state, "ENABLED")
+            self.assertEqual(existing_olt.oper_status, "ACTIVE")
+            self.assertEqual(existing_olt.volt_service_id, "volt_service_id")
+            self.assertEqual(existing_olt.device_id, "test_id")
+            self.assertEqual(existing_olt.of_id, "of_id")
+            self.assertEqual(existing_olt.dp_id, "of:0000000ce2314000")
+            self.assertEqual(existing_olt.serial_number, "orig_serial")
+
+            # mock_olt_save.assert_called()
+            mock_pon_save.assert_called()
+            mock_nni_save.assert_called()
+
+    @requests_mock.Mocker()
+    def test_pull_existing_incorrect_voltha_serial(self, m):
+
+        existing_olt = Mock()
+        existing_olt.admin_state = "ENABLED"
+        existing_olt.enacted = 2
+        existing_olt.updated = 1
+        existing_olt.serial_number = "orig_serial"
+
+        self.devices["items"][0]["serial_number"] = "wrong_serial"
+
+        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
+                patch.object(OLTDevice.objects, "filter") as mock_get, \
+                patch.object(PONPort, "save") as mock_pon_save, \
+                patch.object(NNIPort, "save") as mock_nni_save, \
+                patch.object(existing_olt, "save") as  mock_olt_save:
+            olt_service_mock.return_value = [self.volt_service]
+            mock_get.return_value = [existing_olt]
+
+            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
+            m.get("http://voltha_url:1234/api/v1/devices/test_id/ports", status_code=200, json=self.ports)
+            m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=self.logical_devices)
+
+            self.sync_step(model_accessor=self.model_accessor).pull_records()
+
+            self.assertEqual(existing_olt.backend_code, 2)
+            self.assertEqual(existing_olt.backend_status, "Incorrect serial number")
+            self.assertEqual(existing_olt.serial_number, "orig_serial")
 
     @requests_mock.Mocker()
     def test_pull_existing_do_not_sync(self, m):
