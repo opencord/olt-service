@@ -88,6 +88,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         # feedback state
         o.device_id = None
         o.oper_status = None
+        o.serial_number= None
         o.of_id = None
         o.id = 1
 

@@ -89,7 +89,16 @@ class SyncOLTDevice(SyncStep):
                 'VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA')
         else:
             model.device_id = res['id']
-            model.serial_number = res['serial_number']
+
+            # Only update the serial number if it is not already populated. See comments in similar code in the
+            # pull step. Let the pull step handle emitting any error message if the serial numbers differ.
+            if res['serial_number'] and (not model.serial_number):
+                log.info("Sync step learned olt serial number from voltha",
+                         model_serial_number=model.serial_number,
+                         voltha_serial_number=res['serial_number'],
+                         olt_id=model.id)
+                model.serial_number = res['serial_number']
+
             model.save_changed_fields()
 
     def activate_olt(self, model):
@@ -116,7 +125,15 @@ class SyncOLTDevice(SyncStep):
             attempted = attempted + 1
 
         model.oper_status = request['oper_status']
-        model.serial_number = request['serial_number']
+
+        # Only update the serial number if it is not already populated. See comments in similar code in the
+        # pull step. Let the pull step handle emitting any error message if the serial numbers differ.
+        if request['serial_number'] and (not model.serial_number):
+            log.info("Sync step learned olt serial number from voltha",
+                     model_serial_number=model.serial_number,
+                     voltha_serial_number=request['serial_number'],
+                     olt_id=model.id)
+            model.serial_number = request['serial_number']
 
         if model.oper_status != "ACTIVE":
             raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
