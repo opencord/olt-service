@@ -83,6 +83,9 @@ class OLTDevicePullStep(PullStep):
 
                 olts_in_voltha = self.create_or_update_olts(devices)
 
+                # TODO(smbaker): self.create_or_update_olts() will remove any OLT from this list that does
+                # not have an NNI port. Then delete_olts() may go off and delete it. Is this intended?
+
                 self.delete_olts(olts_in_voltha)
             else:
                 log.debug("[OLT pull step] Blank response received")
@@ -114,11 +117,10 @@ class OLTDevicePullStep(PullStep):
             try:
                 if "host_and_port" in olt:
                     model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
-                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], host=host, port=port)
+                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], id=model.id, host=host, port=port)
                 elif "mac_address" in olt:
                     model = OLTDevice.objects.filter(device_type=olt["type"], mac_address=mac_address)[0]
-                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], mac_address=mac_address)
-
+                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], id=model.id, mac_address=mac_address)
 
                 if model.enacted < model.updated:
                     log.debug("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
@@ -136,6 +138,7 @@ class OLTDevicePullStep(PullStep):
                 if olt["type"] == "simulated_olt":
                     model.host = "172.17.0.1"
                     model.port = 50060
+                    log.debug("[OLT pull step] OLTDevice is new, creating it. Simulated")
                 elif "host_and_port" in olt:
                     [host, port] = olt["host_and_port"].split(":")
                     model.host = host
@@ -160,10 +163,43 @@ class OLTDevicePullStep(PullStep):
                 # Initial admin_state
                 model.admin_state = olt["admin_state"]
 
+            # Check to see if Voltha's serial_number field is populated. During Activation it's possible that
+            # Voltha's serial_number field may be blank. We want to avoid overwriting a populated data model
+            # serial number with an unpopulated Voltha serial number. IF this happened, then there would be
+            # a window of vulnerability where sadis requests will fail.
+            
+            if olt['serial_number'] and model.serial_number != olt['serial_number']:
+                # Check to see if data model serial number is already populated. If the serial number was
+                # already populated, and what we just learned from Voltha differs, then this is an error
+                # that should be made visible to the operator, so the operator may correct it.
+                if model.serial_number:
+                    log.error("Serial number mismatch when pulling olt. Aborting OLT Update.",
+                              model_serial_number=model.serial_number,
+                              voltha_serial_number=olt['serial_number'],
+                              olt_id=model.id)
+                    model.backend_status = "Incorrect serial number"
+                    model.backend_code = 2
+                    model.save_changed_fields()
+                    # Have to include this in the result, or delete_olts() will delete it
+                    updated_olts.append(model)
+                    # Stop processing this OLT
+                    continue
+
+                # Preserve existing behavior.
+                # Data model serial number is unpopulated, so populate it.
+
+                # TODO(smbaker): Consider making serial_number a required field, then do away with this.
+
+                log.info("Pull step learned olt serial number from voltha",
+                         model_serial_number=model.serial_number,
+                         voltha_serial_number=olt['serial_number'],
+                         olt_id=model.id)
+
+                model.serial_number = olt['serial_number']
+
             # Adding feedback state to the device
             model.device_id = olt["id"]
             model.oper_status = olt["oper_status"]
-            model.serial_number = olt['serial_number']
 
             model.volt_service = self.volt_service
             model.volt_service_id = self.volt_service.id
@@ -278,5 +314,5 @@ class OLTDevicePullStep(PullStep):
                          name=o.name)
                 continue
 
-            log.debug("[OLT pull step] deleting device as it's not present in VOLTHA", device_id=o.device_id, name=o.name)
+            log.debug("[OLT pull step] deleting device as it's not present in VOLTHA", device_id=o.device_id, name=o.name, id=o.id)
             model.delete()
