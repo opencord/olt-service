@@ -160,10 +160,34 @@ class OLTDevicePullStep(PullStep):
                 # Initial admin_state
                 model.admin_state = olt["admin_state"]
 
+            # Check to see if Voltha's serial_number field is populated. During Activation it's possible that
+            # Voltha's serial_number field may be blank. We want to avoid overwriting a populated data model
+            # serial number with an unpopulated Voltha serial number. IF this happened, then there would be
+            # a window of vulnerability where sadis requests will fail.
+            
+            if olt['serial_number'] and model.serial_number != olt['serial_number']:
+                # Check to see if data model serial number is already populated
+                if model.serial_number:
+                    log.error("Serial number mismatch when pulling olt. Aborting OLT Update.",
+                              model_serial_number=model.serial_number,
+                              voltha_serial_number=olt['serial_number'],
+                              olt_id=model.id)
+                    model.backend_status = "Incorrect serial number"
+                    model.backend_code = 2
+                    model.save_changed_fields()
+                    # Stop processing this OLT
+                    continue
+
+                # Preserve existing behavior.
+                # Data model serial number is unpopulated, so populate it.
+
+                # TODO(smbaker): Consider making serial_number a required field
+
+                model.serial_number = olt['serial_number']
+
             # Adding feedback state to the device
             model.device_id = olt["id"]
             model.oper_status = olt["oper_status"]
-            model.serial_number = olt['serial_number']
 
             model.volt_service = self.volt_service
             model.volt_service_id = self.volt_service.id
