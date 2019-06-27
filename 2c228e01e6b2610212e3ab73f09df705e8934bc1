@@ -22,6 +22,30 @@
       "revId": "2c228e01e6b2610212e3ab73f09df705e8934bc1",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9546cb5c_f893fdb4",
+        "filename": "xos/synchronizer/pull_steps/pull_olts.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2019-06-27T03:38:00Z",
+      "side": 1,
+      "message": "We also need to think through the part of the pull step that creates OLTDevice models. I\u0027ll post a question on slack.",
+      "parentUuid": "a58e3473_c6bff6e2",
+      "range": {
+        "startLine": 184,
+        "startChar": 18,
+        "endLine": 184,
+        "endChar": 79
+      },
+      "revId": "2c228e01e6b2610212e3ab73f09df705e8934bc1",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
     }
   ]
 }
