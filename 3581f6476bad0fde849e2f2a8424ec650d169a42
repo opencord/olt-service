@@ -22,6 +22,30 @@
       "revId": "3581f6476bad0fde849e2f2a8424ec650d169a42",
       "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8b48c21e_9d9893d9",
+        "filename": "xos/synchronizer/pull_steps/pull_olts.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2019-06-27T21:23:24Z",
+      "side": 1,
+      "message": "The outer if statement lets through both cases, where `model.serial_number` is empty (in which case we populate it below) or where `model.serial_number` is populated (in which case we report the error and execute the continue).",
+      "parentUuid": "978f8d53_b8c8f436",
+      "range": {
+        "startLine": 174,
+        "startChar": 16,
+        "endLine": 174,
+        "endChar": 39
+      },
+      "revId": "3581f6476bad0fde849e2f2a8424ec650d169a42",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
     }
   ]
 }
