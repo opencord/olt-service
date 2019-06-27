@@ -148,5 +148,9 @@ class TechnologyProfile(TechnologyProfile_decl):
             except ValueError as e:
                 raise XOSValidationError('Technology Profile value not in valid JSON format')
 
+        # TODO validate the tech profile (in the model), see errors like:
+        # num_gem_ports=tech_profile[TechProfile.NUM_GEM_PORTS],\nKeyError: \'num_gem_ports\''
+        # in File "/voltha/common/tech_profile/tech_profile.py", line 403, in _get_tech_profile
+
         super(TechnologyProfile, self).save(*args, **kwargs)
 

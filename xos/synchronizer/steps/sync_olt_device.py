@@ -18,7 +18,7 @@ import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
 from xossynchronizer.steps.syncstep import SyncStep, DeferredException
-from xossynchronizer.modelaccessor import OLTDevice, model_accessor
+from xossynchronizer.modelaccessor import OLTDevice, TechnologyProfile, model_accessor
 from xosconfig import Config
 
 import os, sys
@@ -166,8 +166,24 @@ class SyncOLTDevice(SyncStep):
             except Exception:
                 print request.text
 
+    def wait_for_tp(self, technology):
+        """
+        Check if a technology profile for this technology has been already pushed to ETCD,
+        if not defer the OLT Provisioning.
+        :param technology: string - the technology to check for a tech profile
+        :return: True (or raises DeferredException)
+        """
+        try:
+            tps = TechnologyProfile.objects.get(technology=technology, backend_code=1)
+        except IndexError:
+            raise DeferredException("Waiting for a TechnologyProfile (technology=%s) to be synchronized" % technology)
+
+        return True
+
     def sync_record(self, model):
         log.info("Synching device", object=str(model), **model.tologdict())
+
+        self.wait_for_tp(model.technology)
 
         if model.admin_state not in ["ENABLED", "DISABLED"]:
             raise Exception("OLT Device %s admin_state has invalid value %s" % (model.id, model.admin_state))

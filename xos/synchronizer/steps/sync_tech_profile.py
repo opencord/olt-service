@@ -39,7 +39,7 @@ class SyncTechnologyProfile(SyncStep):
     observes = TechnologyProfile
 
     def update_etcd(self, operation, key, value):
-        log.info('Update Etcd store: ', operation=operation, key=key, value=value)
+        log.info('Update Etcd store: ', operation=operation, key=PREFIX + key, value=value)
 
         etcd = etcd3.client(host=ETCD_HOST_URL, port=ETCD_PORT)
         if operation == 'PUT':
@@ -55,6 +55,7 @@ class SyncTechnologyProfile(SyncStep):
            log.warning('Invalid or unsupported Etcd operation: %s' % operation)
 
     def sync_record(self, model):
+
         log.info('Synching TechnologyProfile', object=str(model), **model.tologdict())
 
         log.info('TechnologyProfile: %s : %s' % (model.technology, model.profile_id))
