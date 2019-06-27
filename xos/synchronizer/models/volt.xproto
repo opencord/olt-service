@@ -236,6 +236,7 @@ message TechnologyProfile (XOSBase) {
         help_text = "The technology being utilized by the adaptor",
         db_index = True,
         tosca_key = True,
+        choices = "(('gpon', 'gpon'), ('xgspon', 'xgspon'))",
         max_length = 16];
     required int32 profile_id = 2 [
         help_text = "The numeric id of the profile",

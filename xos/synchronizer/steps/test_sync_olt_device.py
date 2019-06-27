@@ -50,6 +50,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         from xossynchronizer.modelaccessor import model_accessor
         self.model_accessor = model_accessor
 
+        # import all class names to globals
+        for (k, v) in model_accessor.all_model_classes.items():
+            globals()[k] = v
+
         from sync_olt_device import SyncOLTDevice, DeferredException
         self.sync_step = SyncOLTDevice
 
@@ -97,6 +101,12 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         self.voltha_devices_response = {"id": "123", "serial_number": "foobar"}
 
+        self.tp = TechnologyProfile(
+            technology="xgspon",
+            profile_id=64,
+            profile_value="{}"
+        )
+
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save
@@ -127,8 +137,12 @@ class TestSyncOLTDevice(unittest.TestCase):
         """
         m.post("http://voltha_url:1234/api/v1/devices", status_code=500, text="MockError")
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(Exception) as e, \
+            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
+
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+
         self.assertEqual(e.exception.message, "Failed to add OLT device: MockError")
 
     @requests_mock.Mocker()
@@ -138,8 +152,12 @@ class TestSyncOLTDevice(unittest.TestCase):
         """
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": ""})
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(Exception) as e, \
+            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
+
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+
         self.assertEqual(e.exception.message, "VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA")
 
     @requests_mock.Mocker()
@@ -150,7 +168,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response)
         m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=500, text="EnableError")
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(Exception) as e, \
+            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
+
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         self.assertEqual(e.exception.message, "Failed to enable OLT device: EnableError")
@@ -189,16 +210,19 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=onos_expected_conf,
                additional_matcher=functools.partial(match_json, onos_expected_conf))
 
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-        self.assertEqual(self.o.admin_state, "ENABLED")
-        self.assertEqual(self.o.oper_status, "ACTIVE")
-        self.assertEqual(self.o.serial_number, "foobar")
-        self.assertEqual(self.o.of_id, "0001000ce2314000")
+        with patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
 
-        # One save during preprovision
-        # One save during activation to set backend_status to "Waiting for device to activate"
-        # One save after activation has succeeded
-        self.assertEqual(self.o.save_changed_fields.call_count, 3)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+            self.assertEqual(self.o.admin_state, "ENABLED")
+            self.assertEqual(self.o.oper_status, "ACTIVE")
+            self.assertEqual(self.o.serial_number, "foobar")
+            self.assertEqual(self.o.of_id, "0001000ce2314000")
+
+            # One save during preprovision
+            # One save during activation to set backend_status to "Waiting for device to activate"
+            # One save after activation has succeeded
+            self.assertEqual(self.o.save_changed_fields.call_count, 3)
 
     @requests_mock.Mocker()
     def test_sync_record_success_mac_address(self, m):
@@ -239,15 +263,18 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-        self.assertEqual(self.o.admin_state, "ENABLED")
-        self.assertEqual(self.o.oper_status, "ACTIVE")
-        self.assertEqual(self.o.of_id, "0001000ce2314000")
+        with patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
 
-        # One save during preprovision
-        # One save during activation to set backend_status to "Waiting for device to activate"
-        # One save after activation has succeeded
-        self.assertEqual(self.o.save_changed_fields.call_count, 3)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+            self.assertEqual(self.o.admin_state, "ENABLED")
+            self.assertEqual(self.o.oper_status, "ACTIVE")
+            self.assertEqual(self.o.of_id, "0001000ce2314000")
+
+            # One save during preprovision
+            # One save during activation to set backend_status to "Waiting for device to activate"
+            # One save after activation has succeeded
+            self.assertEqual(self.o.save_changed_fields.call_count, 3)
 
     @requests_mock.Mocker()
     def test_sync_record_enable_timeout(self, m):
@@ -279,7 +306,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         }
         m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(Exception) as e, \
+            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
+
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         self.assertEqual(e.exception.message, "It was not possible to activate OLTDevice with id 1")
@@ -317,10 +347,12 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=expected_conf,
                additional_matcher=functools.partial(match_json, expected_conf))
 
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-        self.o.save.assert_not_called()
-        self.o.save_changed_fields.assert_not_called()
+        with patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
 
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+            self.o.save.assert_not_called()
+            self.o.save_changed_fields.assert_not_called()
 
     @requests_mock.Mocker()
     def test_sync_record_deactivate(self, m):
@@ -343,16 +375,19 @@ class TestSyncOLTDevice(unittest.TestCase):
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
         m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
 
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+        with patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
 
-        # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
-        self.assertEqual(self.o.save.call_count, 0)
-        self.assertEqual(self.o.save_changed_fields.call_count, 0)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
+            # No saves as state has not changed (will eventually be saved
+            # by the synchronizer framework to update backend_status)
+            self.assertEqual(self.o.save.call_count, 0)
+            self.assertEqual(self.o.save_changed_fields.call_count, 0)
 
-        # Make sure disable was called
-        urls = [x.url for x in m.request_history]
-        self.assertIn("http://voltha_url:1234/api/v1/devices/123/disable", urls)
+            # Make sure disable was called
+            urls = [x.url for x in m.request_history]
+            self.assertIn("http://voltha_url:1234/api/v1/devices/123/disable", urls)
 
     @requests_mock.Mocker()
     def test_sync_record_deactivate_already_inactive(self, m):
@@ -375,11 +410,23 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
 
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+        with patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            tp_mock.return_value = self.tp
 
-        # No saves as state has not changed (will eventually be saved by synchronizer framework to update backend_status)
-        self.assertEqual(self.o.save.call_count, 0)
-        self.assertEqual(self.o.save_changed_fields.call_count, 0)
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+
+            # No saves as state has not changed (will eventually be saved by synchronizer framework
+            # to update backend_status)
+            self.assertEqual(self.o.save.call_count, 0)
+            self.assertEqual(self.o.save_changed_fields.call_count, 0)
+
+    def test_do_not_sync_without_tech_profile(self):
+        self.o.technology = "xgspon"
+        with self.assertRaises(DeferredException) as e:
+
+            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+
+        self.assertEqual(e.exception.message, "Waiting for a TechnologyProfile (technology=xgspon) to be synchronized")
 
     @requests_mock.Mocker()
     def test_delete_record(self, m):
