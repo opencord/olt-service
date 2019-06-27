@@ -20,7 +20,7 @@ import os, sys
 
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
-class TestSyncVOLTServiceInstance(unittest.TestCase):
+class TestSyncONUDevice(unittest.TestCase):
     def setUp(self):
 
         self.sys_path_save = sys.path
