@@ -16,14 +16,12 @@ import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from helpers import Helpers
-
 import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
 from xossynchronizer.modelaccessor import TechnologyProfile, model_accessor
 from xossynchronizer.steps.syncstep import SyncStep
 from xosconfig import Config
-
 import etcd3
 
 # TODO store ETCD_HOST_URL and ETCD_PORT in the vOLT Service model
@@ -32,6 +30,7 @@ ETCD_PORT = 2379
 PREFIX = "service/voltha/technology_profiles"
 
 log = create_logger(Config().get("logging"))
+
 
 class SyncTechnologyProfile(SyncStep):
     provides = [TechnologyProfile]
@@ -43,16 +42,16 @@ class SyncTechnologyProfile(SyncStep):
 
         etcd = etcd3.client(host=ETCD_HOST_URL, port=ETCD_PORT)
         if operation == 'PUT':
-           etcd.put(PREFIX + key, value)
-           log.info('Technology Profile [%s] saved successfully to Etcd store' % (PREFIX + key))
+            etcd.put(PREFIX + key, value)
+            log.info('Technology Profile [%s] saved successfully to Etcd store' % (PREFIX + key))
         elif operation == 'DELETE':
-           if False == etcd.delete(PREFIX + key):
-               log.error('Error while deleting Technology Profile [%s] from Etcd store' % key)
-               raise Exception('Failed to delete Technology Profile')
-           else:
-               log.info('Technology Profile [%s] deleted successfully from Etcd store' % key)
+            if False == etcd.delete(PREFIX + key):
+                log.error('Error while deleting Technology Profile [%s] from Etcd store' % key)
+                raise Exception('Failed to delete Technology Profile')
+            else:
+                log.info('Technology Profile [%s] deleted successfully from Etcd store' % key)
         else:
-           log.warning('Invalid or unsupported Etcd operation: %s' % operation)
+            log.warning('Invalid or unsupported Etcd operation: %s' % operation)
 
     def sync_record(self, model):
 
@@ -68,6 +67,5 @@ class SyncTechnologyProfile(SyncStep):
 
         log.info('TechnologyProfile: %s : %s' % (model.technology, model.profile_id))
 
-        tp_key = u'/' + model.technology + u'/' + str(model.profile_id)
+        tp_key = "%s/%s/%s" % (PREFIX, model.technology, model.profile_id)
         self.update_etcd('DELETE', tp_key, None)
-
