@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "978f8d53_b8c8f436",
+        "filename": "xos/synchronizer/pull_steps/pull_olts.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2019-06-27T20:19:46Z",
+      "side": 1,
+      "message": "isn\u0027t this check redundant?",
+      "range": {
+        "startLine": 174,
+        "startChar": 16,
+        "endLine": 174,
+        "endChar": 39
+      },
+      "revId": "3581f6476bad0fde849e2f2a8424ec650d169a42",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}
