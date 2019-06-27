@@ -20,8 +20,17 @@ import os, sys
 
 test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
 
-class TestSyncONUDevice(unittest.TestCase):
+class TestSyncTechProfile(unittest.TestCase):
     def setUp(self):
+
+        self.mock_etcd = Mock(name="etcd-client")
+        etcd = Mock(name="etcd-mocked-lib")
+        etcd.client.return_value = self.mock_etcd
+        modules = {
+            'etcd3': etcd
+        }
+        self.module_patcher = patch.dict('sys.modules', modules)
+        self.module_patcher.start()
 
         self.sys_path_save = sys.path
 
@@ -43,62 +52,48 @@ class TestSyncONUDevice(unittest.TestCase):
         self.model_accessor = model_accessor
 
         from xossynchronizer.steps.syncstep import DeferredException
-        from sync_onu_device import SyncONUDevice, model_accessor
+        from sync_tech_profile import SyncTechnologyProfile, model_accessor
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
             globals()[k] = v
 
-        self.sync_step = SyncONUDevice
-
-        volt_service = Mock()
-        volt_service.voltha_url = "voltha_url"
-        volt_service.voltha_port = 1234
-        volt_service.voltha_user = "voltha_user"
-        volt_service.voltha_pass = "voltha_pass"
+        self.sync_step = SyncTechnologyProfile
 
         self.o = Mock()
-        self.o.device_id = "test_id"
-        self.o.pon_port.olt_device.volt_service = volt_service
+        self.o.technology = "test_technology"
+        self.o.profile_id = 64
+        self.o.profile_value = '{"test":"profile"}'
+
+        self.o.tologdict.return_value = {'name': "mock-tp"}
 
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save
+        self.module_patcher.stop()
 
-    @requests_mock.Mocker()
-    def test_enable(self, m):
-        m.post("http://voltha_url:1234/api/v1/devices/test_id/enable")
+    def test_sync(self):
 
-        self.o.admin_state = "ENABLED"
         self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-        self.assertTrue(m.called)
+        self.mock_etcd.put.assert_called_with('service/voltha/technology_profiles/test_technology/64',
+                                              '{"test":"profile"}')
 
-    @requests_mock.Mocker()
-    def test_disable(self, m):
-        m.post("http://voltha_url:1234/api/v1/devices/test_id/disable")
+    def test_delete(self):
 
-        self.o.admin_state = "DISABLED"
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-        self.assertTrue(m.called)
+        self.mock_etcd.get.return_value = [self.o.profile_value, "response from mock-etcd"]
 
-    @requests_mock.Mocker()
-    def test_admin_disabled(self, m):
-        m.post("http://voltha_url:1234/api/v1/devices/test_id/disable")
+        self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
+        self.mock_etcd.get.assert_called_with('service/voltha/technology_profiles/test_technology/64')
+        self.mock_etcd.delete.assert_called_with('service/voltha/technology_profiles/test_technology/64')
 
-        self.o.admin_state = "ADMIN_DISABLED"
-        self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-        self.assertTrue(m.called)
+    def test_delete_missing_object(self):
 
-    @requests_mock.Mocker()
-    def test_disable_fail(self, m):
-        m.post("http://voltha_url:1234/api/v1/devices/test_id/disable", status_code=500, text="Mock Error")
+        self.mock_etcd.get.return_value = [None, "response from mock-etcd"]
 
-        self.o.admin_state = "DISABLED"
+        self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
+        self.mock_etcd.get.assert_called_with('service/voltha/technology_profiles/test_technology/64')
+        self.mock_etcd.delete.assert_not_called()
 
-        with self.assertRaises(Exception) as e:
-            self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
-            self.assertTrue(m.called)
-            self.assertEqual(e.exception.message, "Failed to disable ONU device: Mock Error")
 
 if __name__ == "__main__":
     unittest.main()
