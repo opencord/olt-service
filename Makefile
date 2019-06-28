@@ -18,7 +18,7 @@ SHELL = bash -e -o pipefail
 # Variables
 VERSION                  ?= $(shell cat ./VERSION)
 SERVICE_NAME             ?= $(notdir $(abspath .))
-SYNCHRONIZER_NAME        ?= volt-synchronizer
+SYNCHRONIZER_NAME        ?= $(shell if [ "$(shell uname -m)" = "aarch64" ] ; then echo "volt-synchronizer-arm64"; else echo "volt-synchronizer"; fi)
 
 ## Docker related
 DOCKER_REGISTRY          ?=
@@ -37,6 +37,11 @@ DOCKER_LABEL_BUILD_DATE  ?= $(shell date -u "+%Y-%m-%dT%H:%M:%SZ")
 XOS_DIR                  ?= "../../../xos"
 SERVICES_DIR             ?= "../.."
 
+## Different platform
+DOCKERFILE_BASEIMAGE     ?= $(shell if [ "$(shell uname -m)" = "aarch64" ] ; then echo "xosproject/alpine-grpc-base-arm64:0.9.0"; else echo "xosproject/alpine-grpc-base:0.9.0"; fi)
+DOCKERBUILD_ARGBASE      ?= $(shell if [ "$(shell uname -m)" = "aarch64" ] ; then echo "--build-arg BASE_IMAGE=${DOCKERFILE_BASEIMAGE}"; else echo ""; fi)
+
+
 all: test
 
 docker-build:
@@ -47,6 +52,7 @@ docker-build:
     --build-arg org_label_schema_vcs_ref="${DOCKER_LABEL_VCS_REF}" \
     --build-arg org_label_schema_build_date="${DOCKER_LABEL_BUILD_DATE}" \
     --build-arg org_opencord_vcs_commit_date="${DOCKER_LABEL_COMMIT_DATE}" \
+    ${DOCKERBUILD_ARGBASE} \
     -f Dockerfile.synchronizer .
 
 docker-push:
