@@ -30,6 +30,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 import json
 
+
 class VOLTService(VOLTService_decl):
     class Meta:
         proxy = True
@@ -71,6 +72,7 @@ class VOLTService(VOLTService_decl):
         :return: TechnologyProfile
         """
         return TechnologyProfile.objects.get(technology=technology, profile_id=profile_id)
+
 
 class OLTDevice(OLTDevice_decl):
     class Meta:
@@ -114,6 +116,7 @@ class OLTDevice(OLTDevice_decl):
 
         super(OLTDevice, self).delete(*args, **kwargs)
 
+
 class ONUDevice(ONUDevice_decl):
     class Meta:
         proxy = True
@@ -124,6 +127,7 @@ class ONUDevice(ONUDevice_decl):
             raise XOSValidationError('ONU "%s" can\'t be deleted as it has subscribers associated with it' % self.serial_number)
 
         super(ONUDevice, self).delete(*args, **kwargs)
+
 
 class TechnologyProfile(TechnologyProfile_decl):
     class Meta:
@@ -137,7 +141,7 @@ class TechnologyProfile(TechnologyProfile_decl):
 
         # only synchronizer is allowed to update the model
         if not self.is_new and caller_kind != "synchronizer":
-            if not self.deleted:
+            if not self.deleted and len(self.diff.keys()) > 0:
                 existing = TechnologyProfile.objects.filter(id=self.id)
                 raise XOSValidationError('Modification operation is not allowed on Technology Profile [/%s/%s]. Delete it and add again' % (existing[0].technology, existing[0].profile_id))
 
