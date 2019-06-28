@@ -133,6 +133,7 @@ class TestONUDeviceModel(unittest.TestCase):
                          'ONU "1234" can\'t be deleted as it has subscribers associated with it')
         self.models_decl.OLTDevice_decl.delete.assert_not_called()
 
+
 class TestTechnologyProfileModel(unittest.TestCase):
 
     def setUp(self):
@@ -170,10 +171,20 @@ class TestTechnologyProfileModel(unittest.TestCase):
         self.technology_profile.save()
         self.models_decl.TechnologyProfile_decl.save.assert_called()
 
+    def test_allow_save_if_nohing_changed(self):
+        self.technology_profile.is_new = False
+        self.technology_profile.id = 1
+        self.technology_profile.profile_value = '{"name": "someValue", "profile_type": "someValue"}'
+        self.technology_profile.diff.keys.return_value = []
+
+        self.technology_profile.save()
+        self.models_decl.TechnologyProfile_decl.save.assert_called()
+
     def test_prevent_modify(self):
         self.technology_profile.is_new = False
         self.technology_profile.id = 1
         self.technology_profile.profile_value = '{"name": "someValue", "profile_type": "someValue"}'
+        self.technology_profile.diff.keys.return_value = ["some"]
 
         self.models_decl.TechnologyProfile_decl.objects.filter.return_value = [self.technology_profile]
 
