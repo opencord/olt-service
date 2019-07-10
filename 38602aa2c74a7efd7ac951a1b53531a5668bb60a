@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b82c8c03_79d19fd2",
+        "filename": "docs/README.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 45,
+      "author": {
+        "id": 1000011
+      },
+      "writtenOn": "2019-07-10T05:19:29Z",
+      "side": 1,
+      "message": "Is this documented elsewhere to differentiate it from `DISABLED`?",
+      "range": {
+        "startLine": 45,
+        "startChar": 47,
+        "endLine": 45,
+        "endChar": 61
+      },
+      "revId": "38602aa2c74a7efd7ac951a1b53531a5668bb60a",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": true
+    }
+  ]
+}
