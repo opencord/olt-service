@@ -15,8 +15,6 @@ representation.
 - `VOLTService`. Contains information that the synchronizer needs to access `VOLTHA` and `ONOS-VOLTHA`
     - `voltha_url`, `voltha_port`. Hostname and port of VOLTHA endpoint.
     - `voltha_user`, `voltha_pass`. Username and password for VOLTHA.
-    - `onos_voltha_url`, `onos_voltha_port`. Hostname and port of ONOS associated with VOLTHA.
-    - `onos_voltha_user`, `onos_voltha_pass`. Username and password for ONOS.
 - `vOLTServiceInstance`. Extends `ServiceInstance`, and holds the OLT subscriber-related state for the service chain.
     - `description`. Description of the service instance.
     - `onu_device`. Relation to an ONUDevice object.
@@ -28,24 +26,26 @@ representation.
     - `mac_address`. MAC Address of OLT.
     - `serial_number`. Serial number of OLT.
     - `device_id`. VOLTHA device id.
-    - `admin_state`.
-    - `oper_status`.
+    - `admin_state`. [`ENABLED` | `DISABLED`]. Administrative state, pushed to device.
+    - `oper_status`. Operational status, learned from device.
     - `of_id`. Openflow ID.
     - `dp_id`. Datapath ID.
-    - `uplink`. Uplink port.
-    - `driver`. Driver, defaults to `voltha`.
+    - `uplink`. Uplink port. Exposed via sadis.
+    - `driver`. Driver, defaults to `voltha`. Deprecated.
     - `switch_datapath_id`, `switch_port`. Identifies the switch the OLT is attached to.
     - `outer_tpid`. Outer VLAN id field EtherType.
     - `nas_id`. Authentication ID (propagated to the free-radius server via sadis)
+    - `technology`. [`gpon` | `xgspon`]. Technology being utilized by the adapter.
 - `ONUDevice`. Represents an ONU Device.
     - `pon_port`. Relation to a PONPort that connects this ONU to an OLT.
     - `serial_number`. Serial number of the ONU.
     - `vendor`. Vendor of the ONU.
     - `device_type`. Device type, defaults to `asfvolt16_olt`.
     - `device_id`. VOLTHA device id.
-    - `admin_state`.
-    - `oper_status`.
-    - `connect_status`.
+    - `admin_state`. [`ENABLED` | `DISABLED` | `ADMIN_DISABLED`]. Administrative state, pushed to device. `ADMIN_DISABLED` is intended to be used by an operator to manually disable an ONU and that value will persist until changed by the operator. `DISABLED` and `ENABLED` are typically managed by a workflow driver and may change state based on events from Voltha.
+    - `oper_status`. Operational status, learned from device.
+    - `connect_status`. Whether port is active.
+    - `reason`. ONU device configuration state machine status message.
 - `NNIPort`, `PONPort`, `ANIPort`, `UNIPort`. These represent various ports attached to OLTs and ONUs.
 - `TechnologyProfile`. Contains PON related information, see [Technology Profile Management](https://github.com/opencord/voltha/tree/master/common/tech_profile) in the VOLTHA repo.
 
