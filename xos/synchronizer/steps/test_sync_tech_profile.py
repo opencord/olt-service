@@ -51,8 +51,8 @@ class TestSyncTechProfile(unittest.TestCase):
         from xossynchronizer.modelaccessor import model_accessor
         self.model_accessor = model_accessor
 
-        from xossynchronizer.steps.syncstep import DeferredException
-        from sync_tech_profile import SyncTechnologyProfile, model_accessor
+        from xossynchronizer.modelaccessor import model_accessor
+        from sync_tech_profile import SyncTechnologyProfile
 
         # import all class names to globals
         for (k, v) in model_accessor.all_model_classes.items():
