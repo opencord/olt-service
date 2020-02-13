@@ -1,4 +1,6 @@
-xossynchronizer~=4.0.0
 xosapi~=4.0.0
+xossynchronizer~=4.0.0
 xoskafka~=4.0.0
 etcd3==0.7.0
+voltha-protos~=3.2.4
+googleapis-common-protos~=1.51.0

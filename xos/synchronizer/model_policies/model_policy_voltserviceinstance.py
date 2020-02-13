@@ -57,7 +57,7 @@ class VOLTServiceInstancePolicy(Policy):
 
         base_si = ServiceInstance.objects.get(id=si.id)
         try:
-            onu_device_serial_number = base_si.get_westbound_service_instance_properties("onu_device")
+            onu_device_serial_number = base_si.get_westbound_service_instance_properties("onu_device").split('-')[0]
         except Exception as e:
             raise Exception(
                 "VOLTServiceInstance %s has no westbound ServiceInstance specifying the onu_device, you need to manually specify it" % self.id)

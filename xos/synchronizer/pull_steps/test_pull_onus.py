@@ -14,12 +14,19 @@
 
 import functools
 import unittest
-from mock import patch, call, Mock, PropertyMock
-import requests_mock
 
+from concurrent.futures import ThreadPoolExecutor
+from mock import patch, call, Mock, PropertyMock
+
+import grpc
 import os, sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from mock_voltha_server import VolthaServerMock, MOCK_VOLTHA_SERVER_ADDRESS, MOCK_VOLTHA_SERVER_PORT
+from voltha_client import clear_voltha_client_cache
+
 
 class TestPullONUDevice(unittest.TestCase):
 
@@ -37,10 +44,10 @@ class TestPullONUDevice(unittest.TestCase):
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
         mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
-                                                ("rcord", "rcord.xproto")])
+                                              ("rcord", "rcord.xproto")])
 
         import xossynchronizer.modelaccessor
-        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)  # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
         self.model_accessor = model_accessor
@@ -56,10 +63,8 @@ class TestPullONUDevice(unittest.TestCase):
         # mock volt service
         self.volt_service = Mock()
         self.volt_service.id = "volt_service_id"
-        self.volt_service.voltha_url = "voltha_url"
-        self.volt_service.voltha_user = "voltha_user"
-        self.volt_service.voltha_pass = "voltha_pass"
-        self.volt_service.voltha_port = 1234
+        self.volt_service.voltha_url = MOCK_VOLTHA_SERVER_ADDRESS
+        self.volt_service.voltha_port = MOCK_VOLTHA_SERVER_PORT
 
         # mock OLTDevice
         self.olt = Mock()
@@ -76,6 +81,12 @@ class TestPullONUDevice(unittest.TestCase):
         # mock pon port
         self.pon_port2 = Mock()
         self.pon_port2.id = 2
+
+        # Mock gRPC server
+        clear_voltha_client_cache()
+        self.server = grpc.server(ThreadPoolExecutor(max_workers=5))
+        self.voltha_mock, _, _ = VolthaServerMock.start_voltha_server(self.server)
+        # Server is actually started on single tests because different tests build different mocks
 
         # mock voltha responses
         self.devices = {
@@ -96,6 +107,12 @@ class TestPullONUDevice(unittest.TestCase):
                     "parent_port_no": 1
                 }
             ]
+        }
+
+        self.ports_dict = {
+            "0001130158f01b2d": {
+                "items": []
+            }
         }
 
         self.two_devices = {
@@ -134,19 +151,20 @@ class TestPullONUDevice(unittest.TestCase):
         }
 
         # TODO add ports
-        self.ports = {
-            "items": []
+        self.two_ports_dict = {
+            "0001130158f01b2d": {
+                "items": []
+            },
+            "0001130158f01b2e": {
+                "items": []
+            }
         }
 
     def tearDown(self):
+        self.server.stop(None)
         sys.path = self.sys_path_save
 
-    @requests_mock.Mocker()
-    def test_missing_volt_service(self, m):
-            self.assertFalse(m.called)
-
-    @requests_mock.Mocker()
-    def test_pull(self, m):
+    def test_pull(self):
 
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
                 patch.object(OLTDevice.objects, "get") as mock_olt_device, \
@@ -155,9 +173,7 @@ class TestPullONUDevice(unittest.TestCase):
             olt_service_mock.return_value = [self.volt_service]
             mock_pon_port.return_value = self.pon_port
             mock_olt_device.return_value = self.olt
-
-            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.devices)
-            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
+            self.voltha_mock.set_devices(self.devices)
 
             self.sync_step(model_accessor=self.model_accessor).pull_records()
 
@@ -173,19 +189,18 @@ class TestPullONUDevice(unittest.TestCase):
 
             self.assertEqual(mock_save.call_count, 1)
 
-    @requests_mock.Mocker()
-    def test_pull_bad_pon(self, m):
+    def test_pull_bad_pon(self):
 
         def olt_side_effect(device_id):
             # fail the first onu device
-            if device_id=="00010fc93996afea":
+            if device_id == "00010fc93996afea":
                 return self.olt
             else:
                 return self.olt2
 
         def pon_port_side_effect(mock_pon_port, port_no, olt_device_id):
             # fail the first onu device
-            if olt_device_id==1:
+            if olt_device_id == 1:
                 raise IndexError()
             return self.pon_port2
 
@@ -196,10 +211,8 @@ class TestPullONUDevice(unittest.TestCase):
             olt_service_mock.return_value = [self.volt_service]
             mock_pon_port.side_effect = functools.partial(pon_port_side_effect, self.pon_port)
             mock_olt_device.side_effect = olt_side_effect
-
-            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.two_devices)
-            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
-            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2e/ports", status_code=200, json=self.ports)
+            self.voltha_mock.set_devices(self.two_devices)
+            self.voltha_mock.set_ports(self.two_ports_dict)
 
             self.sync_step(model_accessor=self.model_accessor).pull_records()
 
@@ -218,12 +231,11 @@ class TestPullONUDevice(unittest.TestCase):
 
             self.assertEqual(mock_save.call_count, 1)
 
-    @requests_mock.Mocker()
-    def test_pull_bad_olt(self, m):
+    def test_pull_bad_olt(self):
 
         def olt_side_effect(device_id):
             # fail the first onu device
-            if device_id=="00010fc93996afea":
+            if device_id == "00010fc93996afea":
                 raise IndexError()
             else:
                 return self.olt2
@@ -235,10 +247,8 @@ class TestPullONUDevice(unittest.TestCase):
             olt_service_mock.return_value = [self.volt_service]
             mock_pon_port.return_value = self.pon_port2
             mock_olt_device.side_effect = olt_side_effect
-
-            m.get("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.two_devices)
-            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2d/ports", status_code=200, json=self.ports)
-            m.get("http://voltha_url:1234/api/v1/devices/0001130158f01b2e/ports", status_code=200, json=self.ports)
+            self.voltha_mock.set_devices(self.two_devices)
+            self.voltha_mock.set_ports(self.two_ports_dict)
 
             self.sync_step(model_accessor=self.model_accessor).pull_records()
 
@@ -257,19 +267,15 @@ class TestPullONUDevice(unittest.TestCase):
 
             self.assertEqual(mock_save.call_count, 1)
 
-#[SEBA-367] Unit test for blank response recieved from Voltha
+    # [SEBA-367] Unit test for blank response recieved from Voltha
 
-    @requests_mock.Mocker()
-    def test_blank_response_received(self, m):
+    def test_blank_response_received(self):
 
-        m.get("http://voltha_url:1234/api/v1/devices", status_code=200, text="")
         with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-        patch.object(PONPort.objects, "get") as mock_pon_port, \
+                patch.object(PONPort.objects, "get") as mock_pon_port, \
                 patch.object(OLTDevice.objects, "get") as mock_get, \
                 patch.object(ONUDevice, "save", autospec=True) as mock_save:
-
             olt_service_mock.return_value = [self.volt_service]
-
             self.sync_step(model_accessor=self.model_accessor).pull_records()
 
             olt_service_mock.assert_called()
@@ -277,25 +283,6 @@ class TestPullONUDevice(unittest.TestCase):
             mock_get.assert_not_called()
             self.assertEqual(mock_save.call_count, 0)
 
-#[SEBA-367] Unit test for invalid json received from Voltha
-
-    @requests_mock.Mocker()
-    def test_invalid_json(self, m):
-
-        m.get("http://voltha_url:1234/api/v1/devices", status_code=200, text="{\"items\" : [host_and_port}")
-        with patch.object(VOLTService.objects, "all") as olt_service_mock, \
-        patch.object(PONPort.objects, "get") as mock_pon_port, \
-                patch.object(OLTDevice.objects, "get") as mock_get, \
-                patch.object(ONUDevice, "save", autospec=True) as mock_save:
-
-            olt_service_mock.return_value = [self.volt_service]
-
-            self.sync_step(model_accessor=self.model_accessor).pull_records()
-
-            olt_service_mock.assert_called()
-            mock_pon_port.assert_not_called()
-            mock_get.assert_not_called()
-            self.assertEqual(mock_save.call_count, 0)
 
 if __name__ == "__main__":
     unittest.main()

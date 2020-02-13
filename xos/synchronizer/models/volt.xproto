@@ -8,20 +8,12 @@ message VOLTService (Service){
     option custom_python = "True";
 
     required string voltha_url = 1 [
-        help_text = "The Voltha API address. By default voltha.voltha.svc.cluster.local",
-        default = "voltha.voltha.svc.cluster.local",
+        help_text = "The Voltha API address. By default voltha-api.default.svc.cluster.local",
+        default = "voltha-api.voltha.svc.cluster.local",
         max_length = 256];
     required int32 voltha_port = 2 [
-        help_text = "The Voltha API port. By default 8882",
-        default = 8882];
-    required string voltha_user = 3 [
-        help_text = "The Voltha username. By default voltha",
-        default = "voltha",
-        max_length = 256];
-    required string voltha_pass = 4 [
-        help_text = "The Voltha password. By default admin",
-        default = "admin",
-        max_length = 256];
+        help_text = "The Voltha API port. By default 55555",
+        default = 55555];
 }
 
 message OLTDevice (XOSBase){
