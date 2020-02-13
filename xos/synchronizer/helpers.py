@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import grpc
+
 class Helpers():
     @staticmethod
     def format_url(url):
@@ -23,7 +25,7 @@ class Helpers():
     @staticmethod
     def get_voltha_info(olt_service):
         return {
-            'url': Helpers.format_url(olt_service.voltha_url),
+            'url': olt_service.voltha_url,
             'port': olt_service.voltha_port,
             'user': olt_service.voltha_user,
             'pass': olt_service.voltha_pass
@@ -62,3 +64,26 @@ class Helpers():
         if isinstance(id, basestring):
             id = int(id)
         return "{0:0{1}x}".format(id, 16)
+
+
+class VolthaGrpcChannelWrapper(object):
+    # TODO: opening every time a new gRPC channel is expensive, cache the channels.
+
+    def __init__(self, olt_service):
+        self.voltha_url = olt_service.voltha_url
+        self.voltha_port = olt_service.voltha_port
+        self.channel = None
+
+    def __enter__(self):
+        if self is not None:
+            self.channel = grpc.insecure_channel(self.voltha_url + ":" + self.voltha_port)
+        return self.channel
+
+    def __exit__(self):
+        self.channel.close()
+
+    def open_channel(self):
+        return self.__enter__()
+
+    def close(self):
+        self.__exit__()
