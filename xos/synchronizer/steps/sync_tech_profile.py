@@ -15,17 +15,14 @@
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from helpers import Helpers
-import requests
 from multistructlog import create_logger
-from requests.auth import HTTPBasicAuth
-from xossynchronizer.modelaccessor import TechnologyProfile, model_accessor
+from xossynchronizer.modelaccessor import TechnologyProfile
 from xossynchronizer.steps.syncstep import SyncStep
 from xosconfig import Config
 import etcd3
 
 # TODO store ETCD_HOST_URL and ETCD_PORT in the vOLT Service model
-ETCD_HOST_URL = 'etcd-cluster.default.svc.cluster.local'
+ETCD_HOST_URL = 'voltha-etcd-cluster.default.svc.cluster.local'
 ETCD_PORT = 2379
 PREFIX = "service/voltha/technology_profiles"
 
@@ -46,7 +43,7 @@ class SyncTechnologyProfile(SyncStep):
         elif operation == 'GET':
             return etcd.get(PREFIX + key)
         elif operation == 'DELETE':
-            if False == etcd.delete(PREFIX + key):
+            if not etcd.delete(PREFIX + key):
                 log.error('Error while deleting Technology Profile [%s] from Etcd store' % key)
                 raise Exception('Failed to delete Technology Profile')
             else:
@@ -56,7 +53,7 @@ class SyncTechnologyProfile(SyncStep):
 
     def sync_record(self, model):
 
-        log.info('Synching TechnologyProfile', object=str(model), **model.tologdict())
+        log.info('Syncing TechnologyProfile', object=str(model), **model.tologdict())
 
         log.info('TechnologyProfile: %s : %s' % (model.technology, model.profile_id))
 
