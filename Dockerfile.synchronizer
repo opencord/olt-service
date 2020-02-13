@@ -16,7 +16,8 @@
 
 # xosproject/volt-synchronizer
 
-FROM xosproject/alpine-grpc-base:0.9.0
+# TODO: remove when xosapi package is published or the official xos-client image is published
+FROM dmoro92/xos-client:3.3.2-dev
 
 # Install pip packages
 COPY requirements.txt /tmp/requirements.txt

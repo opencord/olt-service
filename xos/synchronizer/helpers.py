@@ -23,7 +23,7 @@ class Helpers():
     @staticmethod
     def get_voltha_info(olt_service):
         return {
-            'url': Helpers.format_url(olt_service.voltha_url),
+            'url': olt_service.voltha_url,
             'port': olt_service.voltha_port,
             'user': olt_service.voltha_user,
             'pass': olt_service.voltha_pass
