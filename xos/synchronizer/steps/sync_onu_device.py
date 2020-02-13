@@ -12,19 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os, sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-from helpers import Helpers
-
-import requests
 from multistructlog import create_logger
-from requests.auth import HTTPBasicAuth
-from xossynchronizer.modelaccessor import ONUDevice, model_accessor
+from xossynchronizer.modelaccessor import ONUDevice
 from xossynchronizer.steps.syncstep import SyncStep
 from xosconfig import Config
 
+import os, sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from voltha_client import get_voltha_client
+
 log = create_logger(Config().get("logging"))
+
 
 class SyncONUDevice(SyncStep):
     provides = [ONUDevice]
@@ -33,26 +32,27 @@ class SyncONUDevice(SyncStep):
 
     def disable_onu(self, o):
         volt_service = o.pon_port.olt_device.volt_service
-        voltha = Helpers.get_voltha_info(volt_service)
 
         log.info("Disabling device %s in voltha" % o.device_id)
-        request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], o.device_id))
-
-        if request.status_code != 200:
-            raise Exception("Failed to disable ONU device %s: %s" % (o.serial_number, request.text))
+        try:
+            get_voltha_client(volt_service).disable_device(o.device_id)
+        except Exception as e:
+            e.message = "[Enable ONU] " + e.message
+            log.error(e.message)
+            raise e
 
     def enable_onu(self, o):
         volt_service = o.pon_port.olt_device.volt_service
-        voltha = Helpers.get_voltha_info(volt_service)
 
         log.info("Enabling device %s in voltha" % o.device_id)
-        request = requests.post("%s:%d/api/v1/devices/%s/enable" % (voltha['url'], voltha['port'], o.device_id))
-
-        if request.status_code != 200:
-            raise Exception("Failed to enable ONU device %s: %s" % (o.serial_number, request.text))
+        try:
+            get_voltha_client(volt_service).enable_device(o.device_id)
+        except Exception as e:
+            e.message = "[Enable ONU] " + e.message
+            log.error(e.message)
+            raise e
 
     def sync_record(self, o):
-
         if o.admin_state in ["DISABLED", "ADMIN_DISABLED"]:
             self.disable_onu(o)
         if o.admin_state == "ENABLED":

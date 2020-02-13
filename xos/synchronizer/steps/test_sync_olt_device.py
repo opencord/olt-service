@@ -12,21 +12,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from requests import ConnectionError
+from concurrent.futures import ThreadPoolExecutor
 import unittest
 import functools
 from mock import patch, call, Mock, PropertyMock
 import requests_mock
-
+import grpc
 import os, sys
 
-test_path=os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+test_path = os.path.abspath(os.path.dirname(os.path.realpath(__file__)))
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from mock_voltha_server import VolthaServerMock, MOCK_VOLTHA_SERVER_ADDRESS, MOCK_VOLTHA_SERVER_PORT
+from voltha_client import clear_voltha_client_cache
+
 
 def match_json(desired, req):
-    if desired!=req.json():
+    if desired != req.json():
         raise Exception("Got request %s, but body is not matching" % req.url)
-        return False
     return True
+
 
 class TestSyncOLTDevice(unittest.TestCase):
     def setUp(self):
@@ -42,10 +47,10 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         from xossynchronizer.mock_modelaccessor_build import mock_modelaccessor_config
         mock_modelaccessor_config(test_path, [("olt-service", "volt.xproto"),
-                                                ("rcord", "rcord.xproto")])
+                                              ("rcord", "rcord.xproto")])
 
         import xossynchronizer.modelaccessor
-        reload(xossynchronizer.modelaccessor)      # in case nose2 loaded it in a previous test
+        reload(xossynchronizer.modelaccessor)  # in case nose2 loaded it in a previous test
 
         from xossynchronizer.modelaccessor import model_accessor
         self.model_accessor = model_accessor
@@ -70,10 +75,12 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         # Create a mock OLTDevice
         o = Mock()
-        o.volt_service.voltha_url = "voltha_url"
-        o.volt_service.voltha_port = 1234
-        o.volt_service.voltha_user = "voltha_user"
-        o.volt_service.voltha_pass = "voltha_pass"
+        o.volt_service.voltha_url = MOCK_VOLTHA_SERVER_ADDRESS
+        o.volt_service.voltha_port = MOCK_VOLTHA_SERVER_PORT
+
+        clear_voltha_client_cache()
+        self.server = grpc.server(ThreadPoolExecutor(max_workers=5))
+        self.voltha_mock, _, _ = VolthaServerMock.start_voltha_server(self.server)
 
         o.volt_service.provider_services = [onos]
 
@@ -88,7 +95,7 @@ class TestSyncOLTDevice(unittest.TestCase):
         # feedback state
         o.device_id = None
         o.oper_status = None
-        o.serial_number= None
+        o.serial_number = None
         o.of_id = None
         o.id = 1
 
@@ -109,18 +116,18 @@ class TestSyncOLTDevice(unittest.TestCase):
         )
 
     def tearDown(self):
+        self.server.stop(None)
         self.o = None
         sys.path = self.sys_path_save
 
-    @requests_mock.Mocker()
-    def test_get_of_id_from_device(self, m):
+    def test_get_of_id_from_device(self):
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
                 {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
             ]
         }
-        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
+        self.voltha_mock.set_logical_devices(logical_devices)
         self.o.device_id = "123"
         self.o = self.sync_step.get_ids_from_logical_device(self.o)
         self.assertEqual(self.o.of_id, "0001000ce2314000")
@@ -131,73 +138,83 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.sync_step.get_ids_from_logical_device(self.o)
         self.assertEqual(e.exception.message, "Can't find a logical_device for OLT device id: idonotexist")
 
-    @requests_mock.Mocker()
-    def test_sync_record_fail_add(self, m):
+    def test_sync_record_fail_add(self):
         """
         Should print an error if we can't add the device in VOLTHA
         """
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=500, text="MockError")
-
         with self.assertRaises(Exception) as e, \
-            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+                patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
+            self.voltha_mock.set_fails(add=True)
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
-        self.assertEqual(e.exception.message, "Failed to add OLT device: MockError")
+        self.assertEqual(e.exception.message,
+                         'Failed to add OLT device: type: "ponsim_olt"\nhost_and_port: "172.17.0.1:50060"\n, (StatusCode.INTERNAL, MOCK SERVER ERROR)')
 
-    @requests_mock.Mocker()
-    def test_sync_record_fail_no_id(self, m):
+    def test_sync_record_fail_no_id(self):
         """
         Should print an error if VOLTHA does not return the device id
         """
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json={"id": ""})
+        created_device_no_id = {
+            "id": "",
+            "type": "simulated_olt",
+            "host_and_port": "172.17.0.1:50060",
+            "admin_state": "ENABLED",
+            "oper_status": "ACTIVE",
+            "serial_number": "serial_number",
+        }
 
         with self.assertRaises(Exception) as e, \
-            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+                patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
+            self.voltha_mock.set_created_device(created_device_no_id)
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
-        self.assertEqual(e.exception.message, "VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA")
+        self.assertEqual(e.exception.message,
+                         "VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA")
 
-    @requests_mock.Mocker()
-    def test_sync_record_fail_enable(self, m):
+    def test_sync_record_fail_enable(self):
         """
         Should print an error if device.enable fails
         """
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response)
-        m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=500, text="EnableError")
 
         with self.assertRaises(Exception) as e, \
-            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+                patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
+            self.voltha_mock.set_created_device(self.voltha_devices_response)
+            self.voltha_mock.set_fails(enable=True)
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
-        self.assertEqual(e.exception.message, "Failed to enable OLT device: EnableError")
+        self.assertEqual(e.exception.message,
+                         "[OLT enable] Failed to enable device in VOLTHA: 123 (StatusCode.UNKNOWN, MOCK SERVER ERROR)")
 
     @requests_mock.Mocker()
     def test_sync_record_success(self, m):
         """
-        If device.enable succed should fetch the state, retrieve the of_id and push it to ONOS
+        If device.enable succeed should fetch the state, retrieve the of_id and push it to ONOS
         """
-
-        expected_conf = {
+        self.voltha_devices_response.update({
             "type": self.o.device_type,
             "host_and_port": "%s:%s" % (self.o.host, self.o.port)
-        }
+        })
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
-        m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED", "serial_number": "foobar"})
+        devices = {"items": [
+            {
+                "id": "123",
+                "oper_status": "ACTIVE",
+                "admin_state": "ENABLED",
+                "serial_number": "foobar"
+            }
+        ]}
+
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
-                {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
             ]
         }
-        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
         onos_expected_conf = {
             "devices": {
@@ -212,8 +229,10 @@ class TestSyncOLTDevice(unittest.TestCase):
                additional_matcher=functools.partial(match_json, onos_expected_conf))
 
         with patch.object(TechnologyProfile.objects, "get") as tp_mock:
+            self.voltha_mock.set_logical_devices(logical_devices)
+            self.voltha_mock.set_devices(devices)
+            self.voltha_mock.set_created_device(self.voltha_devices_response)
             tp_mock.return_value = self.tp
-
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
             self.assertEqual(self.o.admin_state, "ENABLED")
             self.assertEqual(self.o.oper_status, "ACTIVE")
@@ -235,10 +254,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         del self.o.port
         self.o.mac_address = "00:0c:e2:31:40:00"
 
-        expected_conf = {
+        self.voltha_devices_response.update({
             "type": self.o.device_type,
             "mac_address": self.o.mac_address
-        }
+        })
 
         onos_expected_conf = {
             "devices": {
@@ -249,23 +268,29 @@ class TestSyncOLTDevice(unittest.TestCase):
                 }
             }
         }
+        devices = {"items": [
+            {
+                "id": "123",
+                "oper_status": "ACTIVE",
+                "admin_state": "ENABLED",
+                "serial_number": "foobar"
+            }
+        ]}
         m.post("http://onos:4321/onos/v1/network/configuration/", status_code=200, json=onos_expected_conf,
                additional_matcher=functools.partial(match_json, onos_expected_conf))
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response,
-               additional_matcher=functools.partial(match_json, expected_conf))
-        m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", json={"oper_status": "ACTIVE", "admin_state": "ENABLED", "serial_number": "foobar"})
         logical_devices = {
             "items": [
                 {"root_device_id": "123", "id": "0001000ce2314000", "datapath_id": "55334486016"},
                 {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
             ]
         }
-        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
         with patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
+            self.voltha_mock.set_logical_devices(logical_devices)
+            self.voltha_mock.set_devices(devices)
+            self.voltha_mock.set_created_device(self.voltha_devices_response)
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
             self.assertEqual(self.o.admin_state, "ENABLED")
@@ -277,8 +302,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             # One save after activation has succeeded
             self.assertEqual(self.o.save_changed_fields.call_count, 3)
 
-    @requests_mock.Mocker()
-    def test_sync_record_enable_timeout(self, m):
+    def test_sync_record_enable_timeout(self):
         """
         If device activation fails we need to tell the user.
 
@@ -286,18 +310,19 @@ class TestSyncOLTDevice(unittest.TestCase):
         OLT will return "ERROR" for oper_status during activate and will eventually exceed retries.s
         """
 
-        expected_conf = {
+        self.voltha_devices_response.update({
             "type": self.o.device_type,
             "host_and_port": "%s:%s" % (self.o.host, self.o.port)
-        }
+        })
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response,
-               additional_matcher=functools.partial(match_json, expected_conf))
-        m.post("http://voltha_url:1234/api/v1/devices/123/enable", status_code=200)
-        m.get("http://voltha_url:1234/api/v1/devices/123", [
-                  {"json": {"oper_status": "ACTIVATING", "admin_state": "ENABLED", "serial_number": "foobar"}, "status_code": 200},
-                  {"json": {"oper_status": "ERROR", "admin_state": "ENABLED", "serial_number": "foobar"}, "status_code": 200}
-              ])
+        devices = {"items": [
+            {
+                "id": "123",
+                "oper_status": "FAILED",
+                "admin_state": "ENABLED",
+                "serial_number": "foobar"
+            }
+        ]}
 
         logical_devices = {
             "items": [
@@ -305,16 +330,18 @@ class TestSyncOLTDevice(unittest.TestCase):
                 {"root_device_id": "0001cc4974a62b87", "id": "0001000000000001"}
             ]
         }
-        m.get("http://voltha_url:1234/api/v1/logical_devices", status_code=200, json=logical_devices)
 
         with self.assertRaises(Exception) as e, \
-            patch.object(TechnologyProfile.objects, "get") as tp_mock:
+                patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
+            self.voltha_mock.set_logical_devices(logical_devices)
+            self.voltha_mock.set_devices(devices)
+            self.voltha_mock.set_created_device(self.voltha_devices_response)
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         self.assertEqual(e.exception.message, "It was not possible to activate OLTDevice with id 1")
-        self.assertEqual(self.o.oper_status, "ERROR")
+        self.assertEqual(self.o.oper_status, "FAILED")
         self.assertEqual(self.o.admin_state, "ENABLED")
         self.assertEqual(self.o.device_id, "123")
         self.assertEqual(self.o.serial_number, "foobar")
@@ -355,16 +382,15 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.o.save.assert_not_called()
             self.o.save_changed_fields.assert_not_called()
 
-    @requests_mock.Mocker()
-    def test_sync_record_deactivate(self, m):
+    def test_sync_record_deactivate(self):
         """
         If device.admin_state == "DISABLED" and oper_status == "ACTIVE", then OLT should be deactivated.
         """
 
-        expected_conf = {
+        self.voltha_devices_response.update({
             "type": self.o.device_type,
             "host_and_port": "%s:%s" % (self.o.host, self.o.port)
-        }
+        })
 
         # Make it look like we have an active OLT that we are deactivating.
         self.o.admin_state = "DISABLED"
@@ -373,11 +399,9 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.device_id = "123"
         self.o.of_id = "0001000ce2314000"
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
-        m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
-
         with patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
+            self.voltha_mock.set_created_device(self.voltha_devices_response)
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
@@ -387,8 +411,7 @@ class TestSyncOLTDevice(unittest.TestCase):
             self.assertEqual(self.o.save_changed_fields.call_count, 0)
 
             # Make sure disable was called
-            urls = [x.url for x in m.request_history]
-            self.assertIn("http://voltha_url:1234/api/v1/devices/123/disable", urls)
+            self.assertEqual(self.voltha_mock.disable_called, 1)
 
     @requests_mock.Mocker()
     def test_sync_record_deactivate_already_inactive(self, m):
@@ -397,10 +420,10 @@ class TestSyncOLTDevice(unittest.TestCase):
         and VOLTHA should not be called.
         """
 
-        expected_conf = {
+        self.voltha_devices_response.update({
             "type": self.o.device_type,
             "host_and_port": "%s:%s" % (self.o.host, self.o.port)
-        }
+        })
 
         # Make it look like we have an active OLT that we are deactivating.
         self.o.admin_state = "DISABLED"
@@ -409,12 +432,11 @@ class TestSyncOLTDevice(unittest.TestCase):
         self.o.device_id = "123"
         self.o.of_id = "0001000ce2314000"
 
-        m.post("http://voltha_url:1234/api/v1/devices", status_code=200, json=self.voltha_devices_response, additional_matcher=functools.partial(match_json, expected_conf))
-
         with patch.object(TechnologyProfile.objects, "get") as tp_mock:
             tp_mock.return_value = self.tp
 
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
+            self.voltha_mock.set_created_device(self.voltha_devices_response)
 
             # No saves as state has not changed (will eventually be saved by synchronizer framework
             # to update backend_status)
@@ -424,41 +446,34 @@ class TestSyncOLTDevice(unittest.TestCase):
     def test_do_not_sync_without_tech_profile(self):
         self.o.technology = "xgspon"
         with self.assertRaises(DeferredException) as e:
-
             self.sync_step(model_accessor=self.model_accessor).sync_record(self.o)
 
         self.assertEqual(e.exception.message, "Waiting for a TechnologyProfile (technology=xgspon) to be synchronized")
 
-    @requests_mock.Mocker()
-    def test_delete_record(self, m):
+    def test_delete_record(self):
         self.o.of_id = "0001000ce2314000"
         self.o.device_id = "123"
-
-        m.post("http://voltha_url:1234/api/v1/devices/123/disable", status_code=200)
-        m.delete("http://voltha_url:1234/api/v1/devices/123/delete", status_code=200)
 
         self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
 
-        self.assertEqual(m.call_count, 2)
+        self.assertEqual(self.voltha_mock.disable_called + self.voltha_mock.delete_called, 2)
 
-    @patch('requests.post')
-    def test_delete_record_connectionerror(self, m):
+    def test_delete_record_connectionerror(self):
         self.o.of_id = "0001000ce2314000"
         self.o.device_id = "123"
-
-        m.side_effect = ConnectionError()
+        self.server.stop(None)
 
         self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
 
         # No exception thrown, as ConnectionError will be caught
+        self.assertEqual(self.voltha_mock.disable_called + self.voltha_mock.delete_called, 0)
 
-
-    @requests_mock.Mocker()
-    def test_delete_unsynced_record(self, m):
-        
+    def test_delete_unsynced_record(self):
+        # voltha_server_mock, _, _ = VolthaServerMock.start_voltha_server(self.server)
         self.sync_step(model_accessor=self.model_accessor).delete_record(self.o)
 
-        self.assertEqual(m.call_count, 0)
+        self.assertEqual(self.voltha_mock.disable_called + self.voltha_mock.delete_called, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

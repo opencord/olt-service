@@ -22,7 +22,6 @@ from helpers import Helpers
 class TestHelpers(unittest.TestCase):
 
     def setUp(self):
-
         # create a mock ONOS Service
         onos = Mock()
         onos.name = "ONOS"
@@ -36,8 +35,6 @@ class TestHelpers(unittest.TestCase):
         o = Mock()
         o.voltha_url = "voltha_url"
         o.voltha_port = 1234
-        o.voltha_user = "voltha_user"
-        o.voltha_pass = "voltha_pass"
 
         o.provider_services = [onos]
 
@@ -56,10 +53,8 @@ class TestHelpers(unittest.TestCase):
     def test_get_voltha_info(self):
         voltha_dict = Helpers.get_voltha_info(self.o)
 
-        self.assertEqual(voltha_dict["url"], "http://voltha_url")
+        self.assertEqual(voltha_dict["url"], "voltha_url")
         self.assertEqual(voltha_dict["port"], 1234)
-        self.assertEqual(voltha_dict["user"], "voltha_user")
-        self.assertEqual(voltha_dict["pass"], "voltha_pass")
 
     def test_get_onos_info(self):
         onos_voltha_dict = Helpers.get_onos_voltha_info(self.o)
@@ -75,6 +70,7 @@ class TestHelpers(unittest.TestCase):
 
         hex = Helpers.datapath_id_to_hex("55334486016")
         self.assertEqual(hex, "0000000ce2314000")
+
 
 if __name__ == "__main__":
     unittest.main()

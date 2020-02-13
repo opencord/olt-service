@@ -18,15 +18,19 @@ import requests
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
 from xossynchronizer.steps.syncstep import SyncStep, DeferredException
-from xossynchronizer.modelaccessor import OLTDevice, TechnologyProfile, model_accessor
+from xossynchronizer.modelaccessor import OLTDevice, TechnologyProfile
 from xosconfig import Config
 
-import os, sys
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from voltha_protos import common_pb2
 
+import os, sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from voltha_client import ConnectionError, get_voltha_client
 from helpers import Helpers
 
 log = create_logger(Config().get('logging'))
+
 
 class SyncOLTDevice(SyncStep):
     provides = [OLTDevice]
@@ -36,120 +40,115 @@ class SyncOLTDevice(SyncStep):
 
     @staticmethod
     def get_ids_from_logical_device(o):
-        voltha = Helpers.get_voltha_info(o.volt_service)
-
-        request = requests.get("%s:%d/api/v1/logical_devices" % (voltha['url'], voltha['port']))
-
-        if request.status_code != 200:
-            raise Exception("Failed to retrieve logical devices from VOLTHA: %s" % request.text)
-
-        response = request.json()
-
-        for ld in response["items"]:
-            if ld["root_device_id"] == o.device_id:
-                o.of_id = ld["id"]
-                o.dp_id = "of:%s" % (Helpers.datapath_id_to_hex(ld["datapath_id"])) # Convert to hex
+        logical_devices = get_voltha_client(o.volt_service).list_logical_devices()
+        for ld in logical_devices:
+            if ld.root_device_id == o.device_id:
+                o.of_id = ld.id
+                o.dp_id = "of:%s" % (Helpers.datapath_id_to_hex(ld.datapath_id))  # Convert to hex
                 return o
 
         raise Exception("Can't find a logical_device for OLT device id: %s" % o.device_id)
 
-    def pre_provision_olt_device(self, model):
-        log.info("Pre-provisioning OLT device in VOLTHA", object=str(model), **model.tologdict())
+    def pre_provision_olt_device(self, olt_xos_model):
+        log.info("Pre-provisioning OLT device in VOLTHA", object=str(olt_xos_model), **olt_xos_model.tologdict())
 
-        voltha = Helpers.get_voltha_info(model.volt_service)
+        try:
+            resp_dev = get_voltha_client(olt_xos_model.volt_service).create_olt_device(olt_xos_model)
+            log.info("Device has been pushed to VOLTHA with ID: %s", resp_dev.id)
+        except Exception as e:
+            log.error("ASDASD")
+            log.error(e)
+            log.error(e.message)
+            raise e
 
-        data = {
-            "type": model.device_type
-        }
-
-        if hasattr(model, "host") and hasattr(model, "port"):
-            data["host_and_port"] = "%s:%s" % (model.host, model.port)
-        elif hasattr(model, "mac_address"):
-            data["mac_address"] = model.mac_address
-
-        log.info("Pushing OLT to Voltha", data=data)
-
-        request = requests.post("%s:%d/api/v1/devices" % (voltha['url'], voltha['port']), json=data)
-
-        if request.status_code != 200:
-            raise Exception("Failed to add OLT device: %s" % request.text)
-
-        log.info("Add device response", text=request.text)
-
-        res = request.json()
-
-        log.info("Add device json res", res=res)
+        log.debug("Add device response", device=resp_dev)
 
         # TODO(smbaker): Potential partial failure. If device is created in Voltha but synchronizer crashes before the
         # model is saved, then synchronizer will continue to try to preprovision and fail due to preexisting
         # device.
 
-        if not res['id']:
+        # Device ID comes from Voltha and it is allocated with device is created
+        if resp_dev.id == '':
             raise Exception(
                 'VOLTHA Device Id is empty. This probably means that the OLT device is already provisioned in VOLTHA')
         else:
-            model.device_id = res['id']
-
+            olt_xos_model.device_id = resp_dev.id
             # Only update the serial number if it is not already populated. See comments in similar code in the
             # pull step. Let the pull step handle emitting any error message if the serial numbers differ.
-            if res['serial_number'] and (not model.serial_number):
-                log.info("Sync step learned olt serial number from voltha",
-                         model_serial_number=model.serial_number,
-                         voltha_serial_number=res['serial_number'],
-                         olt_id=model.id)
-                model.serial_number = res['serial_number']
-
-            model.save_changed_fields()
+            if resp_dev.serial_number != '' and (not olt_xos_model.serial_number):
+                log.info("Sync step learned OLT serial number from voltha",
+                         model_serial_number=olt_xos_model.serial_number,
+                         voltha_serial_number=resp_dev.serial_number,
+                         olt_id=olt_xos_model.id)
+                olt_xos_model.serial_number = resp_dev.serial_number
+            log.info("save_changed_fields1")
+            olt_xos_model.save_changed_fields()
 
     def activate_olt(self, model):
-
         attempted = 0
 
-        voltha = Helpers.get_voltha_info(model.volt_service)
-
         # Enable device
-        request = requests.post("%s:%d/api/v1/devices/%s/enable" % (voltha['url'], voltha['port'], model.device_id))
-
-        if request.status_code != 200:
-            raise Exception("Failed to enable OLT device: %s" % request.text)
+        voltha_client = get_voltha_client(model.volt_service)
+        try:
+            voltha_client.enable_device(model.device_id)
+        except Exception as e:
+            e.message = "[OLT enable] " + e.message
+            log.error(e.message)
+            raise e
 
         model.backend_status = "Waiting for device to be activated"
-        model.save_changed_fields(always_update_timestamp=False) # we don't want to kickoff a new loop
+        log.info("save_changed_fields2")
+        model.save_changed_fields(always_update_timestamp=False)  # we don't want to kickoff a new loop
 
         # Read state
-        request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
-        while request['oper_status'] == "ACTIVATING" and attempted < self.max_attempt:
+        olt_dev = None
+        try:
+            olt_dev = voltha_client.get_device(model.device_id)
+            model.oper_status = common_pb2.OperStatus.Types.Name(olt_dev.oper_status)
+        except ConnectionError as e:
+            # Strange behaviour, previous call was successful but this gives connection error.
+            log.error(e.message)
+            # Anyway, continue and retry again
+        except Exception as e:
+            log.warn(e.message)
+
+        while model.oper_status == "ACTIVATING" and attempted < self.max_attempt:
             log.info("Waiting for OLT device %s (%s) to activate" % (model.name, model.device_id))
             sleep(5)
-            request = requests.get("%s:%d/api/v1/devices/%s" % (voltha['url'], voltha['port'], model.device_id)).json()
+            try:
+                olt_dev = voltha_client.get_device(model.device_id)
+            except ConnectionError as e:
+                # Strange behaviour, previous call was successful but this gives connection error.
+                log.error(e.message)
+                # Anyway, continue and retry again
+            except Exception as e:
+                log.warn(e.message)
+                olt_dev = None
+            if olt_dev is not None:
+                model.oper_status = common_pb2.OperStatus.Types.Name(olt_dev.oper_status)
             attempted = attempted + 1
 
-        model.oper_status = request['oper_status']
-
+        # FIXME: possible NoneType if get_device always except
         # Only update the serial number if it is not already populated. See comments in similar code in the
         # pull step. Let the pull step handle emitting any error message if the serial numbers differ.
-        if request['serial_number'] and (not model.serial_number):
+        if olt_dev.serial_number != '' and (not model.serial_number):
             log.info("Sync step learned olt serial number from voltha",
                      model_serial_number=model.serial_number,
-                     voltha_serial_number=request['serial_number'],
+                     voltha_serial_number=olt_dev.serial_number,
                      olt_id=model.id)
-            model.serial_number = request['serial_number']
+            model.serial_number = olt_dev.serial_number
 
         if model.oper_status != "ACTIVE":
             raise Exception("It was not possible to activate OLTDevice with id %s" % model.id)
 
         # Find the of_id of the device
         self.get_ids_from_logical_device(model)
+        log.info("save_changed_fields3")
         model.save_changed_fields()
 
     def deactivate_olt(self, model):
-        voltha = Helpers.get_voltha_info(model.volt_service)
+        get_voltha_client(model.volt_service).disable_device(model.device_id)
 
-        # Disable device
-        request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))
-
-        if request.status_code != 200:
-            raise Exception("Failed to disable OLT device: %s" % request.text)
 
     def configure_onos(self, model):
 
@@ -205,11 +204,11 @@ class SyncOLTDevice(SyncStep):
         if model.admin_state not in ["ENABLED", "DISABLED"]:
             raise Exception("OLT Device %s admin_state has invalid value %s" % (model.id, model.admin_state))
 
-        # If the device has feedback_state is already present in voltha
+        # If the device has feedback_state is already present in VOLTHA
         if not model.device_id and not model.oper_status and not model.of_id:
             log.info("Pushing OLT device to VOLTHA", object=str(model), **model.tologdict())
             self.pre_provision_olt_device(model)
-            model.oper_status = "UNKNOWN" # fall-though to activate OLT
+            model.oper_status = "UNKNOWN"  # fall-though to activate OLT
         else:
             log.info("OLT device already exists in VOLTHA", object=str(model), **model.tologdict())
 
@@ -232,32 +231,36 @@ class SyncOLTDevice(SyncStep):
     def delete_record(self, model):
         log.info("Deleting OLT device", object=str(model), **model.tologdict())
 
-        voltha = Helpers.get_voltha_info(model.volt_service)
-
         if not model.device_id or model.backend_code == 2:
             # NOTE if the device was not synchronized, just remove it from the data model
             log.warning("OLTDevice %s has no device_id, it was never saved in VOLTHA" % model.name)
             return
         else:
+            voltha_client = get_voltha_client(model.volt_service)
             try:
-                # Disable the OLT device
-                request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], model.device_id))
+                voltha_client.disable_device(model.device_id)
+            except ConnectionError as e:
+                e.message = "[Disable OLT] " + e.message
+                log.warn(e.message)
+                return
+            except Exception as e:
+                e.message = "[Disable OLT] " + e.message
+                log.error(e.message)
+                raise e
 
-                if request.status_code != 200:
-                    log.error("Failed to disable OLT device in VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
-                    raise Exception("Failed to disable OLT device in VOLTHA")
+            # NOTE [teo] wait some time after the disable to let VOLTHA doing its things
+            for i in list(reversed(range(10))):
+                sleep(1)
+                log.info("[Delete OLT] Deleting the OLT in %s seconds" % i)
 
-                # NOTE [teo] wait some time after the disable to let VOLTHA doing its things
-                i = 0
-                for i in list(reversed(range(10))):
-                    sleep(1)
-                    log.info("Deleting the OLT in %s seconds" % i)
-
-                # Delete the OLT device
-                request = requests.delete("%s:%d/api/v1/devices/%s/delete" % (voltha['url'], voltha['port'], model.device_id))
-
-                if request.status_code != 200:
-                    log.error("Failed to delete OLT device from VOLTHA: %s - %s" % (model.name, model.device_id), rest_response=request.text, rest_status_code=request.status_code)
-                    raise Exception("Failed to delete OLT device from VOLTHA")
-            except requests.ConnectionError:
-                log.warning("ConnectionError when contacting Voltha in OLT delete step", name=model.name, device_id=model.device_id)
+            # Delete the OLT device
+            try:
+                voltha_client.delete_device(model.device_id)
+            except ConnectionError as e:
+                e.message = "[Delete OLT] " + e.message
+                log.warn(e.message)
+                return
+            except Exception as e:
+                e.message = "[Delete OLT] " + e.message
+                log.error(e.message)
+                raise e

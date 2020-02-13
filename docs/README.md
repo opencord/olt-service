@@ -13,8 +13,7 @@ representation.
 ![ER Diagram](static/vOLTService_ER_diagram.png)
 
 - `VOLTService`. Contains information that the synchronizer needs to access `VOLTHA` and `ONOS-VOLTHA`
-    - `voltha_url`, `voltha_port`. Hostname and port of VOLTHA endpoint.
-    - `voltha_user`, `voltha_pass`. Username and password for VOLTHA.
+    - `voltha_url`, `voltha_port`. Hostname and port of VOLTHA-API gRPC endpoint.
 - `vOLTServiceInstance`. Extends `ServiceInstance`, and holds the OLT subscriber-related state for the service chain.
     - `description`. Description of the service instance.
     - `onu_device`. Relation to an ONUDevice object.
