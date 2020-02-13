@@ -25,7 +25,7 @@ from xosconfig import Config
 import etcd3
 
 # TODO store ETCD_HOST_URL and ETCD_PORT in the vOLT Service model
-ETCD_HOST_URL = 'etcd-cluster.default.svc.cluster.local'
+ETCD_HOST_URL = 'voltha-etcd-cluster.default.svc.cluster.local'
 ETCD_PORT = 2379
 PREFIX = "service/voltha/technology_profiles"
 

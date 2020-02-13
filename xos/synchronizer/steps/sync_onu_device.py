@@ -17,7 +17,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from helpers import Helpers
 
-import requests
+from voltha_protos.voltha_pb2 import ID
+from voltha_protos.voltha_pb2_grpc import VolthaServiceStub
+import grpc
+
 from multistructlog import create_logger
 from requests.auth import HTTPBasicAuth
 from xossynchronizer.modelaccessor import ONUDevice, model_accessor
@@ -35,21 +38,23 @@ class SyncONUDevice(SyncStep):
         volt_service = o.pon_port.olt_device.volt_service
         voltha = Helpers.get_voltha_info(volt_service)
 
+        # FIXME: EXCEPTIONS??
         log.info("Disabling device %s in voltha" % o.device_id)
-        request = requests.post("%s:%d/api/v1/devices/%s/disable" % (voltha['url'], voltha['port'], o.device_id))
+        with grpc.insecure_channel(voltha['url'] + ":" + str(voltha['port'])) as channel:
+            stub = VolthaServiceStub(channel)
+            onu_id = ID(id=o.device_id)
+            stub.DisableDevice(onu_id)
 
-        if request.status_code != 200:
-            raise Exception("Failed to disable ONU device %s: %s" % (o.serial_number, request.text))
-
+    # FIXME: EXCEPTIONS??
     def enable_onu(self, o):
         volt_service = o.pon_port.olt_device.volt_service
         voltha = Helpers.get_voltha_info(volt_service)
 
         log.info("Enabling device %s in voltha" % o.device_id)
-        request = requests.post("%s:%d/api/v1/devices/%s/enable" % (voltha['url'], voltha['port'], o.device_id))
-
-        if request.status_code != 200:
-            raise Exception("Failed to enable ONU device %s: %s" % (o.serial_number, request.text))
+        with grpc.insecure_channel(voltha['url'] + ":" + str(voltha['port'])) as channel:
+            stub = VolthaServiceStub(channel)
+            onu_id = ID(id=o.device_id)
+            stub.EnableDevice(onu_id)
 
     def sync_record(self, o):
 

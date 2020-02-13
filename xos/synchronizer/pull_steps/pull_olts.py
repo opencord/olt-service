@@ -18,9 +18,13 @@ from xossynchronizer.modelaccessor import model_accessor, OLTDevice, VOLTService
 from xosconfig import Config
 from multistructlog import create_logger
 
-import requests
 from requests import ConnectionError
 from requests.models import InvalidURL
+
+from voltha_protos.voltha_pb2_grpc import VolthaServiceStub
+from voltha_protos.voltha_pb2 import ID, Device
+from google.protobuf.empty_pb2 import Empty
+import grpc
 
 import os, sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -37,18 +41,17 @@ class OLTDevicePullStep(PullStep):
     def get_ids_from_logical_device(o):
         voltha_url = Helpers.get_voltha_info(o.volt_service)['url']
         voltha_port = Helpers.get_voltha_info(o.volt_service)['port']
+        log.debug(voltha_url + ":" + str(voltha_port))
 
-        r = requests.get("%s:%s/api/v1/logical_devices" % (voltha_url, voltha_port), timeout=1)
+        #FIXME: any exception to capture?
+        with grpc.insecure_channel(voltha_url+":"+str(voltha_port)) as channel:
+            stub = VolthaServiceStub(channel)
+            logical_devices = stub.ListLogicalDevices(Empty())
 
-        if r.status_code != 200:
-            raise Exception("Failed to retrieve logical devices from VOLTHA: %s" % r.text)
-
-        res = r.json()
-
-        for ld in res["items"]:
-            if ld["root_device_id"] == o.device_id:
-                o.of_id = ld["id"]
-                o.dp_id = "of:" + Helpers.datapath_id_to_hex(ld["datapath_id"])  # convert to hex
+        for ld in logical_devices.items:
+            if ld.root_device_id == o.device_id:
+                o.of_id = ld.id
+                o.dp_id = "of:" + Helpers.datapath_id_to_hex(ld.datapath_id)  # convert to hex
 
         # Note: If the device is administratively disabled, then it's likely we won't find a logical device for
         # it. Only throw the exception for OLTs that are enabled.
@@ -67,26 +70,23 @@ class OLTDevicePullStep(PullStep):
 
         voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
+        log.debug(voltha_url + ":" + str(voltha_port))
 
         try:
-            r = requests.get("%s:%s/api/v1/devices" % (voltha_url, voltha_port), timeout=1)
+            with grpc.insecure_channel(voltha_url + ":" + str(voltha_port)) as channel:
+                stub = VolthaServiceStub(channel)
+                devs = stub.ListDevices(Empty())
 
-            if r.status_code != 200:
-                log.debug("[OLT pull step] It was not possible to fetch devices from VOLTHA")
+            devices = [d for d in devs.items if "olt" in d.type]
 
-            # [SEBA-367] Handling blank response received from Voltha, Scenario occurs when voltha api is called while vcore service is re-starting
-            elif r.text:
-                # keeping only OLTs
-                devices = [d for d in r.json()["items"] if "olt" in d["type"]]
-
+            if len(devices) > 0:
                 log.debug("[OLT pull step] received devices", olts=devices)
-
                 olts_in_voltha = self.create_or_update_olts(devices)
-
                 self.delete_olts(olts_in_voltha)
             else:
                 log.debug("[OLT pull step] Blank response received")
 
+        # FIXME: check possible exceptions
         except (ValueError, TypeError), e:
             log.warn("[OLT pull step] Invalid Json received in response from VOLTHA", reason=e)
             return
@@ -102,22 +102,22 @@ class OLTDevicePullStep(PullStep):
         updated_olts = []
 
         for olt in olts:
-            if olt["type"] == "simulated_olt":
+            if olt.type == "simulated_olt":
                 [host, port] = ["172.17.0.1", "50060"]
-            elif "host_and_port" in olt:
-                [host, port] = olt["host_and_port"].split(":")
-            elif "mac_address" in olt:
-                mac_address = olt["mac_address"]
+            elif "host_and_port" in olt.WhichOneof('address') == "host_and_port":
+                [host, port] = olt.host_and_port.split(":")
+            elif olt.mac_address != '':
+                mac_address = olt.mac_address
 
-            olt_ports = self.fetch_olt_ports(olt["id"])
+            olt_ports = self.fetch_olt_ports(olt.id)
 
             try:
-                if "host_and_port" in olt:
-                    model = OLTDevice.objects.filter(device_type=olt["type"], host=host, port=port)[0]
-                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], id=model.id, host=host, port=port)
-                elif "mac_address" in olt:
-                    model = OLTDevice.objects.filter(device_type=olt["type"], mac_address=mac_address)[0]
-                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt["type"], id=model.id, mac_address=mac_address)
+                if "host_and_port" in olt.WhichOneof('address') == "host_and_port":
+                    model = OLTDevice.objects.filter(device_type=olt.type, host=host, port=port)[0]
+                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt.type, id=model.id, host=host, port=port)
+                elif olt.mac_address != '':
+                    model = OLTDevice.objects.filter(device_type=olt.type, mac_address=mac_address)[0]
+                    log.debug("[OLT pull step] OLTDevice already exists, updating it", device_type=olt.type, id=model.id, mac_address=mac_address)
 
                 if model.enacted < model.updated:
                     log.debug("[OLT pull step] Skipping pull on OLTDevice %s as enacted < updated" % model.name, name=model.name, id=model.id, enacted=model.enacted, updated=model.updated)
@@ -130,51 +130,51 @@ class OLTDevicePullStep(PullStep):
             except IndexError:
 
                 model = OLTDevice()
-                model.device_type = olt["type"]
+                model.device_type = olt.type
 
-                if olt["type"] == "simulated_olt":
+                if olt.type == "simulated_olt":
                     model.host = "172.17.0.1"
                     model.port = 50060
                     log.debug("[OLT pull step] OLTDevice is new, creating it. Simulated")
-                elif "host_and_port" in olt:
-                    [host, port] = olt["host_and_port"].split(":")
+                elif "host_and_port" in olt.WhichOneof('address') == "host_and_port":
+                    [host, port] = olt.host_and_port.split(":")
                     model.host = host
                     model.port = int(port)
-                    log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], host=host, port=port)
-                elif "mac_address" in olt:
-                    model.mac_address = olt["mac_address"]
-                    log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt["type"], mac_address=mac_address)
+                    log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt.type, host=host, port=port)
+                elif olt.mac_address != '':
+                    model.mac_address = olt.mac_address
+                    log.debug("[OLT pull step] OLTDevice is new, creating it", device_type=olt.type, mac_address=mac_address)
 
                 # there's no name in voltha, so make one up based on the id
-                model.name = "OLT-%s" % olt["id"]
+                model.name = "OLT-%s" % olt.id
 
-                nni_ports = [p for p in olt_ports if "ETHERNET_NNI" in p["type"]]
+                nni_ports = [p for p in olt_ports if "ETHERNET_NNI" in p.type]
                 if not nni_ports:
-                    log.warning("[OLT pull step] No NNI ports, so no way to determine uplink. Skipping.", device_type=olt["type"], host=host, port=port)
-                    model.device_id = olt["id"]  # device_id must be populated for delete_olts
+                    log.warning("[OLT pull step] No NNI ports, so no way to determine uplink. Skipping.", device_type=olt.type, host=host, port=port)
+                    model.device_id = olt.id  # device_id must be populated for delete_olts
                     updated_olts.append(model)
                     continue
 
                 # Exctract uplink from the first NNI port. This decision is arbitrary, we will worry about multiple
                 # NNI ports when that situation arises.
-                model.uplink = str(nni_ports[0]["port_no"])
+                model.uplink = str(nni_ports[0].port_no)
 
                 # Initial admin_state
-                model.admin_state = olt["admin_state"]
+                model.admin_state = olt.admin_state
 
             # Check to see if Voltha's serial_number field is populated. During Activation it's possible that
             # Voltha's serial_number field may be blank. We want to avoid overwriting a populated data model
             # serial number with an unpopulated Voltha serial number. IF this happened, then there would be
             # a window of vulnerability where sadis requests will fail.
 
-            if olt['serial_number'] and model.serial_number != olt['serial_number']:
+            if olt.serial_number and model.serial_number != olt.serial_number:
                 # Check to see if data model serial number is already populated. If the serial number was
                 # already populated, and what we just learned from Voltha differs, then this is an error
                 # that should be made visible to the operator, so the operator may correct it.
                 if model.serial_number:
                     log.error("Serial number mismatch when pulling olt. Aborting OLT Update.",
                               model_serial_number=model.serial_number,
-                              voltha_serial_number=olt['serial_number'],
+                              voltha_serial_number=olt.serial_number,
                               olt_id=model.id)
                     model.backend_status = "Incorrect serial number"
                     model.backend_code = 2
@@ -192,14 +192,14 @@ class OLTDevicePullStep(PullStep):
 
                 log.info("Pull step learned olt serial number from voltha",
                          model_serial_number=model.serial_number,
-                         voltha_serial_number=olt['serial_number'],
+                         voltha_serial_number=olt.serial_number,
                          olt_id=model.id)
 
-                model.serial_number = olt['serial_number']
+                model.serial_number = olt.serial_number
 
             # Adding feedback state to the device
-            model.device_id = olt["id"]
-            model.oper_status = olt["oper_status"]
+            model.device_id = olt.id
+            model.oper_status = olt.oper_status
 
             model.volt_service = self.volt_service
             model.volt_service_id = self.volt_service.id
@@ -224,21 +224,21 @@ class OLTDevicePullStep(PullStep):
 
         voltha_url = Helpers.get_voltha_info(self.volt_service)['url']
         voltha_port = Helpers.get_voltha_info(self.volt_service)['port']
+        log.debug(voltha_url + ":" + str(voltha_port))
 
         try:
-            r = requests.get("%s:%s/api/v1/devices/%s/ports" % (voltha_url, voltha_port, olt_device_id), timeout=1)
+            with grpc.insecure_channel(voltha_url + ":" + str(voltha_port)) as channel:
+                stub = VolthaServiceStub(channel)
+                olt_id = ID(id=olt_device_id)
+                olt_ports = stub.ListDevicePorts(olt_id)
 
-            if r.status_code != 200:
-                log.warn("[OLT pull step] It was not possible to fetch ports from VOLTHA for device %s" % olt_device_id,
-                         status_code=r.status_code)
-                return None
-
-            ports = r.json()['items']
+            ports = olt_ports.items
 
             log.debug("[OLT pull step] received ports", ports=ports, olt=olt_device_id)
 
             return ports
 
+        # FIXME: which exception to capture?
         except ConnectionError, e:
             log.warn("[OLT pull step] It was not possible to connect to VOLTHA", reason=e)
             return None
@@ -249,8 +249,8 @@ class OLTDevicePullStep(PullStep):
         return None
 
     def create_or_update_ports(self, ports, olt):
-        nni_ports = [p for p in ports if "ETHERNET_NNI" in p["type"]]
-        pon_ports = [p for p in ports if "PON_OLT" in p["type"]]
+        nni_ports = [p for p in ports if "ETHERNET_NNI" in p.type]
+        pon_ports = [p for p in ports if "PON_OLT" in p.type]
 
         self.create_or_update_nni_port(nni_ports, olt)
         self.create_or_update_pon_port(pon_ports, olt)
@@ -261,17 +261,17 @@ class OLTDevicePullStep(PullStep):
 
         for port in pon_ports:
             try:
-                model = PONPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
-                log.debug("[OLT pull step] PONPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+                model = PONPort.objects.filter(port_no=port.port_no, olt_device_id=olt.id)[0]
+                log.debug("[OLT pull step] PONPort already exists, updating it", port_no=port.port_no, olt_device_id=olt.id)
             except IndexError:
                 model = PONPort()
-                model.port_no = port["port_no"]
+                model.port_no = port.port_no
                 model.olt_device_id = olt.id
-                model.name = port["label"]
-                log.debug("[OLT pull step] PONPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
+                model.name = port.label
+                log.debug("[OLT pull step] PONPort is new, creating it", port_no=port.port_no, olt_device_id=olt.id)
 
-            model.admin_state = port["admin_state"]
-            model.oper_status = port["oper_status"]
+            model.admin_state = port.admin_state
+            model.oper_status = port.oper_status
             model.save_changed_fields()
             update_ports.append(model)
         return update_ports
@@ -281,19 +281,20 @@ class OLTDevicePullStep(PullStep):
 
         for port in nni_ports:
             try:
-                model = NNIPort.objects.filter(port_no=port["port_no"], olt_device_id=olt.id)[0]
+                model = NNIPort.objects.filter(port_no=port.port_no, olt_device_id=olt.id)[0]
                 model.xos_managed = False
-                log.debug("[OLT pull step] NNIPort already exists, updating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.debug("[OLT pull step] NNIPort already exists, updating it", port_no=port.port_no, olt_device_id=olt.id)
             except IndexError:
                 model = NNIPort()
-                model.port_no = port["port_no"]
+                model.port_no = port.port_no
                 model.olt_device_id = olt.id
-                model.name = port["label"]
+                model.name = port.label
                 model.xos_managed = False
-                log.debug("[OLT pull step] NNIPort is new, creating it", port_no=port["port_no"], olt_device_id=olt.id)
+                log.debug("[OLT pull step] NNIPort is new, creating it", port_no=port.port_no, olt_device_id=olt.id)
 
-            model.admin_state = port["admin_state"]
-            model.oper_status = port["oper_status"]
+            # FIXME: admin & oper_status are enum in proto and string in xproto definition
+            model.admin_state = port.admin_state
+            model.oper_status = port.oper_status
             model.save_changed_fields()
             update_ports.append(model)
         return update_ports
