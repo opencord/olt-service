@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "84ee40c2_b8593c0e",
+        "filename": "xos/synchronizer/pull_steps/pull_olts.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 46,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2020-02-14T20:24:26Z",
+      "side": 1,
+      "message": "An issue with putting it in the class constructor may be that the constructor doesn\u0027t take the serviceinstance as an argument, so you would have no place to get o.volt_service to get the URL and port. I do think moving the creation of the channel outside of these functions might be useful. Perhaps create a new \"create_channel\" method in the class, or put something in the Helpers module. If performance of repeatedly creating channels becomes an issue then we could look at caching and reusing the channel across calls.",
+      "range": {
+        "startLine": 46,
+        "startChar": 21,
+        "endLine": 46,
+        "endChar": 106
+      },
+      "revId": "59772ae5701e652aaef89fe7357e2a2a023c46f3",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "431a64ad_7de54805",
+        "filename": "xos/synchronizer/steps/sync_olt_device.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1000016
+      },
+      "writtenOn": "2020-02-14T20:24:26Z",
+      "side": 1,
+      "message": "The more I think of it, moving this to helper function may make sense. That way if we ever for example switched from insecure grpc to secure grpc, or we wanted to cache and reuse channels, or we changed how the URLs are formed, there would be one place to edit, rather than many different places.",
+      "range": {
+        "startLine": 168,
+        "startChar": 12,
+        "endLine": 168,
+        "endChar": 93
+      },
+      "revId": "59772ae5701e652aaef89fe7357e2a2a023c46f3",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
