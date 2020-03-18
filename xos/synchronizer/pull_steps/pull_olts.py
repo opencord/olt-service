@@ -56,30 +56,29 @@ class OLTDevicePullStep(PullStep):
 
     def pull_records(self):
         log.debug("[OLT pull step] pulling OLT devices from VOLTHA")
-        try:
-            self.volt_service = VOLTService.objects.all()[0]
-        except IndexError:
-            log.warn('VOLTService not found')
+        volt_services = VOLTService.objects.all()
+        if volt_services is None or len(volt_services) == 0:
+            log.warn('VOLTServices not found')
             return
 
-        try:
-            olt_devices = get_voltha_client(self.volt_service).list_olt_devices()
-            if olt_devices is None:
-                log.debug("[OLT pull step] Blank response received")
-                return
-            log.debug("[OLT pull step] received devices", olts=olt_devices)
-            olts_in_voltha = self.create_or_update_olts(olt_devices)
-            self.delete_olts(olts_in_voltha)
-        except Exception as e:
-            log.error("[OLT pull step] " + e.message)
-            return
+        for volt_service in volt_services:
+            try:
+                olt_devices = get_voltha_client(volt_service).list_olt_devices()
+                if olt_devices is None:
+                    log.debug("[OLT pull step] Blank response received")
+                    return
+                log.debug("[OLT pull step] received devices", olts=olt_devices)
+                olts_in_voltha = self.create_or_update_olts(olt_devices, volt_service)
+                self.delete_olts(olts_in_voltha)
+            except Exception as e:
+                log.error("[OLT pull step] " + e.message)
 
-    def create_or_update_olts(self, olts):
+    def create_or_update_olts(self, olts, volt_service):
 
         updated_olts = []
 
         for olt in olts:
-            olt_ports = self.fetch_olt_ports(olt.id)
+            olt_ports = self.fetch_olt_ports(olt.id, volt_service)
 
             try:
                 if olt.type == "simulated_olt":
@@ -181,8 +180,8 @@ class OLTDevicePullStep(PullStep):
             model.device_id = olt.id
             model.oper_status = OperStatus.Types.Name(olt.oper_status)
 
-            model.volt_service = self.volt_service
-            model.volt_service_id = self.volt_service.id
+            model.volt_service = volt_service
+            model.volt_service_id = volt_service.id
 
             # get logical device
             OLTDevicePullStep.get_ids_from_logical_device(model)
@@ -196,7 +195,7 @@ class OLTDevicePullStep(PullStep):
 
         return updated_olts
 
-    def fetch_olt_ports(self, olt_device_id):
+    def fetch_olt_ports(self, olt_device_id, volt_service):
         """
         Given an olt device_id, query VOLTHA for the set of ports associated with that OLT.
 
@@ -204,7 +203,7 @@ class OLTDevicePullStep(PullStep):
         :return: List of port dictionaries, or None in case of error.
         """
         try:
-            olt_ports = get_voltha_client(self.volt_service).list_device_ports(olt_device_id)
+            olt_ports = get_voltha_client(volt_service).list_device_ports(olt_device_id)
             if olt_ports is not None:
                 log.debug("[OLT pull step] received ports", ports=olt_ports, olt=olt_device_id)
             return olt_ports
