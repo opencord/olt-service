@@ -75,8 +75,8 @@ class TestSyncOLTDevice(unittest.TestCase):
 
         # Create a mock OLTDevice
         o = Mock()
-        o.volt_service.voltha_url = MOCK_VOLTHA_SERVER_ADDRESS
-        o.volt_service.voltha_port = MOCK_VOLTHA_SERVER_PORT
+        o.volt_service.voltha_api_url = MOCK_VOLTHA_SERVER_ADDRESS
+        o.volt_service.voltha_api_port = MOCK_VOLTHA_SERVER_PORT
 
         clear_voltha_client_cache()
         self.server = grpc.server(ThreadPoolExecutor(max_workers=5))

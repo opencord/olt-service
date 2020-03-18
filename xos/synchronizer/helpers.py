@@ -24,8 +24,8 @@ class Helpers():
     @staticmethod
     def get_voltha_info(olt_service):
         return {
-            'url': olt_service.voltha_url,
-            'port': olt_service.voltha_port,
+            'api_url': olt_service.voltha_api_url,
+            'api_port': olt_service.voltha_api_port,
         }
 
     @staticmethod

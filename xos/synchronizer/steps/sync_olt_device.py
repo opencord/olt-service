@@ -56,7 +56,6 @@ class SyncOLTDevice(SyncStep):
             resp_dev = get_voltha_client(olt_xos_model.volt_service).create_olt_device(olt_xos_model)
             log.info("Device has been pushed to VOLTHA with ID: %s", resp_dev.id)
         except Exception as e:
-            log.error("ASDASD")
             log.error(e)
             log.error(e.message)
             raise e
