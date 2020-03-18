@@ -67,6 +67,11 @@ class TestSyncTechProfile(unittest.TestCase):
 
         self.o.tologdict.return_value = {'name': "mock-tp"}
 
+        volt_service = Mock()
+        volt_service.voltha_etcd_url = "VOLHA_ETCD_URL"
+        volt_service.voltha_etcd_port = 123
+        self.o.volt_service = volt_service
+
     def tearDown(self):
         self.o = None
         sys.path = self.sys_path_save

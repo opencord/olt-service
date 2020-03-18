@@ -7,13 +7,21 @@ message VOLTService (Service){
     option description = "OLT Access Service";
     option custom_python = "True";
 
-    required string voltha_url = 1 [
+    required string voltha_api_url = 1 [
         help_text = "The Voltha API address. By default voltha-api.default.svc.cluster.local",
         default = "voltha-api.voltha.svc.cluster.local",
         max_length = 256];
-    required int32 voltha_port = 2 [
+    required int32 voltha_api_port = 2 [
         help_text = "The Voltha API port. By default 55555",
         default = 55555];
+
+    required string voltha_etcd_url = 3 [
+        help_text = "The Voltha ETCD address. By default voltha-etcd-cluster.default.svc.cluster.local",
+        default = "voltha-etcd-cluster.default.svc.cluster.local",
+        max_length = 256];
+    required int32 voltha_etcd_port = 4 [
+        help_text = "The Voltha ETCD port. By default 2379",
+        default = 2379];
 }
 
 message OLTDevice (XOSBase){
@@ -241,4 +249,8 @@ message TechnologyProfile (XOSBase) {
     required string profile_value = 3 [
         help_text = "The technology profile value in JSON format",
         max_length = 4096];
+
+    required manytoone volt_service->VOLTService:tech_profiles = 1:1002 [
+        help_text = "VOLTService that owns this Technology Profile",
+        db_index = True];
 }

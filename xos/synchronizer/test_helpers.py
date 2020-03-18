@@ -33,8 +33,8 @@ class TestHelpers(unittest.TestCase):
 
         # Create a mock service instance
         o = Mock()
-        o.voltha_url = "voltha_url"
-        o.voltha_port = 1234
+        o.voltha_api_url = "voltha_api_url"
+        o.voltha_api_port = 1234
 
         o.provider_services = [onos]
 
@@ -53,8 +53,8 @@ class TestHelpers(unittest.TestCase):
     def test_get_voltha_info(self):
         voltha_dict = Helpers.get_voltha_info(self.o)
 
-        self.assertEqual(voltha_dict["url"], "voltha_url")
-        self.assertEqual(voltha_dict["port"], 1234)
+        self.assertEqual(voltha_dict["api_url"], "voltha_api_url")
+        self.assertEqual(voltha_dict["api_port"], 1234)
 
     def test_get_onos_info(self):
         onos_voltha_dict = Helpers.get_onos_voltha_info(self.o)

@@ -34,9 +34,9 @@ class SyncTechnologyProfile(SyncStep):
 
     observes = TechnologyProfile
 
-    def update_etcd(self, operation, key, value=None):
+    def update_etcd(self, operation, key, url, port, value=None):
         log.info('Update Etcd store: ', operation=operation, key=PREFIX + key, value=value)
-        etcd = etcd3.client(host=ETCD_HOST_URL, port=ETCD_PORT)
+        etcd = etcd3.client(host=url, port=port)
         if operation == 'PUT':
             etcd.put(PREFIX + key, value)
             log.info('Technology Profile [%s] saved successfully to Etcd store' % (PREFIX + key))
@@ -52,13 +52,16 @@ class SyncTechnologyProfile(SyncStep):
             log.warning('Invalid or unsupported Etcd operation: %s' % operation)
 
     def sync_record(self, model):
-
+        volt_service = model.volt_service
         log.info('Syncing TechnologyProfile', object=str(model), **model.tologdict())
 
         log.info('TechnologyProfile: %s : %s' % (model.technology, model.profile_id))
 
         tp_key = u'/' + model.technology + u'/' + str(model.profile_id)
-        self.update_etcd('PUT', tp_key, value=model.profile_value)
+        self.update_etcd('PUT', tp_key,
+                         url=model.volt_service.voltha_etcd_url,
+                         port=model.volt_service.voltha_etcd_port,
+                         value=model.profile_value)
 
     def delete_record(self, model):
         log.info('Deleting TechnologyProfile', object=str(model), **model.tologdict())
@@ -66,6 +69,11 @@ class SyncTechnologyProfile(SyncStep):
         log.info('TechnologyProfile: %s : %s' % (model.technology, model.profile_id))
 
         tp_key = "/%s/%s" % (model.technology, model.profile_id)
-        [existing_tp, metadata] = self.update_etcd('GET', tp_key)
+        [existing_tp, metadata] = self.update_etcd('GET', tp_key,
+                                                   url=model.volt_service.voltha_etcd_url,
+                                                   port=model.volt_service.voltha_etcd_port)
         if existing_tp is not None:
-            self.update_etcd('DELETE', tp_key)
+            self.update_etcd('DELETE',
+                             tp_key,
+                             url=model.volt_service.voltha_etcd_url,
+                             port=model.volt_service.voltha_etcd_port)

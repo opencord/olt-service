@@ -63,8 +63,8 @@ class TestPullONUDevice(unittest.TestCase):
         # mock volt service
         self.volt_service = Mock()
         self.volt_service.id = "volt_service_id"
-        self.volt_service.voltha_url = MOCK_VOLTHA_SERVER_ADDRESS
-        self.volt_service.voltha_port = MOCK_VOLTHA_SERVER_PORT
+        self.volt_service.voltha_api_url = MOCK_VOLTHA_SERVER_ADDRESS
+        self.volt_service.voltha_api_port = MOCK_VOLTHA_SERVER_PORT
 
         # mock OLTDevice
         self.olt = Mock()
