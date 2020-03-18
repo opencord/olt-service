@@ -34,10 +34,10 @@ def get_voltha_client(olt_service, timeout=TIMEOUT):
     :return: The cached client if present, otherwise a new instance of VolthaClient
     """
     # Query cache, otherwise create new instance
-    client = voltha_clients.get((olt_service.voltha_url, olt_service.voltha_port),
-                                VolthaClient(olt_service.voltha_url, olt_service.voltha_port, timeout))
+    client = voltha_clients.get((olt_service.voltha_api_url, olt_service.voltha_api_port),
+                                VolthaClient(olt_service.voltha_api_url, olt_service.voltha_api_port, timeout))
     client._timeout = timeout
-    voltha_clients[(olt_service.voltha_url, olt_service.voltha_port)] = client
+    voltha_clients[(olt_service.voltha_api_url, olt_service.voltha_api_port)] = client
     return client
 
 
@@ -52,8 +52,8 @@ class VolthaClient(object):
     """
 
     def __init__(self, url, port, timeout=TIMEOUT):
-        self.voltha_url = url
-        self.voltha_port = port
+        self.voltha_api_url = url
+        self.voltha_api_port = port
         self.channel = None
         self._timeout = timeout  # gRPC timeout [s]
 
@@ -63,7 +63,7 @@ class VolthaClient(object):
         :return: True if channel is opened, False if it was already opened
         """
         if self.channel is None:
-            self.channel = grpc.insecure_channel(self.voltha_url + ":" + str(self.voltha_port))
+            self.channel = grpc.insecure_channel(self.voltha_api_url + ":" + str(self.voltha_api_port))
             return True
         return False
 

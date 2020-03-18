@@ -58,8 +58,8 @@ class TestSyncONUDevice(unittest.TestCase):
         self.sync_step = SyncONUDevice
 
         volt_service = Mock()
-        volt_service.voltha_url = MOCK_VOLTHA_SERVER_ADDRESS
-        volt_service.voltha_port = MOCK_VOLTHA_SERVER_PORT
+        volt_service.voltha_api_url = MOCK_VOLTHA_SERVER_ADDRESS
+        volt_service.voltha_api_port = MOCK_VOLTHA_SERVER_PORT
 
         self.o = Mock()
         self.o.device_id = "test_id"

@@ -36,28 +36,28 @@ class ONUDevicePullStep(PullStep):
     def pull_records(self):
         log.debug("[ONU pull step] pulling ONU devices from VOLTHA")
 
-        try:
-            self.volt_service = VOLTService.objects.all()[0]
-        except IndexError:
-            log.warn('VOLTService not found')
-            return
-        try:
-            onu_devices = get_voltha_client(self.volt_service).list_onu_devices()
-            if onu_devices is None:
-                return
-            if len(onu_devices) > 0:
-                log.debug("received devices", onus=onu_devices)
-                onus_in_voltha = self.create_or_update_onus(onu_devices)
-
-                # TODO
-                # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
-            else:
-                log.debug("[ONU pull step] Blank response received")
-        except Exception as e:
-            log.error("[ONU pull step] " + e.message)
+        volt_services = VOLTService.objects.all()
+        if volt_services is None or len(volt_services) == 0:
+            log.warn('VOLTServices not found')
             return
 
-    def create_or_update_onus(self, onus):
+        for volt_service in volt_services:
+            try:
+                onu_devices = get_voltha_client(volt_service).list_onu_devices()
+                if onu_devices is None:
+                    return
+                if len(onu_devices) > 0:
+                    log.debug("received devices", onus=onu_devices)
+                    onus_in_voltha = self.create_or_update_onus(onu_devices, volt_service)
+
+                    # TODO
+                    # [ ] delete ONUS as ONUDevice.objects.all() - updated ONUs
+                else:
+                    log.debug("[ONU pull step] Blank response received")
+            except Exception as e:
+                log.error("[ONU pull step] " + e.message)
+
+    def create_or_update_onus(self, onus, volt_service):
 
         updated_onus = []
 
@@ -99,15 +99,15 @@ class ONUDevicePullStep(PullStep):
 
             model.save_changed_fields()
 
-            self.fetch_onu_ports(model)
+            self.fetch_onu_ports(model, volt_service)
 
             updated_onus.append(model)
 
         return updated_onus
 
-    def fetch_onu_ports(self, onu):
+    def fetch_onu_ports(self, onu, volt_service):
         try:
-            onu_ports = get_voltha_client(self.volt_service).list_device_ports(onu.device_id)
+            onu_ports = get_voltha_client(volt_service).list_device_ports(onu.device_id)
             if onu_ports is None:
                 return
             log.debug("[ONU pull step] received ports", ports=onu_ports, onu=onu.device_id)
