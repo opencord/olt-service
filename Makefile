@@ -60,7 +60,7 @@ test-unit:
 venv-service:
 	virtualenv $@;\
     source ./$@/bin/activate ; set -u ;\
-    pip install -r requirements.txt xosmigrate~=3.2.6 django
+    pip install -r requirements.txt xosmigrate~=4.0.0 django
 
 create-migration: venv-service
 	source ./venv-service/bin/activate; set -u;\
