@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a15ddaa9_2a3e622b",
+        "filename": "xos/synchronizer/migrations/0013_auto_20200326_1254.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000007
+      },
+      "writtenOn": "2020-03-26T21:42:32Z",
+      "side": 1,
+      "message": "do not silently return, print a message to instruct the operator on what to do (he\u0027s not going to look in the code for the comment)",
+      "range": {
+        "startLine": 29,
+        "startChar": 4,
+        "endLine": 30,
+        "endChar": 14
+      },
+      "revId": "84c9732591124d3c54135fd90383cd53d990c3cb",
+      "serverId": "2a2bfe1b-c5c2-48ed-9ac8-16438ab24388",
+      "unresolved": false
+    }
+  ]
+}
